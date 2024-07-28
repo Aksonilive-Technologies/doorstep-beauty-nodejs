@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 const port = 5000;
-
+const AppError = require("./utility/appError");
 app.use(express.json());
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,7 +36,7 @@ db.once("open", () => {
 
 
 app.get("/", (req, res) => {
-  return res.send(getLoginPage());
+  return res.send("Hello Beauty!");
 });
  
 
