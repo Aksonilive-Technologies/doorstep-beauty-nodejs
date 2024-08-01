@@ -7,15 +7,15 @@ const {
   getAllMasterOTP,
   updateMasterOTP,
   deleteMasterOTP,
-} = require("../controller/authController");
+} = require("../controllers/authController");
 
 
 router.get("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
-router.post("/register-master-otp", registerMasterOTP);
-router.post("/update-master-otp", updateMasterOTP);
-router.get("/get-all-master-otp", getAllMasterOTP);
-router.delete("/delete-master-otp", deleteMasterOTP);
+// router.post("/register-master-otp", registerMasterOTP);
+// router.post("/update-master-otp", updateMasterOTP);
+// router.get("/get-all-master-otp", getAllMasterOTP);
+// router.delete("/delete-master-otp", deleteMasterOTP);
 
 
 

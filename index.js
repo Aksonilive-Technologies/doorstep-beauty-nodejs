@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require("dotenv");
 dotenv.config();
+const adminRoute = require("./routes/adminRoute.js");
 
 const app = express();
 
@@ -38,6 +39,9 @@ db.once("open", () => {
 app.get("/", (req, res) => {
   return res.send("Hello Beauty!");
 });
+
+// Routes
+app.use("/api/admin", adminRoute);
  
 
 app.all('*', async (request, response, next) => {
