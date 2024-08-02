@@ -6,6 +6,7 @@ const {
   AllAdmin,
   DeleteAdmin,
   UpdateAdmin,
+  changeStatus
 } = require("../controllers/adminController.js"); // Importing both functions
 
 const router = express.Router();
@@ -34,12 +35,14 @@ router.post(
 );
 
 //get all admin
-router.get("/admins", AllAdmin);
+router.get("/all", AllAdmin);
+
+router.get("/status", changeStatus)
 
 //delete admin
-router.put("/delete/:id", DeleteAdmin);
+router.put("/delete", DeleteAdmin);
 
 //update admin
-router.put("/update/:id", UpdateAdmin);
+router.put("/update", UpdateAdmin);
 
 module.exports = router;

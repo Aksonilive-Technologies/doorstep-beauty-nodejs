@@ -41,7 +41,8 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/admin", adminRoute);
+app.use("/api/v1/admin", adminRoute);
+// app.use("/api/v1/customer", customerRoute);
  
 
 app.all('*', async (request, response, next) => {

@@ -1,16 +1,28 @@
 const bcryptjs = require("bcryptjs");
-const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 
 // Admin Registration
 const Register = async (req, res) => {
   const { name, username, password } = req.body;
+  const { id } = req.query.id;
+  const superAdmin = await Admin.findById(id);
 
-  // Validate request data
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  //check if any of one is not coming then return taht misssing thing
+  if (!name) {
+    return res
+      .status(400)
+      .json({success: false, message: "Please fill name",  });
+  }
+  if (!username) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Please fill username", });
+  }
+  if (!password) {
+    return res
+      .status(400)
+      .json({  success: false,message: "Please fill password", });
   }
 
   try {
@@ -19,7 +31,7 @@ const Register = async (req, res) => {
     if (existingAdmin) {
       return res
         .status(400)
-        .json({ message: "Username already exists", success: false });
+        .json({ success: false , message: "Username already exists"});
     }
 
     // Hash the password
@@ -30,6 +42,7 @@ const Register = async (req, res) => {
       name,
       username,
       password: hashedPassword,
+      level: superAdmin + 1,
     });
 
     // Save the new admin to the database
@@ -37,12 +50,12 @@ const Register = async (req, res) => {
 
     res
       .status(201)
-      .json({ message: "Admin registered successfully", success: true });
+      .json({ success: true, message: "Admin registered successfully" });
   } catch (error) {
     console.error("Error while registering Admin:", error);
     res.status(500).json({
-      message: "Error occurred while registering admin",
       success: false,
+      message: "Error occurred while registering admin",
     });
   }
 };
@@ -51,9 +64,15 @@ const Login = async (req, res) => {
   const { username, password } = req.body;
 
   // Validate request data
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+  if (!username) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Please fill username",  });
+  }
+  if (!password) {
+    return res
+      .status(400)
+      .json({success: false, message: "Please fill password"  });
   }
 
   try {
@@ -61,20 +80,20 @@ const Login = async (req, res) => {
     const admin = await Admin.findOne({ username });
     if (!admin) {
       return res.status(401).json({
-        message: "Invalid username or password",
         success: false,
+        message: "Invalid username or password",
       });
     }
     if (admin.isActive === false) {
       return res.status(401).json({
-        message: "Your account is inactive, Please contact support team",
         success: false,
+        message: "Your account is inactive, Please contact support team",
       });
     }
     if (admin.isDeleted === true) {
       return res.status(401).json({
-        message: "Your account is deleted, Please contact support team",
         success: false,
+        message: "Your account is deleted, Please contact support team",
       });
     }
 
@@ -82,8 +101,8 @@ const Login = async (req, res) => {
     const isValidPassword = await bcryptjs.compare(password, admin.password);
     if (!isValidPassword) {
       return res.status(401).json({
-        message: "Invalid username or password",
         success: false,
+        message: "Invalid username or password",
       });
     }
 
@@ -102,12 +121,13 @@ const Login = async (req, res) => {
 
     // Return success response with admin name and id
     return res.status(200).json({
-      data: {
-        name: admin.name, // Include admin's name
-        id: admin._id, // Include admin's ID
-      },
-      message: "Admin logged in successfully",
       success: true,
+      message: "Admin logged in successfully",
+      data: {
+        id: admin._id,
+        name: admin.name,
+        username: admin.username,
+      },
     });
   } catch (error) {
     console.error("Error while logging in:", error);
@@ -120,8 +140,12 @@ const Login = async (req, res) => {
 
 const AllAdmin = async (req, res) => {
   try {
-    const admin = await Admin.find().select("-password");
-    return res.status(200).json(admin);
+    const admin = await Admin.find().select("-password -__v");
+    return res.status(200).json({
+      success: true,
+      message: "Successfully retrieved all admins",
+      data: admin,
+    });
   } catch (error) {
     console.error("Error while fetching all admins:", error);
     return res.status(500).json({
@@ -133,50 +157,70 @@ const AllAdmin = async (req, res) => {
 
 const DeleteAdmin = async (req, res) => {
   try {
-    const id = req.params.id;
+    const id = req.query.id;
+    const adminCheck = await Admin.findById(id);
+
+    if (!adminCheck) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    if (adminCheck.isDeleted) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Account is already suspended, kindly contact the support team",
+      });
+    }
+
     const admin = await Admin.findByIdAndUpdate(
       id,
       { isDeleted: true },
       { new: true }
     );
 
-    if (!admin) {
-      return res.status(404).json({
-        message: "Admin not found",
-        success: false,
-      });
-    }
-
     return res.status(200).json({
-      message: "Admin deleted successfully",
       success: true,
+      message: "Account suspended successfully",
     });
   } catch (error) {
     console.error("Error while deleting Admin:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
       success: false,
+      message: "Internal Server Error",
     });
   }
 };
 
 const UpdateAdmin = async (req, res) => {
   try {
-    const id = req.params.id;
+    const id = req.query.id;
+
     const checkAdmin = await Admin.findById(id);
 
     if (checkAdmin.isDeleted === true) {
       return res.status(404).json({
-        message: "Admin deleted, Please Contact with support team",
         success: false,
+        message:
+          "Account is already suspended, kindly contact the support team",
+      });
+    }
+    if (checkAdmin.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Account is temporarly blocked, kindly contact the support team",
       });
     }
 
-    const { name, password } = req.body;
+    const { name, username, password } = req.body;
 
     // Create an update object dynamically
     const updateData = {};
     if (name) updateData.name = name;
+    if (username) updateData.username = username;
     if (password) {
       const hashedPassword = await bcryptjs.hash(password, 10);
       updateData.password = hashedPassword;
@@ -193,7 +237,7 @@ const UpdateAdmin = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: "Admin updated successfully",
+      message: "Admin details updated successfully",
       success: true,
     });
   } catch (error) {
@@ -205,10 +249,48 @@ const UpdateAdmin = async (req, res) => {
   }
 };
 
+const changeStatus = async (req, res) => {
+  const  id  = req.query.id;
+
+  try {
+    const admin = await Admin.findById(id);
+    console.log("Admin: ", admin);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+    
+    let isActive = admin.isActive;
+
+    if (isActive === true) {
+      isActive = false;
+      await Admin.findByIdAndUpdate(id, { isActive }, { new: true });
+      return res
+        .status(200)
+        .json({ success: true, message: "Account blocked successfully" });
+    } else if (isActive === false) {
+      isActive = true;
+      await Admin.findByIdAndUpdate(id, { isActive }, { new: true });
+      return res
+        .status(200)
+        .json({ success: true, message: "Account activated successfully" });
+    }
+  } catch (error) {
+    console.error("Error while changing admin status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while changing admin status",
+    });
+  }
+};
+
 module.exports = {
   Register,
   Login,
   AllAdmin,
   DeleteAdmin,
   UpdateAdmin,
+  changeStatus,
 };
