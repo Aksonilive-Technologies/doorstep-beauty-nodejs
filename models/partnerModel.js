@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const customersSchema = new mongoose.Schema(
+const PartnersSchema = new mongoose.Schema(
   {
     image: {
       type: String,
@@ -37,5 +37,5 @@ const customersSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-const Customer = mongoose.model("Customer", customersSchema);
-module.exports = Customer;
+const Partner = mongoose.model("Partner", PartnersSchema);
+module.exports = Partner;

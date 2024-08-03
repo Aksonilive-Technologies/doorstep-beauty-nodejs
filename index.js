@@ -7,6 +7,8 @@ const path = require('path');
 const dotenv = require("dotenv");
 dotenv.config();
 const adminRoute = require("./routes/adminRoute.js");
+const customerRoute = require("./routes/customersRoute.js");
+const partnerRoute = require("./routes/partnersRoute.js");
 
 const app = express();
 
@@ -42,7 +44,8 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/v1/admin", adminRoute);
-// app.use("/api/v1/customer", customerRoute);
+app.use("/api/v1/customer", customerRoute);
+app.use("/api/v1/partner", partnerRoute);
  
 
 app.all('*', async (request, response, next) => {
