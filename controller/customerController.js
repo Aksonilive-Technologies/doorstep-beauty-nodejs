@@ -85,7 +85,7 @@ exports.updateCustomer = async (req, res) => {
         message: "Customer not found",
       });
     }
-
+//
     if (customer.isActive === false) {
       return res.status(404).json({
         success: false,
