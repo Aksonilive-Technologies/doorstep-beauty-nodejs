@@ -1,0 +1,301 @@
+const Customer = require("../models/customerModel.js");
+const jwt = require("jsonwebtoken");
+
+//Create Register
+const validateUserInput = (name, email, phone, address) => {
+    if (!name) return "Please fill the name field";
+    if (!email) return "Please fill the email field";
+    if (!phone) return "Please fill the phone field";
+    if (!address) return "Please fill the address field";
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) return "Invalid email";
+  
+    return null;
+  };
+  
+  exports.register = async (req, res) => {
+    const { name, email, phone, address } = req.body;
+  
+    // Validate user input
+    const validationError = validateUserInput(name, email, phone, address);
+    if (validationError) {
+      return res.status(400).json({ success: false, message: validationError });
+    }
+  
+    try {
+      // Check if user already exists
+      const existingUser = await Customer.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: "Email already registered" });
+      }
+  
+      // Check if mobile number already exists
+      const existingMobile = await Customer.findOne({ mobile: phone });
+      if (existingMobile) {
+        return res.status(400).json({ success: false, message: "Mobile number already registered" });
+      }
+  
+      // Create a new user
+      const user = new Customer({ name, email, mobile: phone, address });
+      await user.save();
+  
+      // Generate JWT token
+      const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, { expiresIn: "1h" });
+  
+      res.status(201).json({
+        success: true,
+        message: "Customer created successfully",
+        token,  
+      });
+    } catch (error) {
+      console.error('Error creating user:', error); // Log the error for debugging
+      res.status(500).json({ success: false, message: "Error creating user" ,errorMessage:error.message});
+    }
+  };
+
+//fetch all the customers
+exports.getAllCustomers = async (req, res) => {
+  try {
+    const customers = await Customer.find().select("-__v");
+    res.status(200).json({
+      success: "true",
+      message: "All customers are fetched successfully",
+      data :customers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching customers",
+      errorMessage: error.message,
+    });
+  }
+};
+
+//update customer
+exports.updateCustomer = async (req, res) => {
+  const { id } = req.query;
+  const { name, email, phone, address } = req.body;
+  try {
+    const customer = await Customer.findById(id);
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if (customer.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message: "Your account is suspended for now",
+      });
+    }
+
+    if (customer.isDeleted === true) {
+      return res.status(404).json({
+        success: false,
+        message: "Your account is deactivated, please contact the support team",
+      });
+    }
+
+   const customerUpdated = await Customer.findByIdAndUpdate(
+      id,
+      { name, email, mobile: phone, address },
+      { new: true } 
+    );
+
+    if (!customerUpdated) {
+      return res.status(500).json({
+        success: false,
+        message: "Error updating customer",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Customer updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating customer",
+    });
+  }
+};
+
+//delete customer
+exports.deleteCustomer = async (req, res) => {
+  const { id } = req.query;
+  try {
+    const customer = await Customer.findById(id);
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if (customer.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Your account is already deleted. Please contact the support team for assistance.",
+      });
+    }
+
+    if (!customer.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "Your account is currently inactive.",
+      });
+    }
+
+  const customerDeleted =  await Customer.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+
+    if (!customerDeleted) {
+      return res.status(500).json({
+        success: false,
+        message: "Error deleting customer",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Your account has been successfully deleted.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting the customer.",
+      errorMessage: error.message,
+    });
+  }
+};
+
+//change status of deleted customer
+exports.changeStatusDeletedCustomer = async (req, res) => {
+  const { id } = req.query;
+  try {
+    const customer = await Customer.findById(id);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if (customer.isActive === false) {
+      customer.isActive = true;
+      return res.status(404).json({
+        success: true,
+        message: "Your account is activated now",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while changing the status of the customer.",
+      errorMessage: error.message,
+    });
+  }
+};
+
+
+exports.customerById = async (req, res) => {
+  const { id } = req.query;
+  try {
+    if(!id){
+      return res.status(404).json({
+        success: false,
+        message: "Customer ID is required.",
+      });
+    }
+    const customer = await Customer.findById(id).select("-password" ).select("-__v");
+
+    if(!customer){
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if(customer.isDeleted === true){
+      return res.status(404).json({
+        success: false,
+        message: "Your account is deactivated, please contact the support team",
+      });
+    }
+    if(customer.isActive === false){
+      return res.status(404).json({
+        success: false,
+        message: "Your account is suspended for now",
+      });
+    }
+    
+
+    res.status(200).json({
+      success: true,
+      message: "Customer fetched successfully",
+      data :customer,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching customer",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.checkExistance = async (req, res) => {
+  const { mobile } = req.query;
+
+  try {
+    if(!mobile){
+        return res.status(404).json({
+            success: false,
+            message: "Mobile number is required",
+        });
+        }
+    const customer = await Customer.findOne({ mobile: mobile }).select("-password" ).select("-__v");
+    if(!customer){
+      return res.status(404).json({
+        success: false,
+        message: "Customer with mobile number "+mobile+" not found",
+      });
+    }
+    if(customer.isDeleted === true){
+      return res.status(404).json({
+        success: false,
+        message: "Your account is deactivated, please contact the support team",
+      });
+    }
+    if(customer.isActive === false){
+      return res.status(404).json({
+        success: false,
+        message: "Your account is suspended for now",
+      });
+    }
+    if (customer) {
+      return res.status(200).json({
+        success: true,
+        message: "Customer is found",
+        data: customer,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error checking customer existence",
+      errorMessage: error.message,
+    });
+  }}
+  
