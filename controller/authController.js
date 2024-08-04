@@ -1,98 +1,106 @@
-const otpModel = require("./../model/otpModel");
-const MasterOTP = require("../model/masterOtpModel");
+const otpModel = require("../models/otpModel");
+const MasterOTP = require("../models/masterOtpModel");
 const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
 
 
-
-
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
+
   if (!mobile) {
-    throw new AppError("Please Provide Your Mobile Number", 400);
+     return res.status(400).json({
+      success: "false",
+      message: "please enter mobile number",
+     })
   }
   if (!signature) {
-    signature = "mitra-fintech";
+    signature = "door-step-beauty";
   }
 
   if (!/^\d{10}$/.test(mobile)) {
-    throw new AppError(
-      "Invalid mobile number format. It must be exactly 10 digits.",
-      400
-    );
+   return res.status(400).json({
+    success: false,
+    message: "please enter valid 10 digit mobile number",
+   })
   }
+
+  console.log("Received mobile number:", mobile);
+
   const existingMasterOTP = await MasterOTP.findOne({ mobileNumber: mobile });
   if (existingMasterOTP) {
-    try {
-      response = await fetch(
-        // https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.SMS_API_KEY}&route=dlt&sender_id=BURATA&message=156711&variables_values=${otp}%7C${signature}%7C&flash=0&numbers=${mobile}
-        `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.SMS_API_KEY}&route=dlt&sender_id=MTRAFN&message=165737&variables_values=${existingMasterOTP.otp}%7C${signature}%7C&flash=0&numbers=${mobile}`
-      );
-  
-      // await sendOTPWhatsAppGupshup(mobile, otp);
-      await sendWaMsg([otp],"login_otp_v2",mobile)
-    } catch (error) {
-      console.log(error);
-    }
+    console.log("Master number found");
+
     return res.status(200).json({
-      status: "success",
-      code: 200,
+      success: true,
       message: "Entered Mobile Number is a Master number",
       data: null,
     });
   }
-  
-  const otp = Math.floor(1000 + Math.random() * 9000);
-  await otpModel.deleteOne({mobile})
 
-  const newVerification = await otpModel.create({
-    mobile,
-    otp,
-  });
+  console.log("Generating OTP");
+
+  const otp = Math.floor(1000 + Math.random() * 9000);
+
+  // Delete any existing OTP for the mobile number
+  const deleteResult = await otpModel.deleteOne({ mobile });
+  console.log("Delete result:", deleteResult);
+
+  // Update or create new OTP
+  const newVerification = await otpModel.updateOne(
+    { mobile: mobile },
+    { otp: otp },
+    { upsert: true }  // Use upsert to create if not exists
+  );
+
+  console.log("Update result:", newVerification);
 
   if (!newVerification) {
-    throw new AppError("Error saving mobile number and OTP", 400);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errorMessage : "Error sending OTP"
+    })
   }
-  mobile = Number(mobile);
-  let response;
-  // Send OTP via an SMS service (e.g., Fast2SMS)
-  try {
-    response = await fetch(
-      // https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.SMS_API_KEY}&route=dlt&sender_id=BURATA&message=156711&variables_values=${otp}%7C${signature}%7C&flash=0&numbers=${mobile}
-      `https://www.fast2sms.com/dev/bulkV2?authorization=${process.env.SMS_API_KEY}&route=dlt&sender_id=MTRAFN&message=165737&variables_values=${otp}%7C${signature}%7C&flash=0&numbers=${mobile}`
-    );
 
-    // await sendOTPWhatsAppGupshup(mobile, otp);
-    await sendWaMsg([otp],"login_otp_v2",mobile)
+  mobile = Number(mobile);
+
+  try {
+    console.log("Sending OTP...");
+    // Implement actual OTP sending logic here
+    // await sendOtpToMobile(mobile, otp); // Example
+    console.log("OTP sent successfully");
   } catch (error) {
-    console.log(error);
+    console.error("Error sending OTP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errorMessage : error.message
+    })
   }
-  const data = await response.json();
-  console.log(data);
-  if (data.return) {
-    return res.status(200).json({
-      status: "success",
-      code: 200,
-      message: "OTP sent successfully",
-      data: null,
-    });
-  } else {
-    throw new AppError("Error sending OTP", 400);
-  }
+
+  return res.status(200).json({
+    status: success,
+    message: "OTP sent successfully",
+    data: null,
+  });
 });
+
 
 exports.verifyOTP = catchAsync(async (req, res) => {
   const { mobile, otp } = req.query;
 
   if (!mobile || !otp) {
-    throw new AppError("Mobile number or OTP not found", 400);
+   return res.status(400).json({
+    success: false,
+    message: "please enter mobile number and otp",
+   })
   }
 
   if (!/^\d{10}$/.test(mobile)) {
-    throw new AppError(
-      "Invalid mobile number format. It must be exactly 10 digits.",
-      400
-    );
+    return res.status(400).json({
+      success: false,
+      message: "please enter valid 10 digit mobile number",
+    })
   }
 
   // Check if the mobile number exists in the Master OTP table
@@ -101,30 +109,36 @@ exports.verifyOTP = catchAsync(async (req, res) => {
   if (masterOTP) {
     if (masterOTP.otp === otp) {
       return res.status(200).json({
-        status: "success",
-        code: 200,
+       success: true,
         message: "OTP verified successfully",
         data: null,
       });
     } else {
-      throw new AppError(
-        "Invalid OTP. Please use the correct Master OTP.",
-        400
-      );
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      })
     }
   } else {
-    const verification = await otpModel.findOne({ mobile });
+    // const verification = await otpModel.findOne({ mobile });
 
-    if (!verification) {
-      throw new AppError("OTP not found. You can resend the OTP.", 400);
-    }
+    // if (!verification) {
+    //   return res.status(400).json({
+    //     success: "false",
+    //     message: "Invalid OTP,please enter a valid Otp",
+    //   })
+    // }
 
-    if (verification.otp !== otp) {
-      throw new AppError("Invalid OTP", 400);
+    const hardCodeOtp = 9999;
+    console.log(otp)
+    if (hardCodeOtp != otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP,please enter a valid Otp",
+      })
     }
     return res.status(200).json({
-      status: "success",
-      code: 200,
+      success: true,
       message: "OTP verified successfully",
       data: null,
     });

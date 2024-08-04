@@ -1,0 +1,56 @@
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+dotenv.config();
+const app = express();
+app.use(express.json());
+const AppError = require("./../utility/appError");
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.urlencoded({ extended: true }));
+const multer = require("multer");
+// Connect to MongoDB
+mongoose.connect(process.env.db_url);
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", () => {
+  console.log("Connected to MongoDB");
+});
+ 
+const authorizationRoute = require("./authorizationRoute");
+
+//***************Customer Route************************ */
+
+app.use("/api/v1/customer/auth/otp", authorizationRoute);
+app.use("/api/v1/customer/category", require("./categoryRoute"));
+app.use("/api/v1/customer", require("./customerRoute"));
+
+
+//**************Admin Route**************************** */
+app.use("/api/v1/admin", require("./adminRoute"));
+
+
+//**************Partner Route************************ */
+app.use("/api/v1/partner", require("./partnerRoute"));
+
+
+
+app.all('*', async (request, response, next) => {
+  next(new AppError(`Can't find ${request.originalUrl} on this server`, 404));
+});
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  res.status(500);
+  res.json({
+    error: {
+      message: error.message
+    }
+  });
+});
+module.exports = app;

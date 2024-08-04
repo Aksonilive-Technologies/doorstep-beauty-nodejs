@@ -1,0 +1,41 @@
+const mongoose = require("mongoose");
+
+const PartnersSchema = new mongoose.Schema(
+  {
+    image: {
+      type: String,
+      default: "it has been not decided yet where to keep our images",
+      // required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+const Partner = mongoose.model("Partner", PartnersSchema);
+module.exports = Partner;
