@@ -11,7 +11,10 @@ app.get("/", (req, res) => {
 });
 
 app.all('*', async (request, response, next) => {
-  next(new AppError(`Can't find ${request.originalUrl} on this server`, 404));
+  return response.status(404).json({
+    success: false,
+    message: "Can't find " + request.originalUrl + " on this server",
+  })
 });
 
 // Register SIGINT event listener

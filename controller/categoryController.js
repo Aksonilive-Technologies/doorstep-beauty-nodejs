@@ -2,7 +2,7 @@ const Category = require('../models/categoriesModel');
 
 // Create a new category
 exports.createCategory = async (req, res) => {
-  const { name, image, description } = req.body;
+  const { name, image} = req.body;
 
   try {
     if (!name || name.trim() === '' || !image || image.trim() === '' ) {
@@ -21,7 +21,7 @@ exports.createCategory = async (req, res) => {
       });
     }
 
-    const category = new Category({ name, image, description });
+    const category = new Category({ name, image });
     await category.save();
       
     if(!category) {

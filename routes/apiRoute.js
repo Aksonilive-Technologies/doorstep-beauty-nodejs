@@ -28,6 +28,11 @@ const authorizationRoute = require("./authorizationRoute");
 
 app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/customer/category", require("./categoryRoute"));
+app.use("/api/v1/customer/product", require("./productRoute"));
+app.use("/api/v1/customer/order", require("./orderRoute"));
+app.use("/api/v1/customer/cart", require("./cartRoute"));
+app.use("/api/v1/customer/service", require("./serviceRoute"));
+//app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
 
@@ -41,7 +46,10 @@ app.use("/api/v1/partner", require("./partnerRoute"));
 
 
 app.all('*', async (request, response, next) => {
-  next(new AppError(`Can't find ${request.originalUrl} on this server`, 404));
+  return response.status(404).json({
+    success: false,
+    message: "Can't find " + request.originalUrl + " on this server",
+  })
 });
 
 // Error handling middleware
