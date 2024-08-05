@@ -187,11 +187,17 @@ exports.changeStatusDeletedCustomer = async (req, res) => {
       });
     }
 
-    if (customer.isActive === false) {
-      customer.isActive = true;
-      return res.status(404).json({
+    if (!customer.isActive) {
+      return res.status(200).json({
         success: true,
-        message: "Your account is activated now",
+        message: "Please contact the support team. Your account is already deactivated.",
+      });
+    } else {
+      customer.isActive = false;
+      await customer.save();
+      return res.status(200).json({
+        success: true,
+        message: "Your account has been temporarily deactivated. Please contact the support team.",
       });
     }
   } catch (error) {

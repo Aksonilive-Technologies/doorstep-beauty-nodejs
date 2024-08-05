@@ -231,20 +231,20 @@ exports.updateAdmin = async (req, res) => {
 
     if (!admin) {
       return res.status(404).json({
-        message: "Admin not found",
         success: false,
+        message: "Admin not found",
       });
     }
 
     return res.status(200).json({
-      message: "Admin details updated successfully",
       success: true,
+      message: "Admin details updated successfully",
     });
   } catch (error) {
     console.error("Error while updating Admin:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
       success: false,
+      message: "Internal Server Error",
       errorMessage: error.message,
     });
   }
