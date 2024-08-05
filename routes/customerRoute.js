@@ -19,5 +19,5 @@ router.put("/update", updateCustomer);
 router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
 router.get('/profile/fetch',customerById);
-router.get('/checkExistance',checkExistance)
+router.get('/check-existence',checkExistance)
 module.exports = router;
