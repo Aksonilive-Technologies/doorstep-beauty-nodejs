@@ -10,6 +10,7 @@ const {
   customerById,
   checkExistance
 } = require("../controller/customerController.js");
+const verifyToken = require("../middleware/verifyToken.js");
 
 
 

@@ -1,30 +1,30 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
+const mongoose = require("mongoose");
 
 // Admin Registration
 exports.register = async (req, res) => {
   const { name, username, password } = req.body;
   const { id } = req.query;
-  
-  const superAdmin = await Admin.findById(id);
 
+  const superAdmin = await Admin.findById(id);
 
   //check if any of one is not coming then return taht misssing thing
   if (!name) {
     return res
       .status(400)
-      .json({success: false, message: "Please fill name",  });
+      .json({ success: false, message: "Please fill name" });
   }
   if (!username) {
     return res
       .status(400)
-      .json({ success: false, message: "Please fill username", });
+      .json({ success: false, message: "Please fill username" });
   }
   if (!password) {
     return res
       .status(400)
-      .json({  success: false,message: "Please fill password", });
+      .json({ success: false, message: "Please fill password" });
   }
 
   try {
@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
     if (existingAdmin) {
       return res
         .status(400)
-        .json({ success: false , message: "Username already exists"});
+        .json({ success: false, message: "Username already exists" });
     }
 
     // Hash the password
@@ -49,8 +49,15 @@ exports.register = async (req, res) => {
 
     // Save the new admin to the database
     await newAdmin.save();
-
-    res.status(201).json({ success: true, message: "Admin registered successfully" });
+    // Generate JWT token
+    const token = jwt.sign({ AdminId: newAdmin._id }, process.env.SECRET_KEY, {
+      expiresIn: "1d",
+    });
+    res.status(201).json({
+      success: true,
+      message: "Admin registered successfully",
+      token: token,
+    });
   } catch (error) {
     console.error("Error while registering Admin:", error);
     res.status(500).json({
@@ -59,20 +66,20 @@ exports.register = async (req, res) => {
     });
   }
 };
-// Admin Login
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
-//
+  //
   // Validate request data
   if (!username) {
     return res
       .status(400)
-      .json({ success: false, message: "Please fill username",  });
+      .json({ success: false, message: "Please fill username" });
   }
   if (!password) {
     return res
       .status(400)
-      .json({success: false, message: "Please fill password"  });
+      .json({ success: false, message: "Please fill password" });
   }
 
   try {
@@ -111,14 +118,6 @@ exports.login = async (req, res) => {
       expiresIn: "1d",
     });
 
-    // Set cookie with the token
-    res.cookie("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
     // Return success response with admin name and id
     return res.status(200).json({
       success: true,
@@ -127,6 +126,7 @@ exports.login = async (req, res) => {
         id: admin._id,
         name: admin.name,
         username: admin.username,
+        token: token,
       },
     });
   } catch (error) {
@@ -141,6 +141,8 @@ exports.login = async (req, res) => {
 exports.allAdmin = async (req, res) => {
   try {
     const admin = await Admin.find().select("-password -__v");
+    // Generate JWT token
+
     return res.status(200).json({
       success: true,
       message: "Successfully retrieved all admins",
@@ -196,10 +198,11 @@ exports.deleteAdmin = async (req, res) => {
 
 exports.updateAdmin = async (req, res) => {
   try {
-    const id = req.query.id;
-
-    const checkAdmin = await Admin.findById(id);
-
+    const { id } = req.query;
+    const objectId = new mongoose.Types.ObjectId(id);
+    console.log(objectId, typeof objectId);
+    const checkAdmin = await Admin.find({_id:objectId});
+    console.log(checkAdmin);
     if (checkAdmin.isDeleted === true) {
       return res.status(404).json({
         success: false,
@@ -231,27 +234,27 @@ exports.updateAdmin = async (req, res) => {
 
     if (!admin) {
       return res.status(404).json({
-        message: "Admin not found",
         success: false,
+        message: "Admin not found",
       });
     }
 
     return res.status(200).json({
-      message: "Admin details updated successfully",
       success: true,
+      message: "Admin details updated successfully",
     });
   } catch (error) {
     console.error("Error while updating Admin:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
       success: false,
+      message: "Internal Server Error",
       errorMessage: error.message,
     });
   }
 };
 
 exports.changeStatus = async (req, res) => {
-  const  id  = req.query.id;
+  const { id } = req.query;
 
   try {
     const admin = await Admin.findById(id);
@@ -262,8 +265,8 @@ exports.changeStatus = async (req, res) => {
         message: "Admin not found",
       });
     }
-    
-    let isActive = admin.isActive;
+
+    let isActive = !admin.isActive;
 
     if (isActive === true) {
       isActive = false;
@@ -286,5 +289,3 @@ exports.changeStatus = async (req, res) => {
     });
   }
 };
-
-

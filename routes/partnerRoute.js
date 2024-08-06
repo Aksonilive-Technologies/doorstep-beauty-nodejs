@@ -9,6 +9,7 @@ const {
   updatePartner,
   deletePartner,
 } = require("../controller/partnerController");
+const verifyToken = require("../middleware/verifyToken");
 
 
 
