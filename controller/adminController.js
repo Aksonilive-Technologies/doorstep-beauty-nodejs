@@ -1,6 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
+const mongoose = require("mongoose");
 
 // Admin Registration
 exports.register = async (req, res) => {
@@ -52,13 +53,11 @@ exports.register = async (req, res) => {
     const token = jwt.sign({ AdminId: newAdmin._id }, process.env.SECRET_KEY, {
       expiresIn: "1d",
     });
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Admin registered successfully",
-        token: token,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Admin registered successfully",
+      token: token,
+    });
   } catch (error) {
     console.error("Error while registering Admin:", error);
     res.status(500).json({
@@ -67,7 +66,7 @@ exports.register = async (req, res) => {
     });
   }
 };
-// Admin Login
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   //
@@ -143,7 +142,7 @@ exports.allAdmin = async (req, res) => {
   try {
     const admin = await Admin.find().select("-password -__v");
     // Generate JWT token
-    
+
     return res.status(200).json({
       success: true,
       message: "Successfully retrieved all admins",
@@ -199,10 +198,11 @@ exports.deleteAdmin = async (req, res) => {
 
 exports.updateAdmin = async (req, res) => {
   try {
-    const id = req.query.id;
-
-    const checkAdmin = await Admin.findById(id);
-
+    const { id } = req.query;
+    const objectId = new mongoose.Types.ObjectId(id);
+    console.log(objectId, typeof objectId);
+    const checkAdmin = await Admin.find({_id:objectId});
+    console.log(checkAdmin);
     if (checkAdmin.isDeleted === true) {
       return res.status(404).json({
         success: false,
@@ -238,7 +238,6 @@ exports.updateAdmin = async (req, res) => {
         message: "Admin not found",
       });
     }
-    
 
     return res.status(200).json({
       success: true,
@@ -254,7 +253,6 @@ exports.updateAdmin = async (req, res) => {
   }
 };
 
-//i don't think any use of token here
 exports.changeStatus = async (req, res) => {
   const { id } = req.query;
 
@@ -268,7 +266,7 @@ exports.changeStatus = async (req, res) => {
       });
     }
 
-    let isActive = admin.isActive;
+    let isActive = !admin.isActive;
 
     if (isActive === true) {
       isActive = false;

@@ -14,8 +14,8 @@ const verifyToken = require("../middleware/verifyToken");
 
 
 router.post("/register", register);
-router.get("/all", verifyToken, getPartners);
-router.put("/update", verifyToken, updatePartner);
-router.delete("/delete", verifyToken, deletePartner);
+router.get("/all", getPartners);
+router.put("/update", updatePartner);
+router.delete("/delete", deletePartner);
 
 module.exports = router;
