@@ -5,10 +5,18 @@ exports.createCategory = async (req, res) => {
   const { name, image} = req.body;
 
   try {
-    if (!name || name.trim() === '' || !image || image.trim() === '' ) {
+    if (!name || name.trim() === '') {
       return res.status(400).json({
         success: false,
         message: 'Name is required',
+      });
+    }
+
+    // Added specific validation message for image field
+    if (!image || image.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Image is required',
       });
     }
 

@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const app = express();
 app.use(express.json());
-const AppError = require("./../utility/appError");
+const AppError = require("../utility/appError");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "100mb" }));

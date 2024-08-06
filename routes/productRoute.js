@@ -1,17 +1,16 @@
 const express = require("express");
-router = express.Router();
+const router = express.Router();
 const Product = require("../controller/productController");
+const upload = require("../middleware/multerMiddleware.js"); // Update the path accordingly
 
+// Route to create a new product with image upload
+router.post("/create", upload.single("file"), Product.createProduct);
 
-
-router.post("/create", Product.createProduct);
-router.put("/update", Product.updateProduct);
+// Other routes remain unchanged
+router.put("/update", upload.single("file"), Product.updateProduct);
 router.get("/fetch/single", Product.getProductById);
 router.delete("/delete", Product.deleteProduct);
 router.get("/fetch/all", Product.getAllProducts);
 router.get("/fetch/new-products", Product.getAllNewProducts);
 
-
-
-
-module.exports = router
+module.exports = router;
