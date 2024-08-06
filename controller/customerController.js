@@ -44,11 +44,10 @@ exports.register = async (req, res) => {
     const user = new Customer({ name, email, mobile: phone });
     await user.save();
 
- 
-
     res.status(201).json({
       success: true,
       message: "Customer created successfully",
+      data: user,
     });
   } catch (error) {
     console.error("Error creating user:", error); // Log the error for debugging
@@ -124,7 +123,7 @@ exports.updateCustomer = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Customer updated successfully"
+      message: "Customer updated successfully",
     });
   } catch (error) {
     res.status(500).json({
