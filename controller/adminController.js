@@ -143,14 +143,11 @@ exports.allAdmin = async (req, res) => {
   try {
     const admin = await Admin.find().select("-password -__v");
     // Generate JWT token
-    const token = jwt.sign({ AdminId: admin._id }, process.env.SECRET_KEY, {
-      expiresIn: "1d",
-    });
+    
     return res.status(200).json({
       success: true,
       message: "Successfully retrieved all admins",
       data: admin,
-      token: token,
     });
   } catch (error) {
     console.error("Error while fetching all admins:", error);
@@ -161,7 +158,6 @@ exports.allAdmin = async (req, res) => {
   }
 };
 
-//i don't think sending a token to delete admin is good, it might be problemetic
 exports.deleteAdmin = async (req, res) => {
   try {
     const id = req.query.id;
@@ -242,14 +238,11 @@ exports.updateAdmin = async (req, res) => {
         message: "Admin not found",
       });
     }
-    const token = jwt.sign({ AdminId: admin._id }, process.env.SECRET_KEY, {
-      expiresIn: "1d",
-    });
+    
 
     return res.status(200).json({
       success: true,
       message: "Admin details updated successfully",
-      token: token,
     });
   } catch (error) {
     console.error("Error while updating Admin:", error);

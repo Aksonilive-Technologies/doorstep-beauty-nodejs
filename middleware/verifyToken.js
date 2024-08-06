@@ -1,32 +1,26 @@
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 
-// Generalized JWT verification middleware
-export const verifyJWT = (model, secretKey) => asyncHandler(async (req, _, next) => {
-    try {
-        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
-        
-        if (!token) {
-            throw new ApiError(401, "Unauthorized request");
-        }
+const verifyToken = (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(403).json({ error: "No credentials sent!" });
+  }
 
-        const decodedToken = jwt.verify(token, secretKey);
-        
-        if (!decodedToken?._id) {
-            throw new ApiError(401, "Invalid Access Token");
-        }
+  const authHeader = req.headers.authorization;
 
-        // Find the user or entity by ID using the provided model
-        const entity = await model.findById(decodedToken._id).select("-password -refreshToken");
-        
-        if (!entity) {
-            throw new ApiError(401, "Invalid Access Token");
-        }
+  const token = authHeader.split(" ")[1];
 
-        req.user = entity; // You may want to rename `req.user` to something more general if needed
-        next();
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid access token");
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to authenticate token",
+      });
     }
-});
+
+    // If everything is good, save the decoded info to request for use in other routes
+    req.userId = decoded.id;
+    next();
+  });
+};
+
+module.exports = verifyToken;

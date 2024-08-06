@@ -9,15 +9,16 @@ const {
     updateAdmin,
     changeStatus
   } = require("../controller/adminController"); 
+const verifyToken = require("../middleware/verifyToken");
   
 
 
 router.post("/register",register); 
 router.post("/login",login);
-router.get("/all", allAdmin);
-router.get("/status", changeStatus)
-router.put("/delete", deleteAdmin);
-router.put("/update", updateAdmin);
+router.get("/all", verifyToken, allAdmin);
+router.get("/status", verifyToken, changeStatus)
+router.put("/delete", verifyToken, deleteAdmin);
+router.put("/update", verifyToken, updateAdmin);
 
 
 

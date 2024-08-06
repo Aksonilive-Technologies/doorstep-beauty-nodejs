@@ -56,17 +56,14 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating user:", error); // Log the error for debugging
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error creating user",
-        errorMessage: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error creating user",
+      errorMessage: error.message,
+    });
   }
 };
 
-//fetch all the customers
 exports.getAllCustomers = async (req, res) => {
   try {
     const customers = await Customer.find().select("-__v");
@@ -88,6 +85,7 @@ exports.getAllCustomers = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
   const { id } = req.query;
   const { name, email, phone, address } = req.body;
+  
   try {
     const customer = await Customer.findById(id);
 
@@ -97,7 +95,8 @@ exports.updateCustomer = async (req, res) => {
         message: "Customer not found",
       });
     }
-    //
+
+    // Check if the customer account is suspended
     if (customer.isActive === false) {
       return res.status(404).json({
         success: false,
@@ -105,6 +104,7 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
+    // Check if the customer account is deactivated
     if (customer.isDeleted === true) {
       return res.status(404).json({
         success: false,
@@ -112,6 +112,7 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
+    // Update customer details
     const customerUpdated = await Customer.findByIdAndUpdate(
       id,
       { name, email, mobile: phone, address },
@@ -128,6 +129,7 @@ exports.updateCustomer = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Customer updated successfully",
+      token: token,
     });
   } catch (error) {
     res.status(500).json({
@@ -136,6 +138,7 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
+
 
 //delete customer
 exports.deleteCustomer = async (req, res) => {
