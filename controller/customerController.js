@@ -2,11 +2,11 @@ const Customer = require("../models/customerModel.js");
 const jwt = require("jsonwebtoken");
 
 //Create Register
-const validateUserInput = (name, email, phone, address) => {
+const validateUserInput = (name, email, phone) => {
   if (!name) return "Please fill the name field";
   if (!email) return "Please fill the email field";
   if (!phone) return "Please fill the phone field";
-  if (!address) return "Please fill the address field";
+  // if (!address) return "Please fill the address field";
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(email)) return "Invalid email";
@@ -15,10 +15,10 @@ const validateUserInput = (name, email, phone, address) => {
 };
 
 exports.register = async (req, res) => {
-  const { name, email, phone, address } = req.body;
+  const { name, email, phone } = req.body;
 
   // Validate user input
-  const validationError = validateUserInput(name, email, phone, address);
+  const validationError = validateUserInput(name, email, phone);
   if (validationError) {
     return res.status(400).json({ success: false, message: validationError });
   }
@@ -41,14 +41,13 @@ exports.register = async (req, res) => {
     }
 
     // Create a new user
-    const user = new Customer({ name, email, mobile: phone, address });
+    const user = new Customer({ name, email, mobile: phone });
     await user.save();
-
- 
 
     res.status(201).json({
       success: true,
       message: "Customer created successfully",
+      data: user,
     });
   } catch (error) {
     console.error("Error creating user:", error); // Log the error for debugging
@@ -80,8 +79,8 @@ exports.getAllCustomers = async (req, res) => {
 //update customer
 exports.updateCustomer = async (req, res) => {
   const { id } = req.query;
-  const { name, email, phone, address } = req.body;
-  
+  const { name, email, phone } = req.body;
+
   try {
     const customer = await Customer.findById(id);
 
@@ -111,7 +110,7 @@ exports.updateCustomer = async (req, res) => {
     // Update customer details
     const customerUpdated = await Customer.findByIdAndUpdate(
       id,
-      { name, email, mobile: phone, address },
+      { name, email, mobile: phone },
       { new: true }
     );
 
@@ -124,7 +123,7 @@ exports.updateCustomer = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Customer updated successfully"
+      message: "Customer updated successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -133,7 +132,6 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
-
 
 //delete customer
 exports.deleteCustomer = async (req, res) => {
