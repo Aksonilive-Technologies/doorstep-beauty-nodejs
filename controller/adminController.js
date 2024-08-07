@@ -140,13 +140,23 @@ exports.login = async (req, res) => {
 
 exports.allAdmin = async (req, res) => {
   try {
-    const admin = await Admin.find().select("-password -__v");
-    // Generate JWT token
+    const loggedInUserId = req.userId;
+
+    if (!loggedInUserId) {
+      return res.status(400).json({
+        message: "Logged-in user ID is missing",
+        success: false,
+      });
+    }
+
+    const admins = await Admin.find({ _id: { $ne: loggedInUserId } }).select(
+      "-password -__v"
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all admins",
-      data: admin,
+      message: "Successfully retrieved all admins excluding the logged-in user",
+      data: admins,
     });
   } catch (error) {
     console.error("Error while fetching all admins:", error);
@@ -201,7 +211,7 @@ exports.updateAdmin = async (req, res) => {
     const { id } = req.query;
     const objectId = new mongoose.Types.ObjectId(id);
     console.log(objectId, typeof objectId);
-    const checkAdmin = await Admin.find({_id:objectId});
+    const checkAdmin = await Admin.find({ _id: objectId });
     console.log(checkAdmin);
     if (checkAdmin.isDeleted === true) {
       return res.status(404).json({
@@ -257,8 +267,9 @@ exports.changeStatus = async (req, res) => {
   const { id } = req.query;
 
   try {
+    // Find the admin by ID
     const admin = await Admin.findById(id);
-    console.log("Admin: ", admin);
+
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -266,24 +277,24 @@ exports.changeStatus = async (req, res) => {
       });
     }
 
-    let isActive = !admin.isActive;
+    const updatedStatus = !admin.isActive;
 
-    if (isActive === true) {
-      isActive = false;
-      await Admin.findByIdAndUpdate(id, { isActive }, { new: true });
-      return res
-        .status(200)
-        .json({ success: true, message: "Account blocked successfully" });
-    } else if (isActive === false) {
-      isActive = true;
-      await Admin.findByIdAndUpdate(id, { isActive }, { new: true });
-      return res
-        .status(200)
-        .json({ success: true, message: "Account activated successfully" });
-    }
+    await Admin.findByIdAndUpdate(
+      id,
+      { isActive: updatedStatus },
+      { new: true }
+    );
+
+    const message = updatedStatus
+      ? "Account activated successfully"
+      : "Account blocked successfully";
+    return res.status(200).json({
+      success: true,
+      message: message,
+    });
   } catch (error) {
     console.error("Error while changing admin status:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error occurred while changing admin status",
     });
