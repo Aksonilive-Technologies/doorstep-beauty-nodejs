@@ -1,20 +1,18 @@
 const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
-  // next();
+  // Check if Authorization header is present
   if (!req.headers.authorization) {
-    return res
-      .status(403)
-      .json({
-        success: false,
-        message: "Login must required!",
-        errorMessage: "Authorization key must be added in header",
-      });
+    return res.status(403).json({
+      success: false,
+      message: "Authorization header is missing",
+      errorMessage: "Authorization key must be added in header",
+    });
   }
 
   const authHeader = req.headers.authorization;
 
-
+  // Verify token
   jwt.verify(authHeader, process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
       return res.status(500).json({
@@ -22,9 +20,8 @@ const verifyToken = (req, res, next) => {
         message: "Failed to authenticate token",
       });
     }
-
-    // If everything is good, save the decoded info to request for use in other routes
-    req.userId = decoded.id;
+    // Save the user ID from the token
+    req.userId = decoded.AdminId;
     next();
   });
 };
