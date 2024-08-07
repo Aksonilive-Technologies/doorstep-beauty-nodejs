@@ -158,30 +158,37 @@ exports.allAdmin = async (req, res) => {
     }
 
     const existingLevel = loggedInUser.level;
-    console.log(existingLevel);
 
     // Handle pagination parameters
     const page = parseInt(req.query.page) || 1;
-    const limit = 10;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Find admins with a lower level than the logged-in user, with pagination
     const admins = await Admin.find({
       _id: { $ne: loggedInUserId },
-      level: { $gt: existingLevel }
+      level: { $gt: existingLevel },
     })
-    .select("-password -__v")
-    .skip(skip)
-    .limit(limit);
+      .select("-password -__v")
+      .skip(skip)
+      .limit(limit);
+
+    if (!admins) {
+      return res.status(404).json({
+        success: false,
+        message: "No admins found",
+      });
+    }
 
     const totalAdmins = await Admin.countDocuments({
       _id: { $ne: loggedInUserId },
-      level: { $lt: existingLevel }
+      level: { $lt: existingLevel },
     });
 
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all admins with a lower level than the logged-in user",
+      message:
+        "Successfully retrieved all admins with a lower level than the logged-in user",
       data: admins,
       totalPages: Math.ceil(totalAdmins / limit),
       currentPage: page,
@@ -194,7 +201,6 @@ exports.allAdmin = async (req, res) => {
     });
   }
 };
-
 
 exports.deleteAdmin = async (req, res) => {
   try {
