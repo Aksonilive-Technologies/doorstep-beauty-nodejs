@@ -15,7 +15,7 @@ router.post("/register", register);
 router.post("/login", login);
 
 router.get("/all", verifyToken, allAdmin);
-router.get("/status", verifyToken, changeStatus);
+router.put("/status", verifyToken, changeStatus);
 router.put("/delete", verifyToken, deleteAdmin);
 router.put("/update", verifyToken, updateAdmin);
 

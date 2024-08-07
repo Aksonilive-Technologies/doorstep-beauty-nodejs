@@ -269,7 +269,6 @@ exports.changeStatus = async (req, res) => {
   try {
     // Find the admin by ID
     const admin = await Admin.findById(id);
-    console.log("Admin: ", admin);
 
     if (!admin) {
       return res.status(404).json({
