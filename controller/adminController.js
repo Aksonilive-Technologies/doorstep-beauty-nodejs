@@ -3,60 +3,59 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 const mongoose = require("mongoose");
 
-// Admin Registration
 exports.register = async (req, res) => {
-  const { name, username, password } = req.body;
+  const { name, username, password, email, role } = req.body;
   const { id } = req.query;
 
-  const superAdmin = await Admin.findById(id);
-
-  //check if any of one is not coming then return taht misssing thing
-  if (!name) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Please fill name" });
-  }
-  if (!username) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Please fill username" });
-  }
-  if (!password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Please fill password" });
-  }
-
   try {
-    // Check if username already exists
-    const existingAdmin = await Admin.findOne({ username });
-    if (existingAdmin) {
+    const superAdmin = await Admin.findById(id);
+    if (!superAdmin) {
+      return res
+        .status(400)
+        .json({ success: false, message: "SuperAdmin not found" });
+    }
+
+    const requiredFields = { name, username, password, email, role };
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return res
+          .status(400)
+          .json({ success: false, message: `Please fill ${key}` });
+      }
+    }
+
+    const [existingAdminUser, existingAdminEmail] = await Promise.all([
+      Admin.findOne({ username }),
+      Admin.findOne({ email }),
+    ]);
+
+    if (existingAdminUser) {
       return res
         .status(400)
         .json({ success: false, message: "Username already exists" });
     }
 
-    // Hash the password
+    if (existingAdminEmail) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already exists" });
+    }
+
     const hashedPassword = await bcryptjs.hash(password, 10);
 
-    // Create new admin
     const newAdmin = new Admin({
       name,
       username,
       password: hashedPassword,
+      email,
+      role,
       level: superAdmin.level + 1,
     });
 
-    // Save the new admin to the database
     await newAdmin.save();
-    // Generate JWT token
-    const token = jwt.sign({ AdminId: newAdmin._id }, process.env.SECRET_KEY, {
-      expiresIn: "1d",
-    });
     res.status(201).json({
       success: true,
       message: "Admin registered successfully",
-      token: token,
     });
   } catch (error) {
     console.error("Error while registering Admin:", error);
@@ -94,13 +93,13 @@ exports.login = async (req, res) => {
     if (admin.isActive === false) {
       return res.status(401).json({
         success: false,
-        message: "Your account is inactive, Please contact support team",
+        message: "Your account is inactive, please contact the support team.",
       });
     }
     if (admin.isDeleted === true) {
       return res.status(401).json({
         success: false,
-        message: "Your account is deleted, Please contact support team",
+        message: "Your account is suspended, please contact the support team.",
       });
     }
 
@@ -149,14 +148,50 @@ exports.allAdmin = async (req, res) => {
       });
     }
 
-    const admins = await Admin.find({ _id: { $ne: loggedInUserId } }).select(
-      "-password -__v"
-    );
+    // Find the logged-in user's level
+    const loggedInUser = await Admin.findById(loggedInUserId);
+    if (!loggedInUser) {
+      return res.status(404).json({
+        message: "Logged-in user not found",
+        success: false,
+      });
+    }
+
+    const existingLevel = loggedInUser.level;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find admins with a lower level than the logged-in user, with pagination
+    const admins = await Admin.find({
+      _id: { $ne: loggedInUserId },
+      level: { $gt: existingLevel },
+    })
+      .select("-password -__v")
+      .skip(skip)
+      .limit(limit);
+
+    if (!admins) {
+      return res.status(404).json({
+        success: false,
+        message: "No admins found",
+      });
+    }
+
+    const totalAdmins = await Admin.countDocuments({
+      _id: { $ne: loggedInUserId },
+      level: { $lt: existingLevel },
+    });
 
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all admins excluding the logged-in user",
+      message:
+        "Successfully retrieved all admins with a lower level than the logged-in user",
       data: admins,
+      totalPages: Math.ceil(totalAdmins / limit),
+      currentPage: page,
     });
   } catch (error) {
     console.error("Error while fetching all admins:", error);
@@ -228,11 +263,10 @@ exports.updateAdmin = async (req, res) => {
       });
     }
 
-    const { name, username, password } = req.body;
+    const { username, password } = req.body;
 
     // Create an update object dynamically
     const updateData = {};
-    if (name) updateData.name = name;
     if (username) updateData.username = username;
     if (password) {
       const hashedPassword = await bcryptjs.hash(password, 10);
@@ -296,7 +330,7 @@ exports.changeStatus = async (req, res) => {
     console.error("Error while changing admin status:", error);
     return res.status(500).json({
       success: false,
-      message: "Error occurred while changing admin status",
+      message: "Failed to update the status",
     });
   }
 };
