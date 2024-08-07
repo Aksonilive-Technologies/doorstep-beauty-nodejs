@@ -140,13 +140,22 @@ exports.login = async (req, res) => {
 
 exports.allAdmin = async (req, res) => {
   try {
-    const admin = await Admin.find().select("-password -__v");
-    // Generate JWT token
+    const loggedInUserId = req.userId; 
+
+    if (!loggedInUserId) {
+      return res.status(400).json({
+        message: 'Logged-in user ID is missing',
+        success: false,
+      });
+    }
+
+    
+    const admins = await Admin.find({ _id: { $ne: loggedInUserId } }).select("-password -__v");
 
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all admins",
-      data: admin,
+      message: "Successfully retrieved all admins excluding the logged-in user",
+      data: admins,
     });
   } catch (error) {
     console.error("Error while fetching all admins:", error);
@@ -156,6 +165,8 @@ exports.allAdmin = async (req, res) => {
     });
   }
 };
+
+
 
 exports.deleteAdmin = async (req, res) => {
   try {
