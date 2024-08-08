@@ -21,13 +21,6 @@ exports.createCategory = async (req, res) => {
       });
     }
 
-    if (!image || image.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Image is required",
-      });
-    }
-
     // Check for existing category
     const existingCategory = await Category.findOne({ name });
 
