@@ -15,7 +15,7 @@ exports.register = async (req, res) => {
         .json({ success: false, message: "SuperAdmin not found" });
     }
 
-    const requiredFields = { name, username, password, email, role };
+    const requiredFields = { name, username, password, email };
     for (const [key, value] of Object.entries(requiredFields)) {
       if (!value) {
         return res
