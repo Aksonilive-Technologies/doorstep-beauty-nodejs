@@ -46,19 +46,21 @@ exports.createProduct = async (req, res) => {
         message: "Product with name " + productData.name + " already exists",
       });
     }
+    const imageUrl =
+      "https://www.google.com/imgres?imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100064041720159&tbnid=CatNt3FPfftJqM&vet=12ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd..i&imgrefurl=https%3A%2F%2Fm.facebook.com%2Fp%2FBeauty-Parlour-And-Saloon-Product-Sale-And-Repear-100064041720159%2F&docid=Hj9Se5mRLD346M&w=672&h=456&q=saloon%20product&ved=2ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd";
 
-    let imageUrl = null;
-    // Upload file to Cloudinary if provided
-    if (req.file) {
-      const localFilePath = req.file.path;
-      imageUrl = await uploadOnCloudinary(localFilePath);
-      if (!imageUrl) {
-        return res.status(500).json({
-          success: false,
-          message: "Error uploading image to Cloudinary",
-        });
-      }
-    }
+    // let imageUrl = null;
+    // // Upload file to Cloudinary if provided
+    // if (req.file) {
+    //   const localFilePath = req.file.path;
+    //   imageUrl = await uploadOnCloudinary(localFilePath);
+    //   if (!imageUrl) {
+    //     return res.status(500).json({
+    //       success: false,
+    //       message: "Error uploading image to Cloudinary",
+    //     });
+    //   }
+    // }
 
     // Create a new product with the image URL if available
     const product = new Product({ ...productData, imageUrl });
