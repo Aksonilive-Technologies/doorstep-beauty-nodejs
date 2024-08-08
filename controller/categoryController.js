@@ -71,7 +71,6 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
-
 // Get a single category by ID
 exports.getCategoryById = async (req, res) => {
   const { id } = req.query;
@@ -143,8 +142,10 @@ exports.updateCategory = async (req, res) => {
 
 // Soft delete a category by ID
 exports.deleteCategory = async (req, res) => {
-  const { id } = req.params;
-
+  //yaha pe query likhna hai params ke jagah pe
+  // const { id } = req.params;
+  const { id } = req.query;
+  console.log("id : ", id);
   try {
     const category = await Category.findById(id);
     if (!category || category.isDeleted || !category.isActive) {

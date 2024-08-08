@@ -200,10 +200,12 @@ exports.changeStatusDeletedCustomer = async (req, res) => {
     }
 
     if (!customer.isActive) {
+      customer.isActive = true;
+      await customer.save();
       return res.status(200).json({
         success: true,
         message:
-          "Please contact the support team. Your account is already deactivated.",
+          "Your account is activated now",
       });
     } else {
       customer.isActive = false;
