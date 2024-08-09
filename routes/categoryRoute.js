@@ -16,6 +16,7 @@ router.put('/update/single', categoryController.updateCategory);
 
 // Soft delete a category by ID
 router.delete('/delete/single', categoryController.deleteCategory);
+
 router.get('/change-status', categoryController.changeStatus);
 
 module.exports = router;

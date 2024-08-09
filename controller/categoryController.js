@@ -57,14 +57,14 @@ exports.getAllCategories = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Find categories with pagination
-    const categories = await Category.find({ isDeleted: false, isActive: true })
+    const categories = await Category.find()
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)
       .limit(limit);
 
     // Get the total number of categories (for pagination info)
-    const totalCategories = await Category.countDocuments({ isDeleted: false, isActive: true });
+    const totalCategories = await Category.countDocuments();
     const totalPages = Math.ceil(totalCategories / limit);
 
     res.status(200).json({
