@@ -5,7 +5,7 @@ const customersSchema = new mongoose.Schema(
     image: {
       type: String,
       default:
-        "https://www.google.com/imgres?imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100064041720159&tbnid=CatNt3FPfftJqM&vet=12ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd..i&imgrefurl=https%3A%2F%2Fm.facebook.com%2Fp%2FBeauty-Parlour-And-Saloon-Product-Sale-And-Repear-100064041720159%2F&docid=Hj9Se5mRLD346M&w=672&h=456&q=saloon%20product&ved=2ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd",
+        "www.freepik.com/free-vector/flat-style-woman-avatar_233878897.htm#fromView=search&page=1&position=5&uuid=46a9df45-cd24-4488-99c8-6f1676c22924",
     },
     name: {
       type: String,
