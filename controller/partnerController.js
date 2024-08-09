@@ -180,12 +180,12 @@ exports.deletePartner = async (req, res) => {
         });
       }
   
-      if (!partner.isActive) {
-        return res.status(400).json({
-          success: false,
-          message: "Your account is currently inactive.",
-        });
-      }
+      // if (!partner.isActive) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "Your account is currently inactive.",
+      //   });
+      // }
   
       // Mark the partner as deleted
       const partnerDeleted = await Partner.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
