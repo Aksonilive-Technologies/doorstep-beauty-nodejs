@@ -6,7 +6,7 @@ exports.addBanner = async (req, res) => {
 
   const requiredFields = [
     { field: redirectUrl, name: "redirectUrl" },
-    // { field: bannerImage, name: "bannerImage" },
+    { field: bannerImage, name: "bannerImage" },
     { field: position, name: "position" },
   ];
 

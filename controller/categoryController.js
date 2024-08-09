@@ -192,3 +192,49 @@ exports.deleteCategory = async (req, res) => {
     });
   }
 };
+
+//change status of active
+exports.changeStatus = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Find the category by ID
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    // Check if the category is deleted
+    if (category.isDeleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Category is deleted, please contact the support team",
+      });
+    }
+
+    // Toggle the isActive status
+    category.isActive = !category.isActive;
+
+    // Save the updated category
+    const updatedCategory = await category.save();
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: category.isActive
+        ? "Your category is activated"
+        : "Your category is deactivated",
+    });
+  } catch (error) {
+    // Handle errors
+    console.error("Error updating category status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating category status",
+      errorMessage: error.message,
+    });
+  }
+};
