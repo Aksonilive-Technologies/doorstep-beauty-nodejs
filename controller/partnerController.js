@@ -210,5 +210,43 @@ exports.deletePartner = async (req, res) => {
         errorMessage: error.message,
       });
     }
-  };
+};
+
+exports.changeStatus = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Find the admin by ID
+    const partner = await Partner.findById(id);
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        message: "Partner not found",
+      });
+    }
+
+    const updatedStatus = !partner.isActive;
+
+    await Partner.findByIdAndUpdate(
+      id,
+      { isActive: updatedStatus },
+      { new: true }
+    );
+
+    const message = updatedStatus
+      ? "Account activated successfully"
+      : "Account blocked successfully";
+    return res.status(200).json({
+      success: true,
+      message: message,
+    });
+  } catch (error) {
+    console.error("Error while changing partner status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update the status",
+    });
+  }
+};
   
