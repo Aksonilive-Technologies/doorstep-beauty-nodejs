@@ -32,7 +32,7 @@ app.use("/api/v1/customer/product", require("./productRoute"));
 app.use("/api/v1/customer/order", require("./orderRoute"));
 app.use("/api/v1/customer/cart", require("./cartRoute"));
 app.use("/api/v1/customer/service", require("./serviceRoute"));
-app.use("/api/v1/customer/address", require("./customerAddressRoute.js"));
+app.use("/api/v1/customer/address", require("./customerAddressRoute"));
 app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
