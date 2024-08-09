@@ -44,6 +44,10 @@ app.use("/api/v1/admin", require("./adminRoute"));
 app.use("/api/v1/partner", require("./partnerRoute"));
 
 
+//**************Banner Route************************ */
+app.use("/api/v1/banner", require("./bannerRoute"));
+
+
 
 app.all('*', async (request, response, next) => {
   return response.status(404).json({
