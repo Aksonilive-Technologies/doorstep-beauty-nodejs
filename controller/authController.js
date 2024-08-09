@@ -79,7 +79,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
   }
 
   return res.status(200).json({
-    status: true,
+    success: true,
     message: "OTP sent successfully",
     data: null,
   });
@@ -160,7 +160,7 @@ exports.registerMasterOTP = catchAsync(async (req, res) => {
   }
   const m = await MasterOTP.create({ mobileNumber: mobileNumber, otp: otp });
   return res.status(200).json({
-    status: "success",
+    success: true,
     code: 200,
     message: "OTP created successfully",
   });
@@ -189,7 +189,7 @@ exports.getAllMasterOTP = catchAsync(async (req, res) => {
   }
 
   res.status(200).json({
-    status: "success",
+    success: true,
     code: 200,
     message: "Master OTPs found successfully",
     data: masterotp,
@@ -215,7 +215,7 @@ exports.updateMasterOTP = catchAsync(async (req, res) => {
       throw new AppError("Mobile Number is not Registered",400);
     }
     res.status(200).json({
-      status: "success",
+      success: true,
       code: "200",
       message: "master Otp is updated succesfully ",
       data: null,
@@ -233,7 +233,7 @@ exports.deleteMasterOTP = catchAsync(async (req, res) => {
       throw new AppError("Mobile Number not found in master Table",404);
     }
     return res.status(200).json({
-      status: "success",
+      success: true,
       code: "200",
       message: "master Otp is Deleted succesfully ",
       data: null,

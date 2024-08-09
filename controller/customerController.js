@@ -1,6 +1,7 @@
 const Customer = require("../models/customerModel.js");
 const jwt = require("jsonwebtoken");
-
+const generateCode = require("../helper/generateCode.js");
+const generateRandomCode = require("../helper/generateCode.js");;
 //Create Register
 const validateUserInput = (name, email, phone) => {
   if (!name) return "Please fill the name field";
@@ -40,8 +41,11 @@ exports.register = async (req, res) => {
         .json({ success: false, message: "Mobile number already registered" });
     }
 
+    // Generate a referral code
+    const referralCode = generateRandomCode(6);
+
     // Create a new user
-    const user = new Customer({ name, email, mobile: phone });
+    const user = new Customer({ name, email, mobile: phone, refferalCode: referralCode });
     await user.save();
 
     res.status(201).json({
@@ -108,11 +112,20 @@ exports.getAllCustomers = async (req, res) => {
 };
 
 //update customer
+
 exports.updateCustomer = async (req, res) => {
-  const { id } = req.query;
-  const { name, email, phone } = req.body;
+  const { id, name, email, phone } = req.body;
 
   try {
+    // Validate required fields
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    // Fetch the current customer details
     const customer = await Customer.findById(id);
 
     if (!customer) {
@@ -122,27 +135,32 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
-    // Check if the customer account is suspended
+    // Check if the customer account is suspended or deactivated
     if (customer.isActive === false) {
-      return res.status(404).json({
+      return res.status(403).json({
         success: false,
         message: "Your account is suspended for now",
       });
     }
 
-    // Check if the customer account is deactivated
     if (customer.isDeleted === true) {
-      return res.status(404).json({
+      return res.status(403).json({
         success: false,
         message: "Your account is deactivated, please contact the support team",
       });
     }
 
-    // Update customer details
+    // Prepare the update object with only provided fields
+    const updateFields = {};
+    if (name) updateFields.name = name;
+    if (email) updateFields.email = email;
+    if (phone) updateFields.mobile = phone;
+
+    // Update the customer details
     const customerUpdated = await Customer.findByIdAndUpdate(
       id,
-      { name, email, mobile: phone },
-      { new: true }
+      updateFields,
+      { new: true, runValidators: true }
     );
 
     if (!customerUpdated) {
@@ -155,11 +173,14 @@ exports.updateCustomer = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Customer updated successfully",
+      data: customerUpdated
     });
   } catch (error) {
+    console.error("Error updating customer:", error);
     res.status(500).json({
       success: false,
       message: "Error updating customer",
+      errorMessage: error.message,
     });
   }
 };
@@ -313,6 +334,7 @@ exports.checkExistance = async (req, res) => {
         message: "Mobile number is required",
       });
     }
+    console.log(mobile);
     const customer = await Customer.findOne({ mobile: mobile })
       .select("-password")
       .select("-__v");

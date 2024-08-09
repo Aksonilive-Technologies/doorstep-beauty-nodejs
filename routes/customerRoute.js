@@ -16,7 +16,7 @@ const verifyToken = require("../middleware/verifyToken.js");
 
 router.post("/register", register);
 router.get("/all", getAllCustomers);
-router.put("/update", updateCustomer);
+router.patch("/update", updateCustomer);
 router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
 router.get('/profile/fetch',customerById);

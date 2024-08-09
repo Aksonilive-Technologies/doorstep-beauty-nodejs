@@ -20,8 +20,9 @@ const customersSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
+    refferalCode: {
       type: String,
+      required: true,
     },
     isActive: {
       type: Boolean,
