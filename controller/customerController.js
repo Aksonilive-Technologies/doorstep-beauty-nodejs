@@ -185,12 +185,12 @@ exports.deleteCustomer = async (req, res) => {
       });
     }
 
-    if (!customer.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Your account is currently inactive.",
-      });
-    }
+    // if (!customer.isActive) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Your account is currently inactive.",
+    //   });
+    // }
 
     const customerDeleted = await Customer.findByIdAndUpdate(
       id,
