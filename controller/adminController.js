@@ -164,7 +164,8 @@ exports.allAdmin = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Find admins with a lower level than the logged-in user, with pagination
+    // Find admins with a higher level than the logged-in user, with pagination
+    // Change: Updated condition to { $gt: existingLevel } to match the logic for counting total admins later
     const admins = await Admin.find({
       _id: { $ne: loggedInUserId },
       level: { $gt: existingLevel },
@@ -173,31 +174,33 @@ exports.allAdmin = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    if (!admins) {
+    // Change: Added check for admins.length === 0 to correctly handle the case where no admins are found
+    if (!admins || admins.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No admins found",
       });
     }
 
+    // Count the total number of admins with a higher level than the logged-in user
+    // Change: Updated condition to { $gt: existingLevel } to match the logic for finding admins earlier
     const totalAdmins = await Admin.countDocuments({
       _id: { $ne: loggedInUserId },
-      level: { $lt: existingLevel },
+      level: { $gt: existingLevel },
     });
 
     return res.status(200).json({
       success: true,
       message:
-        "Successfully retrieved all admins with a lower level than the logged-in user",
+        "Successfully retrieved all admins with a higher level than the logged-in user",
       data: admins,
       totalPages: Math.ceil(totalAdmins / limit),
       currentPage: page,
     });
   } catch (error) {
-    console.error("Error while fetching all admins:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
       success: false,
+      message: "An error occurred while retrieving admins",
     });
   }
 };
