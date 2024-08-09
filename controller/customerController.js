@@ -59,13 +59,44 @@ exports.register = async (req, res) => {
   }
 };
 
+// exports.getAllCustomers = async (req, res) => {
+//   try {
+//     const customers = await Customer.find().select("-__v");
+//     res.status(200).json({
+//       success: "true",
+//       message: "All customers are fetched successfully",
+//       data: customers,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error fetching customers",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
+
 exports.getAllCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find().select("-__v");
+    const { page = 1 } = req.query; // Get the page number from the query, default to 1
+    const limit = 10; // Limit to 10 customers per page
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+
+    const customers = await Customer.find()
+      .select("-__v")
+      .skip(skip)
+      .limit(limit);
+
+    const totalCustomers = await Customer.countDocuments(); // Get the total number of customers
+    const totalPages = Math.ceil(totalCustomers / limit); // Calculate total pages
+
     res.status(200).json({
       success: "true",
       message: "All customers are fetched successfully",
       data: customers,
+      currentPage: page,
+      totalPages: totalPages,
     });
   } catch (error) {
     res.status(500).json({
