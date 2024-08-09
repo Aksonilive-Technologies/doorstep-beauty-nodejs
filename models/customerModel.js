@@ -5,7 +5,7 @@ const customersSchema = new mongoose.Schema(
     image: {
       type: String,
       default:
-        "www.freepik.com/free-vector/flat-style-woman-avatar_233878897.htm#fromView=search&page=1&position=5&uuid=46a9df45-cd24-4488-99c8-6f1676c22924",
+        "https://img.freepik.com/free-vector/flat-style-woman-avatar_90220-2944.jpg?t=st=1723229342~exp=1723232942~hmac=f7ae6821ecd30cc5ed961db3b5494b70a6a3d757ad095a733f38740d141dcaa2&w=740",
     },
     name: {
       type: String,
