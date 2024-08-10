@@ -11,10 +11,10 @@ const {
   checkExistance
 } = require("../controller/customerController.js");
 const verifyToken = require("../middleware/verifyToken.js");
+const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 
 
-
-router.post("/register", register);
+router.post("/register", uploadSingleImage,register);
 router.get("/all", getAllCustomers);
 router.patch("/update", updateCustomer);
 router.delete("/delete", deleteCustomer);
