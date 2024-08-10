@@ -47,6 +47,9 @@ app.use("/api/v1/partner", require("./partnerRoute"));
 //**************Banner Route************************ */
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
 
+//**************Stock Route************************ */
+app.use("/api/v1/customer/stock", require("./stockRoute"));
+
 
 
 app.all('*', async (request, response, next) => {
