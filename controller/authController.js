@@ -2,7 +2,7 @@ const otpModel = require("../models/otpModel");
 const MasterOTP = require("../models/masterOtpModel");
 const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
-
+const sendWaMsg = require("../utility/sendWaMsg");
 
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
@@ -23,8 +23,6 @@ exports.sendOTP = catchAsync(async (req, res) => {
     message: "please enter valid 10 digit mobile number",
    })
   }
-
-  console.log("Received mobile number:", mobile);
 
   const existingMasterOTP = await MasterOTP.findOne({ mobileNumber: mobile });
   if (existingMasterOTP) {
@@ -67,7 +65,15 @@ exports.sendOTP = catchAsync(async (req, res) => {
   try {
     console.log("Sending OTP...");
     // Implement actual OTP sending logic here
-    // await sendOtpToMobile(mobile, otp); // Example
+    const response = await sendWaMsg(mobile,otp)
+    if(!response){
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        errorMessage : "Error sending OTP through what's app"
+      })
+    }
+
     console.log("OTP sent successfully");
   } catch (error) {
     console.error("Error sending OTP:", error);

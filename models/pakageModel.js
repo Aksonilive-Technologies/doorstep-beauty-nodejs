@@ -1,14 +1,9 @@
 const mongoose = require("mongoose");
 
-const productSchema = new mongoose.Schema(
+const packageSchema = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: true,
-        },
-        image: {
-            type: String,
-            // default: "https://st3.depositphotos.com/15648834/17930/v/450/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg",
             required: true,
         },
         description: {
@@ -27,17 +22,16 @@ const productSchema = new mongoose.Schema(
             ref: "Categories",
             required: true,
         },
-        type: {
-            type: String,
-            default: "product",
-        },
-        details : {
+        productIds: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Product",
+                required: true,
+            }
+        ],
+        details: {
             type: Object,
             default: {}
-        },
-        isnew: {
-            type: Boolean,
-            default: true,
         },
         isFeatured: {
             type: Boolean,
@@ -75,6 +69,7 @@ const productSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-const Product = mongoose.model("Product", productSchema);
 
-module.exports = Product
+const Package = mongoose.model("Package", packageSchema);
+
+module.exports = Package;
