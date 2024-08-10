@@ -45,7 +45,7 @@ exports.register = async (req, res) => {
     const referralCode = generateRandomCode(6);
 
     // Create a new user
-    const user = new Customer({ name, email, mobile: phone, refferalCode: referralCode });
+    const user = new Customer({ name, email, mobile: phone, referralCode: referralCode });
     await user.save();
 
     res.status(201).json({
