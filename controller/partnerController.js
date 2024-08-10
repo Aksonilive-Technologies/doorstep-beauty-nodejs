@@ -77,11 +77,20 @@ const validationRules = {
 //fetching all the partners
 exports.getPartners = async (req, res) => {
   try {
-    const partners = await Partner.find(); // Removed .populate("user")
+    const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
+
+    const partners = await Partner.find()
+      .limit(limit * 1) // Convert string to number
+      .skip((page - 1) * limit);
+
+    const totalPartners = await Partner.countDocuments();
+
     res.status(200).json({
       success: true,
       message: "Partners retrieved successfully",
       data: partners,
+      totalPages: Math.ceil(totalPartners / limit),
+      currentPage: page,
     });
   } catch (error) {
     res.status(500).json({
