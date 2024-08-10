@@ -27,7 +27,7 @@ const authorizationRoute = require("./authorizationRoute");
 //***************Customer Route************************ */
 
 app.use("/api/v1/customer/auth/otp", authorizationRoute);
-app.use("/api/v1/customer/category", require("./categoryRoute"));
+// app.use("/api/v1/customer/category", require("./categoryRoute"));
 app.use("/api/v1/customer/product", require("./productRoute"));
 app.use("/api/v1/customer/order", require("./orderRoute"));
 app.use("/api/v1/customer/cart", require("./cartRoute"));
@@ -49,6 +49,11 @@ app.use("/api/v1/admin/banner", require("./bannerRoute"));
 
 //**************Stock Route************************ */
 app.use("/api/v1/customer/stock", require("./stockRoute"));
+
+//**************categories Route************************ */
+app.use("/api/v1/admin/category", require("./categoryRoute"));
+
+
 
 
 
