@@ -91,12 +91,6 @@ exports.getCategoryById = async (req, res) => {
 
   try {
     const category = await Category.findById(id);
-    if (!category || category.isDeleted || !category.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
     res.status(200).json({
       success: true,
       message: "Category retrieved successfully",
@@ -121,12 +115,6 @@ exports.updateCategory = async (req, res) => {
 
   try {
     const category = await Category.findById(id);
-    if (!category || category.isDeleted || !category.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updates, {
       new: true,
@@ -204,14 +192,6 @@ exports.changeStatus = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Category not found",
-      });
-    }
-
-    // Check if the category is deleted
-    if (category.isDeleted) {
-      return res.status(400).json({
-        success: false,
-        message: "Category is deleted, please contact the support team",
       });
     }
 
