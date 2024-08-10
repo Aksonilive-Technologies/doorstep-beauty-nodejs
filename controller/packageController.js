@@ -246,3 +246,37 @@ exports.getPackageById = async (req, res) => {
     });
   }
 };
+
+
+exports.getPackageByCategoryId = async (req, res) => {
+  const { id } = req.query;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ID is required",
+    });
+  }
+
+  try {
+    const package = await Package.find({categoryId: id,isDeleted: false,isActive: true}).select("-__v ");
+console.log(package,"package")
+    if (!package) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found with category Id " + id +"it may be deleted or inactive",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Package fetched successfully",
+      data: package,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching package",
+      errorMessage: error.message,
+    });
+  }
+}
