@@ -85,6 +85,48 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
+exports.getAllCategoriesCustomer = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find categories with pagination, filtering out deleted or inactive categories
+    const categories = await Category.find({
+      isDeleted: false,
+      isActive: true,
+    })
+      .select("-__v")
+      .sort({ position: 1 }) // Sort by position in ascending order
+      .skip(skip)
+      .limit(limit);
+
+    // Get the total number of categories (for pagination info)
+    const totalCategories = await Category.countDocuments({
+      isDeleted: false,
+      isActive: true,
+    });
+    const totalPages = Math.ceil(totalCategories / limit);
+
+    res.status(200).json({
+      success: true,
+      message: "Categories retrieved successfully",
+      data: categories,
+      currentPage: page,
+      totalPages: totalPages,
+      totalCategories: totalCategories,
+    });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching categories",
+      errorMessage: error.message,
+    });
+  }
+};
+
+
 // Get a single category by ID
 exports.getCategoryById = async (req, res) => {
   const { id } = req.query;
