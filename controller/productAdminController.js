@@ -14,12 +14,12 @@ const validateProductInput = (productData, file) => {
   if (!mongoose.Types.ObjectId.isValid(categoryId))
     return "Invalid category ID";
 
-  // if (!file) return "Please upload an image";
+  //   if (!file) return "Please upload an image";
 
-  // const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
-  // if (!validImageTypes.includes(file.mimetype)) {
-  //   return "Invalid image format. Only JPEG, PNG, and GIF are allowed";
-  // }
+  //   const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
+  //   if (!validImageTypes.includes(file.mimetype)) {
+  //     return "Invalid image format. Only JPEG, PNG, and GIF are allowed";
+  //   }
 
   return null;
 };
@@ -90,14 +90,29 @@ exports.createProduct = async (req, res) => {
 // Fetch all products
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({
-      isActive: true,
-      isDeleted: false,
-    }).select("-__v");
+    const { page = 1, limit = 10 } = req.query;
+
+    // Calculate the number of products to skip based on the current page and limit
+    const skip = (page - 1) * limit;
+
+    // Fetch products with pagination and sorting
+    const products = await Product.find()
+      .select("-__v")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get the total count of products for pagination calculation
+    const totalProducts = await Product.countDocuments();
+
     res.status(200).json({
       success: true,
       message: "All products fetched successfully",
       data: products,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalProducts / limit),
+        totalProducts,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -110,15 +125,33 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getAllNewProducts = async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Calculate the number of products to skip based on the current page and limit
+    const skip = (page - 1) * limit;
+
+    // Fetch products with pagination and sorting
     const products = await Product.find({
-      isActive: true,
-      isDeleted: false,
       isnew: true,
-    }).select("-__v");
+    })
+      .select("-__v")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get the total count of new products for pagination calculation
+    const totalNewProducts = await Product.countDocuments({
+      isnew: true,
+    });
+
     res.status(200).json({
       success: true,
-      message: "All products fetched successfully",
+      message: "All new products fetched successfully",
       data: products,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalNewProducts / limit),
+        totalNewProducts,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -260,19 +293,19 @@ exports.getProductById = async (req, res) => {
       });
     }
 
-    if (product.isDeleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+    // if (product.isDeleted) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Product not found",
+    //   });
+    // }
 
-    if (!product.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+    // if (!product.isActive) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Product not found",
+    //   });
+    // }
 
     res.status(200).json({
       success: true,
@@ -283,6 +316,37 @@ exports.getProductById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching product",
+      errorMessage: error.message,
+    });
+  }
+};
+
+//change status by ID
+exports.changeStatusById = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const product = await Product.findById(id).select("-__v");
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Toggle the isActive status
+    product.isActive = !product.isActive;
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Product is now ${product.isActive ? "Active" : "Deactivated"}`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error changing status",
       errorMessage: error.message,
     });
   }

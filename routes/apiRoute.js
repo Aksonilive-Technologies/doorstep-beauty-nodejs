@@ -11,7 +11,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "100mb" }));
 app.use(cors());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 const multer = require("multer");
 // Connect to MongoDB
@@ -21,7 +21,7 @@ db.on("error", console.error.bind(console, "MongoDB connection error:"));
 db.once("open", () => {
   console.log("Connected to MongoDB");
 });
- 
+
 const authorizationRoute = require("./authorizationRoute");
 
 //***************Customer Route************************ */
@@ -40,7 +40,6 @@ app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
-
 //**************Admin Route**************************** */
 
 app.use("/api/v1/admin", require("./adminRoute"));
@@ -48,16 +47,16 @@ app.use("/api/v1/partner", require("./partnerRoute"));
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
 app.use("/api/v1/customer/stock", require("./stockRoute"));
 app.use("/api/v1/admin/category", require("./categoryRoute"));
+
+//**************Product Route************************ */
+app.use("/api/v1/admin/product", require("./productAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
-
-
-
-app.all('*', async (request, response, next) => {
+app.all("*", async (request, response, next) => {
   return response.status(404).json({
     success: false,
     message: "Can't find " + request.originalUrl + " on this server",
-  })
+  });
 });
 
 // Error handling middleware
@@ -65,8 +64,8 @@ app.use((error, req, res, next) => {
   res.status(500);
   res.json({
     error: {
-      message: error.message
-    }
+      message: error.message,
+    },
   });
 });
 module.exports = app;
