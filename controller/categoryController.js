@@ -150,12 +150,12 @@ exports.deleteCategory = async (req, res) => {
   console.log("id : ", id);
   try {
     const category = await Category.findById(id);
-    if (!category || category.isDeleted || !category.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found",
-      });
-    }
+    // if (!category || category.isDeleted || !category.isActive) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Category not found",
+    //   });
+    // }
 
     category.isDeleted = true;
     const deletedCategory = await category.save();
