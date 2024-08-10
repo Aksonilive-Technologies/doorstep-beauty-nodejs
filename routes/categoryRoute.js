@@ -8,6 +8,8 @@ router.post('/create', categoryController.createCategory);
 // Get all categories
 router.get('/fetch/all', categoryController.getAllCategories);
 
+router.get('/category/fetch/all', categoryController.getAllCategoriesCustomer);
+
 // Get a single category by ID
 router.get('/fetch/single', categoryController.getCategoryById);
 
