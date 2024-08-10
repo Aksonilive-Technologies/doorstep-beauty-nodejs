@@ -57,14 +57,14 @@ exports.getAllCategories = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Find categories with pagination
-    const categories = await Category.find({ isDeleted: false, isActive: true })
+    const categories = await Category.find()
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)
       .limit(limit);
 
     // Get the total number of categories (for pagination info)
-    const totalCategories = await Category.countDocuments({ isDeleted: false, isActive: true });
+    const totalCategories = await Category.countDocuments();
     const totalPages = Math.ceil(totalCategories / limit);
 
     res.status(200).json({
@@ -188,6 +188,52 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error deleting category",
+      errorMessage: error.message,
+    });
+  }
+};
+
+//change status of active
+exports.changeStatus = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Find the category by ID
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    // Check if the category is deleted
+    if (category.isDeleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Category is deleted, please contact the support team",
+      });
+    }
+
+    // Toggle the isActive status
+    category.isActive = !category.isActive;
+
+    // Save the updated category
+    const updatedCategory = await category.save();
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: category.isActive
+        ? "Your category is activated"
+        : "Your category is deactivated",
+    });
+  } catch (error) {
+    // Handle errors
+    console.error("Error updating category status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating category status",
       errorMessage: error.message,
     });
   }
