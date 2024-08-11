@@ -1,4 +1,6 @@
 const Category = require("../models/categoriesModel");
+const { cloudinary } = require("../config/cloudinary.js");
+
 
 // Create a new category
 exports.createCategory = async (req, res) => {
@@ -32,7 +34,17 @@ exports.createCategory = async (req, res) => {
     }
 
     // Create and save the new category
-    const category = new Category({ name, image, position });
+        // Upload the image to Cloudinary if a file is present
+        let imageUrl;
+        if (req.file) {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: "category",
+            public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
+            overwrite: true,
+          });
+          imageUrl = result.secure_url;
+        }
+    const category = new Category({ name, image:imageUrl, position });
     await category.save();
 
     res.status(201).json({

@@ -1,10 +1,9 @@
 const { default: mongoose } = require("mongoose");
 const Banner = require("../models/bannerModel.js");
-const { cloudinary } = require("../config/cloudinary.js");
 
 
 exports.addBanner = async (req, res) => {
-  const { redirectUrl, position } = req.body; // Required fields to check
+  const { redirectUrl, bannerImage, position } = req.body; // Required fields to check
 
   const requiredFields = [
     { field: redirectUrl, name: "redirectUrl" },
