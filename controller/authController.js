@@ -122,25 +122,23 @@ exports.verifyOTP = catchAsync(async (req, res) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP",
+        message: "Entered master otp is wrong, please try again",
       })
     }
   } else {
-    // const verification = await otpModel.findOne({ mobile });
+    const verification = await otpModel.findOne({ mobile });
 
-    // if (!verification) {
-    //   return res.status(400).json({
-    //     success: "false",
-    //     message: "Invalid OTP,please enter a valid Otp",
-    //   })
-    // }
+    if (!verification) {
+      return res.status(400).json({
+        success: "false",
+        message: "otp not found, please send otp",
+      })
+    }
 
-    const hardCodeOtp = 9999;
-    console.log(otp)
-    if (hardCodeOtp != otp) {
+    if (verification.otp != otp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP,please enter a valid Otp",
+        message: "Entered otp is wrong, please try again",
       })
     }
     return res.status(200).json({
