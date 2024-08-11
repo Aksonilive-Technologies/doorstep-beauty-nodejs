@@ -2,58 +2,61 @@ const { default: mongoose } = require("mongoose");
 const Banner = require("../models/bannerModel.js");
 const { cloudinary } = require("../config/cloudinary.js");
 
+
 exports.addBanner = async (req, res) => {
   const { redirectUrl, position } = req.body; // Required fields to check
 
   const requiredFields = [
     { field: redirectUrl, name: "redirectUrl" },
-    // { field: bannerImage, name: "bannerImage" },
     { field: position, name: "position" },
   ];
 
+  // Check for missing required fields
   for (let i = 0; i < requiredFields.length; i++) {
     if (!requiredFields[i].field) {
       return res.status(400).json({
-        success: "false",
+        success: false,
         message: `${requiredFields[i].name} is required`,
       });
     }
   }
 
   try {
-    // Check if banner already exists
+    // Check if a banner with the same redirectUrl already exists
     const bannerExist = await Banner.findOne({ redirectUrl });
     if (bannerExist) {
       return res
         .status(400)
-        .json({ success: "false", message: "Banner already exists" });
-    } // Save the banner to the database
+        .json({ success: false, message: "Banner already exists" });
+    }
 
-    // Upload the image to Cloudinary if present
-    let imageUrl = undefined;
+    // Upload the image to Cloudinary if a file is present
+    let imageUrl;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "banner",
-        public_id: `${Date.now()}_${name}`,
+        public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
         overwrite: true,
       });
       imageUrl = result.secure_url;
     }
+
+    // Create and save the new banner
     const banner = new Banner({
       redirectUrl,
       position,
-      bannerImage: imageUrl || undefined,
+      bannerImage: imageUrl,
     });
 
     const savedBanner = await banner.save();
     return res.status(201).json({
-      success: "true",
+      success: true,
       message: "Banner added successfully",
       data: savedBanner,
     });
   } catch (err) {
     return res.status(500).json({
-      success: "false",
+      success: false,
       message: "Error adding banner",
       errorMessage: err.message,
     });
