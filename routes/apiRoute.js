@@ -55,6 +55,7 @@ app.use("/api/v1/admin/category", require("./categoryRoute"));
 //**************Product Route************************ */
 app.use("/api/v1/admin/product", require("./productAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
+app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({

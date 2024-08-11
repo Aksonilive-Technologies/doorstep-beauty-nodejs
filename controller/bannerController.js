@@ -1,12 +1,13 @@
 const { default: mongoose } = require("mongoose");
 const Banner = require("../models/bannerModel.js");
+const { cloudinary } = require("../config/cloudinary.js");
 
 exports.addBanner = async (req, res) => {
-  const { redirectUrl, bannerImage, position } = req.body; // Required fields to check
+  const { redirectUrl, position } = req.body; // Required fields to check
 
   const requiredFields = [
     { field: redirectUrl, name: "redirectUrl" },
-    { field: bannerImage, name: "bannerImage" },
+    // { field: bannerImage, name: "bannerImage" },
     { field: position, name: "position" },
   ];
 
@@ -28,10 +29,20 @@ exports.addBanner = async (req, res) => {
         .json({ success: "false", message: "Banner already exists" });
     } // Save the banner to the database
 
+    // Upload the image to Cloudinary if present
+    let imageUrl = undefined;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "banner",
+        public_id: `${Date.now()}_${name}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    }
     const banner = new Banner({
       redirectUrl,
-      bannerImage,
       position,
+      bannerImage: imageUrl || undefined,
     });
 
     const savedBanner = await banner.save();

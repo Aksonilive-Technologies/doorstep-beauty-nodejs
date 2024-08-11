@@ -1,7 +1,8 @@
 const Customer = require("../models/customerModel.js");
 const jwt = require("jsonwebtoken");
 const generateCode = require("../helper/generateCode.js");
-const generateRandomCode = require("../helper/generateCode.js");;
+const generateRandomCode = require("../helper/generateCode.js");
+const { cloudinary } = require("../config/cloudinary");
 //Create Register
 const validateUserInput = (name, email, phone) => {
   if (!name) return "Please fill the name field";
@@ -41,11 +42,29 @@ exports.register = async (req, res) => {
         .json({ success: false, message: "Mobile number already registered" });
     }
 
+    // Upload the image to Cloudinary if present
+    let imageUrl = undefined;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "customers",
+        public_id: `${Date.now()}_${name}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    }
+
     // Generate a referral code
     const referralCode = generateRandomCode(6);
 
     // Create a new user
-    const user = new Customer({ name, email, mobile: phone, referralCode: referralCode });
+    const user = new Customer({ 
+      name, 
+      email, 
+      mobile: phone, 
+      referralCode: referralCode,
+      image: imageUrl || undefined,
+    });
+    
     await user.save();
 
     res.status(201).json({
@@ -54,7 +73,7 @@ exports.register = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error("Error creating user:", error); // Log the error for debugging
+    console.error("Error creating user:", error); 
     res.status(500).json({
       success: false,
       message: "Error creating user",

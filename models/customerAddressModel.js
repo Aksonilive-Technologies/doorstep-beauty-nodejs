@@ -27,6 +27,10 @@ const customerAddressSchema = new moongoose.Schema(
                 type: String,
                 required: true,
             },
+            locality: {
+                type: String,
+                default: "NA",
+            },
             landmark: {
                 type: String,
                 default: "NA",
