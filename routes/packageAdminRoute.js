@@ -4,10 +4,10 @@ const packageController = require('../controller/packageController');
 
 // Route to create a new package
 router.post('/create', packageController.createPackage);
-// router.get('/all', packageController.getAllPackages);
+router.get('/all', packageController.getAllPackages);
 // router.get('/:id', packageController.getPackageById);
-// router.put('/update/:id', packageController.updatePackage);
-// router.delete('/delete/:id', packageController.deletePackage);
+router.put('/update/:id', packageController.updatePackage);
+router.delete('/delete/:id', packageController.deletePackage);
 
 
 module.exports = router;

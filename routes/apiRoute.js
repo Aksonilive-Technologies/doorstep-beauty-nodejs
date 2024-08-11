@@ -43,13 +43,18 @@ app.use("/api/v1/customer", require("./customerRoute"));
 //**************Admin Route**************************** */
 
 app.use("/api/v1/admin", require("./adminRoute"));
+
+//**************Partner Route************************ */
 app.use("/api/v1/partner", require("./partnerRoute"));
+
+//**************Banner Route************************ */
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
 app.use("/api/v1/customer/stock", require("./stockRoute"));
 app.use("/api/v1/admin/category", require("./categoryRoute"));
 
 //**************Product Route************************ */
 app.use("/api/v1/admin/product", require("./productAdminRoute"));
+app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
 app.all("*", async (request, response, next) => {
