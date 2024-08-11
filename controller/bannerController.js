@@ -43,7 +43,6 @@ exports.addBanner = async (req, res) => {
     // Create and save the new banner
     const banner = new Banner({
       redirectUrl,
-      bannerImage,
       position,
       bannerImage: imageUrl,
     });
