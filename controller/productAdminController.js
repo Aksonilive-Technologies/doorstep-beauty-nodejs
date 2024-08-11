@@ -1,6 +1,6 @@
 const Product = require("../models/productModel");
 const mongoose = require("mongoose");
-const { uploadOnCloudinary } = require("../utility/cloudinary");
+const { cloudinary } = require("../config/cloudinary.js");
 
 // Helper function for validating product input
 const validateProductInput = (productData, file) => {
@@ -14,18 +14,12 @@ const validateProductInput = (productData, file) => {
   if (!mongoose.Types.ObjectId.isValid(categoryId))
     return "Invalid category ID";
 
-  //   if (!file) return "Please upload an image";
-
-  //   const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
-  //   if (!validImageTypes.includes(file.mimetype)) {
-  //     return "Invalid image format. Only JPEG, PNG, and GIF are allowed";
-  //   }
-
   return null;
 };
 
 exports.createProduct = async (req, res) => {
   const productData = req.body;
+  const { file } = req;
 
   // Validate product input
   const validationError = validateProductInput(productData);
@@ -34,36 +28,36 @@ exports.createProduct = async (req, res) => {
   }
 
   try {
-    const existingProduct = await Product.findOne({
-      name: productData.name,
-      isActive: true,
-      isDeleted: false,
-    });
+    const existingProduct = await Product.findOne({ name: productData.name });
 
     if (existingProduct) {
       return res.status(400).json({
         success: false,
-        message: "Product with name " + productData.name + " already exists",
+        message: `Product with name ${productData.name} already exists`,
       });
     }
-    const imageUrl =
-      "https://www.google.com/imgres?imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100064041720159&tbnid=CatNt3FPfftJqM&vet=12ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd..i&imgrefurl=https%3A%2F%2Fm.facebook.com%2Fp%2FBeauty-Parlour-And-Saloon-Product-Sale-And-Repear-100064041720159%2F&docid=Hj9Se5mRLD346M&w=672&h=456&q=saloon%20product&ved=2ahUKEwj-lJ7_0OWHAxVNRCoJHesUIhMQMygEegQIARBd";
 
-    // let imageUrl = null;
-    // // Upload file to Cloudinary if provided
-    // if (req.file) {
-    //   const localFilePath = req.file.path;
-    //   imageUrl = await uploadOnCloudinary(localFilePath);
-    //   if (!imageUrl) {
-    //     return res.status(500).json({
-    //       success: false,
-    //       message: "Error uploading image to Cloudinary",
-    //     });
-    //   }
-    // }
+    // Upload the image to Cloudinary if a file is present
+    let imageUrl;
+    if (file) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "product",
+          public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        imageUrl = result.secure_url;
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: error.message,
+        });
+      }
+    }
 
     // Create a new product with the image URL if available
-    const product = new Product({ ...productData, imageUrl });
+    const product = new Product({ ...productData, image: imageUrl });
     const savedProduct = await product.save();
 
     if (!savedProduct) {
