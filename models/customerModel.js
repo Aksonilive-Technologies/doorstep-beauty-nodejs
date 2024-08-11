@@ -20,9 +20,14 @@ const customersSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    refferalCode: {
+    referralCode: {
       type: String,
       required: true,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer", 
+      required: false, // Optional if not all customers are referred by someone
     },
     isActive: {
       type: Boolean,

@@ -6,14 +6,19 @@ exports.createAddress = async (req, res) => {
   const { customerId, address, addressType, isPrimary } = req.body;
 
   try {
-    if(!customerId || !address || !addressType) {
+    if (!customerId || !address || !addressType) {
       return res.status(400).json({
         success: false,
-        message: "customerId, address, addressType are required fields",
+        message: "customerId, address, and addressType are required fields",
       });
     }
 
-    const existingCustomer = await Customer.findById({_id:customerId, isDeleted: false, isActive: true});
+    const existingCustomer = await Customer.findOne({
+      _id: customerId,
+      isDeleted: false,
+      isActive: true,
+    });
+
     if (!existingCustomer) {
       return res.status(404).json({
         success: false,
@@ -21,14 +26,28 @@ exports.createAddress = async (req, res) => {
       });
     }
 
-    if(isPrimary) {
-      await CustomerAddress.updateMany({ customer: customerId, isPrimary: true, isDeleted: false , isActive: true }, { isPrimary: false });
+    const existingAddresses = await CustomerAddress.find({
+      customer: customerId,
+      isDeleted: false,
+      isActive: true,
+    });
+
+    let primaryStatus = isPrimary;
+    if (existingAddresses.length === 0) {
+      primaryStatus = true; // Set as primary if no addresses exist
+    } else if (primaryStatus) {
+      // If isPrimary is true, update all other addresses to not be primary
+      await CustomerAddress.updateMany(
+        { customer: customerId, isPrimary: true, isDeleted: false, isActive: true },
+        { isPrimary: false }
+      );
     }
+
     const newAddress = new CustomerAddress({
-      customer:customerId,
+      customer: customerId,
       address,
       addressType,
-      isPrimary: isPrimary || false,
+      isPrimary: primaryStatus || false, // Use the computed primary status
     });
 
     const savedAddress = await newAddress.save();
@@ -36,6 +55,7 @@ exports.createAddress = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Customer address added successfully",
+      data: savedAddress,
     });
   } catch (error) {
     console.error("Error creating customer address:", error);
@@ -46,6 +66,7 @@ exports.createAddress = async (req, res) => {
     });
   }
 };
+
 
 // Get all addresses for a customer
 exports.getAddressesByCustomer = async (req, res) => {

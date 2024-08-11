@@ -54,7 +54,8 @@ const packageSchema = new mongoose.Schema(
             default: 0,
         },
         finalPrice : {
-            type: Number
+            type: Number,
+            default: 0
         },
         isActive: {
             type: Boolean,

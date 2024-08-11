@@ -36,10 +36,12 @@ app.use("/api/v1/customer/cart", require("./cartRoute"));
 app.use("/api/v1/customer/service", require("./serviceRoute"));
 app.use("/api/v1/customer/address", require("./customerAddressRoute"));
 app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
+app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
 //**************Admin Route**************************** */
+
 app.use("/api/v1/admin", require("./adminRoute"));
 
 //**************Partner Route************************ */
@@ -47,15 +49,12 @@ app.use("/api/v1/partner", require("./partnerRoute"));
 
 //**************Banner Route************************ */
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
-
-//**************Stock Route************************ */
 app.use("/api/v1/customer/stock", require("./stockRoute"));
-
-//**************categories Route************************ */
 app.use("/api/v1/admin/category", require("./categoryRoute"));
 
 //**************Product Route************************ */
 app.use("/api/v1/admin/product", require("./productAdminRoute"));
+app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
