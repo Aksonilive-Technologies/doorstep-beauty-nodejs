@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const Banner = require("../models/bannerModel.js");
-
+const { cloudinary } = require("../config/cloudinary.js");
 
 exports.addBanner = async (req, res) => {
   const { redirectUrl, bannerImage, position } = req.body; // Required fields to check
@@ -22,11 +22,20 @@ exports.addBanner = async (req, res) => {
 
   try {
     // Check if a banner with the same redirectUrl already exists
-    const bannerExist = await Banner.findOne({ redirectUrl });
-    if (bannerExist) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Banner already exists" });
+    // const bannerExist = await Banner.findOne({ redirectUrl });
+    // if (bannerExist) {
+    //   return res
+    //     .status(400)
+    //     .json({ success: false, message: "Banner already exists" });
+    // }
+
+    if (redirectUrl) {
+      const bannerExist = await Banner.findOne({ redirectUrl });
+      if (bannerExist) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Banner already exists" });
+      }
     }
 
     // Upload the image to Cloudinary if a file is present
@@ -34,7 +43,7 @@ exports.addBanner = async (req, res) => {
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "banner",
-        public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
+        public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
       imageUrl = result.secure_url;
@@ -44,7 +53,7 @@ exports.addBanner = async (req, res) => {
     const banner = new Banner({
       redirectUrl,
       position,
-      bannerImage: imageUrl,
+      image: imageUrl,
     });
 
     const savedBanner = await banner.save();
@@ -95,9 +104,12 @@ exports.getBanner = async (req, res) => {
 
 //fetch all banner for App
 exports.getBannerForApp = async (req, res) => {
-  try { 
-    const banners = await Banner.find({isDeleted: false, isActive: true}).sort({ position: 1 });
-    if(!banners || banners.length === 0) {
+  try {
+    const banners = await Banner.find({
+      isDeleted: false,
+      isActive: true,
+    }).sort({ position: 1 });
+    if (!banners || banners.length === 0) {
       return res.status(404).json({
         success: "false",
         message: "No banners found",
@@ -223,52 +235,53 @@ exports.changeStatus = async (req, res) => {
 
 //delete Banner
 exports.deleteBanner = async (req, res) => {
-	try {
-	  const { id } = req.query;
-  
-	  // Validate ID
-	  if (!mongoose.Types.ObjectId.isValid(id)) {
-		return res.status(400).json({
-		  success: "false",
-		  message: "Invalid Banner ID",
-		});
-	  }
-  
-	  // Find the banner
-	  const banner = await Banner.findById(id);
-  
-	  // Check if the banner exists
-	  if (!banner) {
-		return res.status(404).json({
-		  success: "false",
-		  message: "Banner not found",
-		});
-	  }
-  
-	  // Check if the banner is already marked as deleted
-	  if (banner.isDeleted) {
-		return res.status(400).json({
-		  success: "false",
-		  message: "This banner is already deleted. Please contact the support team.",
-		});
-	  }
-  
-	  // Mark the banner as deleted
-	  banner.isDeleted = true;
-	  await banner.save();
-  
-	  // Success response
-	  return res.status(200).json({
-		success: "true",
-		message: "Banner deleted successfully",
-	  });
-	} catch (err) {
-	  // Log the error and send a more detailed error response
-	  console.error("Error deleting banner:", err);
-	  return res.status(500).json({
-		success: "false",
-		message: "Error deleting banner",
-		errorMessage: err.message,
-	  });
-	}
+  try {
+    const { id } = req.query;
+
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: "false",
+        message: "Invalid Banner ID",
+      });
+    }
+
+    // Find the banner
+    const banner = await Banner.findById(id);
+
+    // Check if the banner exists
+    if (!banner) {
+      return res.status(404).json({
+        success: "false",
+        message: "Banner not found",
+      });
+    }
+
+    // Check if the banner is already marked as deleted
+    if (banner.isDeleted) {
+      return res.status(400).json({
+        success: "false",
+        message:
+          "This banner is already deleted. Please contact the support team.",
+      });
+    }
+
+    // Mark the banner as deleted
+    banner.isDeleted = true;
+    await banner.save();
+
+    // Success response
+    return res.status(200).json({
+      success: "true",
+      message: "Banner deleted successfully",
+    });
+  } catch (err) {
+    // Log the error and send a more detailed error response
+    console.error("Error deleting banner:", err);
+    return res.status(500).json({
+      success: "false",
+      message: "Error deleting banner",
+      errorMessage: err.message,
+    });
+  }
 };
