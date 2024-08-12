@@ -133,7 +133,7 @@ exports.getAllCustomers = async (req, res) => {
 
 exports.updateCustomer = async (req, res) => {
   const { id, name, email, mobile } = req.body;
-  const { file } = req; 
+  const { file } = req.body; 
 
   try {
     // Validate required fields
