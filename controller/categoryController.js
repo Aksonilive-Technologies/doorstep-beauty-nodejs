@@ -162,13 +162,28 @@ exports.getCategoryById = async (req, res) => {
 
 // Update a category by ID
 exports.updateCategory = async (req, res) => {
-  //yaha pe query likhna hai params ke jagah pe
-  // const { id } = req.params;
-  const { id } = req.query;
+  const { id } = req.query;  // Using query parameters instead of params
   const updates = req.body;
 
   try {
     const category = await Category.findById(id);
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
+      });
+    }
+
+    // If there's a new image, upload it and add the URL to the updates
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "category",
+        public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
+        overwrite: true,
+      });
+      updates.image = result.secure_url;  // Add the image URL to the updates
+    }
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updates, {
       new: true,
@@ -195,6 +210,7 @@ exports.updateCategory = async (req, res) => {
     });
   }
 };
+
 
 // Soft delete a category by ID
 exports.deleteCategory = async (req, res) => {
