@@ -9,7 +9,7 @@ const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 router.post("/create", uploadSingleImage, Product.createProduct);
 
 // Other routes remain unchanged
-router.put("/update", Product.updateProduct);
+router.put("/update", uploadSingleImage, Product.updateProduct);
 // router.get("/fetch/single", Product.getProductById);
 router.delete("/delete", Product.deleteProduct);
 router.get("/fetch/all", Product.getAllProducts);

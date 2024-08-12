@@ -169,6 +169,7 @@ exports.updateProduct = async (req, res) => {
         message: "Product ID is required",
       });
     }
+
     const product = await Product.findById(id);
 
     if (!product) {
@@ -186,6 +187,25 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
+    // Handle image upload if a file is provided
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "product",
+          public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        updatedFields.image = result.secure_url;  // Add the image URL to the updated fields
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: error.message,
+        });
+      }
+    }
+
+    // Update the product in the database
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
       { $set: updatedFields },
@@ -212,6 +232,7 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
+
 
 // Delete product
 exports.deleteProduct = async (req, res) => {
