@@ -304,3 +304,39 @@ console.log(package,"package")
     });
   }
 }
+
+exports.updatePackageStatus = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Fetch the package by ID
+    const package = await Package.findById(id);
+    if (!package) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found with id " + id,
+      });
+    }
+
+    // Toggle the isActive status
+    const updatedPackage = await Package.findByIdAndUpdate(
+      id,
+      { isActive: !package.isActive }, // Toggle the isActive field
+      { new: true, runValidators: true } // Return the updated document
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Package is ${updatedPackage.isActive ? "Activated" : "Deactivated"}`, // Fixed the message
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating package status",
+      errorMessage: error.message,
+    });
+  }
+};
+
+
+  
