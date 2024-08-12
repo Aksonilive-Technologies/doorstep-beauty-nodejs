@@ -16,7 +16,8 @@ const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 
 router.post("/register", uploadSingleImage,register);
 router.get("/all", getAllCustomers);
-router.patch("/update", uploadSingleImage, updateCustomer);
+// router.patch("/update", uploadSingleImage, updateCustomer);
+router.post("/update", uploadSingleImage, updateCustomer);
 // router.post("/update", uploadSingleImage, updateCustomer);
 router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
