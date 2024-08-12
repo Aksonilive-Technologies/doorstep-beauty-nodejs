@@ -15,7 +15,7 @@ router.get("/category/fetch/all", categoryController.getAllCategoriesCustomer);
 router.get("/fetch/single", categoryController.getCategoryById);
 
 // Update a category by ID
-router.put("/update/single", categoryController.updateCategory);
+router.put("/update/single", uploadSingleImage, categoryController.updateCategory);
 
 // Soft delete a category by ID
 router.delete("/delete/single", categoryController.deleteCategory);
