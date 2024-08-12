@@ -4,7 +4,7 @@ const bannerSchema = new Schema(
   {
     redirectUrl: {
       type: String,
-      required: true,
+      // required: true,
     },
     bannerImage: {
       type: String,
