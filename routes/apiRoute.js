@@ -57,6 +57,10 @@ app.use("/api/v1/admin/product", require("./productAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
+//**************testing Apis************************ */
+app.use("/api/v1/testing/admin", require("./testingRoute.js"))
+
+
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
     success: false,
