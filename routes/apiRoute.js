@@ -10,7 +10,11 @@ const AppError = require("../utility/appError");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "100mb" }));
-app.use(cors());
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 const multer = require("multer");
