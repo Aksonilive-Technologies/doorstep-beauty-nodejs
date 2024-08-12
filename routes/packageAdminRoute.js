@@ -6,8 +6,8 @@ const packageController = require('../controller/packageController');
 router.post('/create', packageController.createPackage);
 router.get('/all', packageController.getAllPackages);
 // router.get('/:id', packageController.getPackageById);
-router.put('/update/:id', packageController.updatePackage);
-router.delete('/delete/:id', packageController.deletePackage);
+router.put('/update', packageController.updatePackage);
+router.put('/delete', packageController.deletePackage);
 
 
 module.exports = router;
