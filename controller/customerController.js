@@ -4,10 +4,10 @@ const generateCode = require("../helper/generateCode.js");
 const generateRandomCode = require("../helper/generateCode.js");
 const { cloudinary } = require("../config/cloudinary");
 //Create Register
-const validateUserInput = (name, email, phone) => {
+const validateUserInput = (name, email, mobile) => {
   if (!name) return "Please fill the name field";
   if (!email) return "Please fill the email field";
-  if (!phone) return "Please fill the phone field";
+  if (!mobile) return "Please fill the mobile field";
   // if (!address) return "Please fill the address field";
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -17,10 +17,10 @@ const validateUserInput = (name, email, phone) => {
 };
 
 exports.register = async (req, res) => {
-  const { name, email, phone } = req.body;
+  const { name, email, mobile } = req.body;
 
   // Validate user input
-  const validationError = validateUserInput(name, email, phone);
+  const validationError = validateUserInput(name, email, mobile);
   if (validationError) {
     return res.status(400).json({ success: false, message: validationError });
   }
@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
     }
 
     // Check if mobile number already exists
-    const existingMobile = await Customer.findOne({ mobile: phone });
+    const existingMobile = await Customer.findOne({ mobile: mobile });
     if (existingMobile) {
       return res
         .status(400)
@@ -57,14 +57,14 @@ exports.register = async (req, res) => {
     const referralCode = generateRandomCode(6);
 
     // Create a new user
-    const user = new Customer({ 
-      name, 
-      email, 
-      mobile: phone, 
+    const user = new Customer({
+      name,
+      email,
+      mobile: mobile,
       referralCode: referralCode,
       image: imageUrl || undefined,
     });
-    
+
     await user.save();
 
     res.status(201).json({
@@ -73,7 +73,7 @@ exports.register = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error("Error creating user:", error); 
+    console.error("Error creating user:", error);
     res.status(500).json({
       success: false,
       message: "Error creating user",
@@ -98,7 +98,6 @@ exports.register = async (req, res) => {
 //     });
 //   }
 // };
-
 
 exports.getAllCustomers = async (req, res) => {
   try {
@@ -133,7 +132,8 @@ exports.getAllCustomers = async (req, res) => {
 //update customer
 
 exports.updateCustomer = async (req, res) => {
-  const { id, name, email, phone } = req.body;
+  const { id, name, email, mobile } = req.body;
+  const { file } = req; 
 
   try {
     // Validate required fields
@@ -169,18 +169,36 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
-    // Prepare the update object with only provided fields
+    // Upload the image to Cloudinary if a file is present
+    let imageUrl;
+    if (file) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "customers",
+          public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        imageUrl = result.secure_url;
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: error.message,
+        });
+      }
+    }
+
     const updateFields = {};
     if (name) updateFields.name = name;
     if (email) updateFields.email = email;
-    if (phone) updateFields.mobile = phone;
+    if (mobile) updateFields.mobile = mobile; // Changed from mobile to mobile for consistency
+    if (imageUrl) updateFields.image = imageUrl;
 
     // Update the customer details
-    const customerUpdated = await Customer.findByIdAndUpdate(
-      id,
-      updateFields,
-      { new: true, runValidators: true }
-    );
+    const customerUpdated = await Customer.findByIdAndUpdate(id, updateFields, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!customerUpdated) {
       return res.status(500).json({
@@ -192,7 +210,7 @@ exports.updateCustomer = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Customer updated successfully",
-      data: customerUpdated
+      data: customerUpdated,
     });
   } catch (error) {
     console.error("Error updating customer:", error);
@@ -203,6 +221,7 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
+
 
 //delete customer
 exports.deleteCustomer = async (req, res) => {
@@ -275,8 +294,7 @@ exports.changeStatusDeletedCustomer = async (req, res) => {
       await customer.save();
       return res.status(200).json({
         success: true,
-        message:
-          "Your account is activated now",
+        message: "Your account is activated now",
       });
     } else {
       customer.isActive = false;
