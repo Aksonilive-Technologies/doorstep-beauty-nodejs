@@ -60,6 +60,9 @@ app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 //**************testing Apis************************ */
 app.use("/api/v1/testing/admin", require("./testingRoute.js"))
 
+//**************admin Apis************************ */
+app.use("/api/v1/admin/package", require("./packageAdminRoute.js"));
+
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({

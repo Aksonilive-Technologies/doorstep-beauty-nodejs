@@ -27,9 +27,12 @@ const productSchema = new mongoose.Schema(
             ref: "Categories",
             required: true,
         },
-        type: {
+        // type: {
+        //     type: String,
+        //     default: "product",
+        // },
+        details: {
             type: String,
-            default: "product",
         },
         details : {
             type: Object,
