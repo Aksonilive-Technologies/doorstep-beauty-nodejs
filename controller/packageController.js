@@ -12,9 +12,9 @@ const validatePackageInput = (packageData) => {
   if (!productIds || !productIds.length) return "Please provide at least one product";
 
   if (!mongoose.Types.ObjectId.isValid(categoryId)) return "Invalid category ID";
-  // for (let id of productIds) {
-  //   if (!mongoose.Types.ObjectId.isValid(id)) return "Invalid product ID(s)";
-  // }
+  for (let id of productIds) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return "Invalid product ID(s)";
+  }
 
   return null;
 };
