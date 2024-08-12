@@ -6,7 +6,7 @@ exports.addBanner = async (req, res) => {
   const { redirectUrl, bannerImage, position } = req.body; // Required fields to check
 
   const requiredFields = [
-    { field: redirectUrl, name: "redirectUrl" },
+    // { field: redirectUrl, name: "redirectUrl" },
     { field: position, name: "position" },
   ];
 
