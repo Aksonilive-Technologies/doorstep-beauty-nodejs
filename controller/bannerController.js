@@ -136,7 +136,7 @@ exports.updateBanner = async (req, res) => {
     // Validate id
     if (!id) {
       return res.status(400).json({
-        success: "false",
+        success: false,
         message: "Banner ID is required",
       });
     }
@@ -144,27 +144,48 @@ exports.updateBanner = async (req, res) => {
     // Check if id is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
-        success: "false",
+        success: false,
         message: "Invalid Banner ID",
       });
     }
 
+    // Upload the image to Cloudinary if a file is present
+    let imageUrl;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "banner",
+        public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    }
+
+    // Prepare the update object
+    const updateData = {
+      ...req.body,
+    };
+
+    if (imageUrl) {
+      updateData.image = imageUrl;
+    }
+    console.log(imageUrl)
+
     // Attempt to update the banner
-    const updatedBanner = await Banner.findByIdAndUpdate(id, req.body, {
+    const updatedBanner = await Banner.findByIdAndUpdate(id, updateData, {
       new: true,
     });
 
     // If the banner was not found
     if (!updatedBanner) {
       return res.status(404).json({
-        success: "false",
+        success: false,
         message: "Banner not found",
       });
     }
 
     // Successfully updated
     return res.status(200).json({
-      success: "true",
+      success: true,
       message: "Banner updated successfully",
       data: updatedBanner,
     });
@@ -172,7 +193,7 @@ exports.updateBanner = async (req, res) => {
     // Log error and respond with error message
     console.error("Error updating banner:", err);
     return res.status(500).json({
-      success: "false",
+      success: false,
       message: "Error updating banner",
       errorMessage: err.message,
     });
