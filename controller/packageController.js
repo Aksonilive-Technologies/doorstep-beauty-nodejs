@@ -68,15 +68,38 @@ exports.createPackage = async (req, res) => {
 // Get All Packages
 exports.getAllPackages = async (req, res) => {
   try {
+    // Get the page and limit from query parameters
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to limit of 10 if not provided
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+
+    // Fetch packages with pagination
     const packages = await Package.find({
       isActive: true,
       isDeleted: false,
-    }).select("-__v");
+    })
+      .skip(skip) // Skip the calculated number of documents
+      .limit(limit) // Limit the number of documents returned
+      .select("-__v");
+
+    // Count total packages for pagination metadata
+    const totalPackages = await Package.countDocuments({
+      isActive: true,
+      isDeleted: false,
+    });
+
+    const totalPages = Math.ceil(totalPackages / limit); // Calculate total pages
 
     res.status(200).json({
       success: true,
       message: "All packages fetched successfully",
       data: packages,
+      pagination: {
+        totalPackages,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -86,6 +109,7 @@ exports.getAllPackages = async (req, res) => {
     });
   }
 };
+
 
 // Update a Package
 exports.updatePackage = async (req, res) => {
