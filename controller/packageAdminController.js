@@ -9,9 +9,11 @@ const validatePackageInput = (packageData) => {
   if (!price) return "Please fill the price field";
   if (!duration) return "Please fill the duration field";
   if (!categoryId) return "Please fill the category field";
-  if (!productIds || !productIds.length) return "Please provide at least one product";
+  if (!productIds || !productIds.length)
+    return "Please provide at least one product";
 
-  if (!mongoose.Types.ObjectId.isValid(categoryId)) return "Invalid category ID";
+  if (!mongoose.Types.ObjectId.isValid(categoryId))
+    return "Invalid category ID";
   for (let id of productIds) {
     if (!mongoose.Types.ObjectId.isValid(id)) return "Invalid product ID(s)";
   }
@@ -47,7 +49,9 @@ exports.createPackage = async (req, res) => {
     const savedPackage = await package.save();
 
     if (!savedPackage) {
-      return res.status(500).json({ success: false, message: "Error creating package" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Error creating package" });
     }
 
     res.status(201).json({
@@ -68,15 +72,33 @@ exports.createPackage = async (req, res) => {
 // Get All Packages
 exports.getAllPackages = async (req, res) => {
   try {
+    // Get the page and limit from query parameters
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to limit of 10 if not provided
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+
+    // Fetch packages with pagination
     const packages = await Package.find({
-      isActive: true,
-      isDeleted: false,
-    }).select("-__v");
+    })
+      .skip(skip) // Skip the calculated number of documents
+      .limit(limit) // Limit the number of documents returned
+      .select("-__v");
+
+    // Count total packages for pagination metadata
+    const totalPackages = await Package.countDocuments({
+    });
+
+    const totalPages = Math.ceil(totalPackages / limit); // Calculate total pages
 
     res.status(200).json({
       success: true,
       message: "All packages fetched successfully",
       data: packages,
+      pagination: {
+        totalPackages,
+        totalPages,
+        currentPage: page,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -86,7 +108,6 @@ exports.getAllPackages = async (req, res) => {
     });
   }
 };
-
 // Update a Package
 exports.updatePackage = async (req, res) => {
   const { id } = req.query;
@@ -247,7 +268,6 @@ exports.getPackageById = async (req, res) => {
   }
 };
 
-
 exports.getPackageByCategoryId = async (req, res) => {
   const { id } = req.query;
 
@@ -259,12 +279,19 @@ exports.getPackageByCategoryId = async (req, res) => {
   }
 
   try {
-    const package = await Package.find({categoryId: id,isDeleted: false,isActive: true}).select("-__v ");
-console.log(package,"package")
+    const package = await Package.find({
+      categoryId: id,
+      isDeleted: false,
+      isActive: true,
+    }).select("-__v ");
+    console.log(package, "package");
     if (!package) {
       return res.status(404).json({
         success: false,
-        message: "Package not found with category Id " + id +"it may be deleted or inactive",
+        message:
+          "Package not found with category Id " +
+          id +
+          "it may be deleted or inactive",
       });
     }
     res.status(200).json({
@@ -279,4 +306,39 @@ console.log(package,"package")
       errorMessage: error.message,
     });
   }
-}
+};
+
+exports.updatePackageStatus = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    // Fetch the package by ID
+    const package = await Package.findById(id);
+    if (!package) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found with id " + id,
+      });
+    }
+
+    // Toggle the isActive status
+    const updatedPackage = await Package.findByIdAndUpdate(
+      id,
+      { isActive: !package.isActive }, // Toggle the isActive field
+      { new: true, runValidators: true } // Return the updated document
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Package is ${
+        updatedPackage.isActive ? "Activated" : "Deactivated"
+      }`, // Message updated
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating package status",
+      errorMessage: error.message,
+    });
+  }
+};
