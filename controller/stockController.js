@@ -56,18 +56,18 @@ exports.fetchAllStocks = async (req, res) => {
     const totalPages = Math.ceil(totalStocks / limit);
 
     // If no stocks found
-    if (stocks.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No stocks found",
-      });
-    }
+    // if (stocks.length === 0) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "No stocks found",
+    //   });
+    // }
 
     // Return successful response
     return res.status(200).json({
       success: true,
       message: "Successfully retrieved all the stocks",
-      stocks,
+      data:stocks,
       currentPage: page,
       totalPages,
       totalStocks,
