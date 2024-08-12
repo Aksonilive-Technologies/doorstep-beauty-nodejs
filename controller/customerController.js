@@ -133,7 +133,7 @@ exports.getAllCustomers = async (req, res) => {
 
 exports.updateCustomer = async (req, res) => {
   const { id, name, email, mobile } = req.body;
-  const { file } = req.body; 
+  const file = req.file;  // Accessing the file from req.file
 
   try {
     // Validate required fields
@@ -169,8 +169,13 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
+    // Create an object to hold the fields to update
+    const updateFields = {};
+    if (name) updateFields.name = name;
+    if (email) updateFields.email = email;
+    if (mobile) updateFields.mobile = mobile;
+
     // Upload the image to Cloudinary if a file is present
-    let imageUrl;
     if (file) {
       try {
         const result = await cloudinary.uploader.upload(file.path, {
@@ -178,7 +183,7 @@ exports.updateCustomer = async (req, res) => {
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });
-        imageUrl = result.secure_url;
+        updateFields.image = result.secure_url;  // Add the image URL to the updateFields object
       } catch (error) {
         return res.status(500).json({
           success: false,
@@ -187,12 +192,6 @@ exports.updateCustomer = async (req, res) => {
         });
       }
     }
-
-    const updateFields = {};
-    if (name) updateFields.name = name;
-    if (email) updateFields.email = email;
-    if (mobile) updateFields.mobile = mobile; // Changed from mobile to mobile for consistency
-    if (imageUrl) updateFields.image = imageUrl;
 
     // Update the customer details
     const customerUpdated = await Customer.findByIdAndUpdate(id, updateFields, {
@@ -221,6 +220,7 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
+
 
 
 //delete customer
