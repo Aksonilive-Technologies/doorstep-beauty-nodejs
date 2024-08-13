@@ -102,37 +102,26 @@ exports.getAllCategories = async (req, res) => {
 // need to modify
 exports.getAllCategoriesCustomer = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
+  
     // Find categories with pagination
-    const categories = await Category.find({isActive})
+    const categories = await Category.find({isActive: true, isDeleted: false})
       .select("-__v")
-      .sort({ position: 1 }) // Sort by position in ascending order
-      .skip(skip)
-      .limit(limit)
+      .sort({ position: 1 }) 
       .lean(); // Use lean for better performance
 
     // Populate each category with related products and packages
     for (const category of categories) {
-      const products = await Product.find({ categoryId: category._id }).select("-__v");
-      const packages = await Package.find({ categoryId: category._id }).select("-__v");
+      const products = await Product.find({ categoryId: category._id ,isDeleted: false,isActive: true}).limit(10).select("-__v");
+      const packages = await Package.find({ categoryId: category._id,isDeleted: false,isActive: true }).limit(10).select("-__v");
       category.products = products;
       category.packages = packages;
     }
-
-    // Get the total number of categories (for pagination info)
-    const totalCategories = await Category.countDocuments();
-    const totalPages = Math.ceil(totalCategories / limit);
+    
 
     res.status(200).json({
       success: true,
-      message: "Categories, products, and packages retrieved successfully",
+      message: "All Categories retrieved successfully",
       data: categories,
-      currentPage: page,
-      totalPages: totalPages,
-      totalCategories: totalCategories,
     });
   } catch (error) {
     console.error("Error fetching categories, products, and packages:", error);
