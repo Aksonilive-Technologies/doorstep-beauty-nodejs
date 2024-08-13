@@ -99,15 +99,15 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
-
-exports.getAllCategories = async (req, res) => {
+// need to modify
+exports.getAllCategoriesCustomer = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Find categories with pagination
-    const categories = await Category.find()
+    const categories = await Category.find({isActive})
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)
@@ -143,7 +143,6 @@ exports.getAllCategories = async (req, res) => {
     });
   }
 };
-
 
 
 // Get a single category by ID
