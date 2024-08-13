@@ -21,16 +21,22 @@ exports.createProduct = async (req, res) => {
   const productData = req.body;
   const { file } = req;
 
+  console.log("Received product data:", productData);
+  console.log("Received file:", file);
+
   // Validate product input
   const validationError = validateProductInput(productData);
   if (validationError) {
+    console.log("Validation error:", validationError);
     return res.status(400).json({ success: false, message: validationError });
   }
 
   try {
+    console.log("Checking for existing product with name:", productData.name);
     const existingProduct = await Product.findOne({ name: productData.name });
 
     if (existingProduct) {
+      console.log("Product already exists:", existingProduct);
       return res.status(400).json({
         success: false,
         message: `Product with name ${productData.name} already exists`,
@@ -40,6 +46,7 @@ exports.createProduct = async (req, res) => {
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
     if (file) {
+      console.log("Uploading file to Cloudinary:", file.path);
       try {
         const result = await cloudinary.uploader.upload(file.path, {
           folder: "product",
@@ -47,25 +54,33 @@ exports.createProduct = async (req, res) => {
           overwrite: true,
         });
         imageUrl = result.secure_url;
+        console.log("Image uploaded successfully:", imageUrl);
       } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error.message);
         return res.status(500).json({
           success: false,
           message: "Error uploading image",
           errorMessage: error.message,
         });
       }
+    } else {
+      console.log("No file provided, skipping image upload.");
     }
 
     // Create a new product with the image URL if available
     const product = new Product({ ...productData, image: imageUrl });
+    console.log("Creating new product:", product);
+
     const savedProduct = await product.save();
 
     if (!savedProduct) {
+      console.log("Error saving product to the database.");
       return res
         .status(500)
         .json({ success: false, message: "Error creating product" });
     }
 
+    console.log("Product created successfully:", savedProduct);
     res.status(201).json({
       success: true,
       message: "Product created successfully",
@@ -80,6 +95,7 @@ exports.createProduct = async (req, res) => {
     });
   }
 };
+
 
 // Fetch all products
 exports.getAllProducts = async (req, res) => {
