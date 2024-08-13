@@ -31,8 +31,7 @@ const authorizationRoute = require("./authorizationRoute");
 //***************Customer Route************************ */
 
 app.use("/api/v1/customer/auth/otp", authorizationRoute);
-// app.use("/api/v1/customer/category", require("./categoryRoute"));
-app.use("/api/v1/customer", require("./categoryRoute"));
+app.use("/api/v1/customer/category", require("./categoryRoute"));
 
 app.use("/api/v1/customer/product", require("./productRoute"));
 app.use("/api/v1/customer/order", require("./orderRoute"));
