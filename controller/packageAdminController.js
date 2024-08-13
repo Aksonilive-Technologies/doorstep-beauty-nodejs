@@ -52,6 +52,7 @@ exports.createPackage = async (req, res) => {
       return res
         .status(500)
         .json({ success: false, message: "Error creating package" });
+    
     }
 
     res.status(201).json({
