@@ -57,7 +57,7 @@ exports.createPackage = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Package created successfully",
-      package: savedPackage,
+      data: savedPackage,
     });
   } catch (error) {
     console.error("Error creating package:", error);
@@ -108,6 +108,7 @@ exports.getAllPackages = async (req, res) => {
     });
   }
 };
+
 // Update a Package
 exports.updatePackage = async (req, res) => {
   const { id } = req.query;
