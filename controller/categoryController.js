@@ -136,14 +136,34 @@ exports.getAllCategoriesCustomer = async (req, res) => {
 
 // Get a single category by ID
 exports.getCategoryById = async (req, res) => {
-  const { id } = req.query;
+  const { id ,page = 1, limit = 10} = req.query;
 
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ID {id} is required",
+    });
+  }
+
+  // Calculate the number of products to skip based on the current page and limit
+  const skip = (page - 1) * limit;
   try {
-    const category = await Category.findById(id);
+    const category = await Category.find({_id: id, isActive: true, isDeleted: false}).lean().select("-__v");
+
+    if (category.length === 0 || category === null) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found or deleted or inactive temporarily",
+      });
+    }
+    const products = await Product.find({ categoryId: category[0]._id ,isDeleted: false,isActive: true}).limit(limit).skip(skip).select("-__v");
+    const packages = await Package.find({ categoryId: category[0]._id,isDeleted: false,isActive: true }).limit(limit).skip(skip).select("-__v");
+    category[0].products = products;
+    category[0].packages = packages;
     res.status(200).json({
       success: true,
-      message: "Category retrieved successfully",
-      data: category,
+      message: "Category product and package retrieved successfully",
+      data: category[0],
     });
   } catch (error) {
     console.error("Error fetching category:", error);
