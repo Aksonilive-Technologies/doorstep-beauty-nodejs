@@ -22,12 +22,16 @@ const customersSchema = new mongoose.Schema(
     },
     referralCode: {
       type: String,
-      required: true,
+      required: false,
     },
     referredBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer", 
       required: false, // Optional if not all customers are referred by someone
+    },
+    walletBalance: {
+      type: Number,
+      default: 0,
     },
     isActive: {
       type: Boolean,
