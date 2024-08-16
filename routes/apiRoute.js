@@ -64,8 +64,15 @@ app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 //**************testing Apis************************ */
 app.use("/api/v1/testing/admin", require("./testingRoute.js"))
 
-//**************admin Apis************************ */
+//**************package Apis************************ */
 app.use("/api/v1/admin/package", require("./packageAdminRoute.js"));
+
+
+//**************Membership Apis************************ */
+app.use("/api/v1/admin/membership", require("./membershipRoute.js"));
+
+//**************admin Apis************************ */
+app.use("/api/v1/admin/complain", require("./customerComplainRoute.js"));
 
 
 app.all("*", async (request, response, next) => {
