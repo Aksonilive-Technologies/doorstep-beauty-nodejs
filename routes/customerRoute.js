@@ -8,7 +8,10 @@ const {
   deleteCustomer,
   changeStatusDeletedCustomer,
   customerById,
-  checkExistance
+  checkExistance,
+  addMoneyToWallet,
+  debitMoneyFromWallet,
+  getWalletBalance
 } = require("../controller/customerController.js");
 const verifyToken = require("../middleware/verifyToken.js");
 const { uploadSingleImage } = require("../middleware/uploadMiddleware");
@@ -23,4 +26,7 @@ router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
 router.get('/profile/fetch',customerById);
 router.get('/check-existence',checkExistance)
+router.post("/add", addMoneyToWallet);
+router.post("/debit", debitMoneyFromWallet);
+router.get("/fetch",getWalletBalance );
 module.exports = router;

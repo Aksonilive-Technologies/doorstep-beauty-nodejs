@@ -8,5 +8,7 @@ router.put("/update", Cart.updateCartItem);
 router.get("/fetch/single", Cart.getCartByCustomerId);
 router.post("/remove-item", Cart.removeItemFromCart);
 router.post("/clear", Cart.emptyCart);
+router.post("/item/increment", Cart.incrementItemQuantity);
+router.post("/item/decrement", Cart.decrementItemQuantity);
 
 module.exports = router;

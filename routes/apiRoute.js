@@ -40,6 +40,7 @@ app.use("/api/v1/customer/service", require("./serviceRoute"));
 app.use("/api/v1/customer/address", require("./customerAddressRoute"));
 app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
 app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
+app.use("/api/v1/customer/wallet", require("./customerRoute"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 

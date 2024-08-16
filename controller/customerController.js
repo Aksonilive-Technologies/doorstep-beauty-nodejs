@@ -427,3 +427,110 @@ exports.checkExistance = async (req, res) => {
     });
   }
 };
+
+// Add money to wallet
+exports.addMoneyToWallet = async (req, res) => {
+  const { id, amount } = req.body;
+
+  if (!id || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: "Customer ID and amount are required",
+    });
+  }
+
+  try {
+    const customerRecord = await Customer.findOne({ _id: id , isActive: true, isDeleted: false });
+
+    if (!customerRecord || customerRecord.length === 0 || customerRecord === null) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found,may be deleted or deactivated temporarily",
+      });
+    }
+
+    customerRecord.walletBalance += Number(amount);
+    await customerRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: `₹${amount} added to wallet of ${customerRecord.name}successfully`,
+    });
+  } catch (error) {
+    console.error("Error adding money to wallet:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error adding money to wallet",
+      errorMessage: error.message,
+    });
+  }
+};
+
+// Debit money from wallet
+exports.debitMoneyFromWallet = async (req, res) => {
+  const { id, amount } = req.body;
+
+  if (!id || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: "Customer ID and amount are required",
+    });
+  }
+
+  try {
+    const customer = await Customer.findOne({ _id: id , isActive: true, isDeleted: false });
+
+    if (!customerRecord || customer.length === 0 || customer === null) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found,may be deleted or deactivated temporarily",
+      });
+    }
+
+
+    if (customer.walletBalance < amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Insufficient balance in the wallet",
+      });
+    }
+
+    customer.walletBalance -= amount;
+    await customer.save();
+
+    res.status(200).json({
+      success: true,
+      message: `₹${amount} debited from wallet successfully`,
+    });
+  } catch (error) {
+    console.error("Error debiting money from wallet:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error debiting money from wallet",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.getWalletBalance = async (req, res) => {
+  try {
+    const {id} = req.body;
+
+    if (!id) {
+      return res.status(400).json({ success : false, message: "Customer ID {id} is required" });
+    }
+    const customer = await Customer.findOne({ _id: id, isActive: true, isDeleted: false });
+
+    if (!customer) {
+      return res.status(404).json({ success : false, message: "Customer not found,may be deleted or deactivated temporarily" });
+    }
+
+    return res.status(200).json({
+      message: "Wallet balance fetched successfully",
+      data: {Balance : customer.walletBalance},
+    });
+  } catch (error) {
+    console.error("Error fetching wallet balance:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
