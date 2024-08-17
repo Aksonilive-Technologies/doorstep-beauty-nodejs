@@ -28,5 +28,5 @@ router.get('/profile/fetch',customerById);
 router.get('/check-existence',checkExistance)
 router.post("/add", addMoneyToWallet);
 router.post("/debit", debitMoneyFromWallet);
-router.get("/fetch",getWalletBalance );
+router.post("/fetch",getWalletBalance );
 module.exports = router;
