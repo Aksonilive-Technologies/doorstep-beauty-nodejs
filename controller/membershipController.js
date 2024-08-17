@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const Membership = require("../models/membershipModel.js");
-const logger = require("../utility/logger.js");
+// const logger = require("../utility/logger.js");
 
 const createMembership = async (req, res) => {
   try {
@@ -149,13 +149,13 @@ const changeMembershipStatus = async (req, res) => {
     });
   } catch (error) {
     // Log error details internally for production-level monitoring
-    logger.error(
-      `Error updating membership status for ID ${id}: ${error.message}`,
-      {
-        stack: error.stack,
-        errorCode: error.code || "UNKNOWN_ERROR",
-      }
-    );
+    // logger.error(
+    //   `Error updating membership status for ID ${id}: ${error.message}`,
+    //   {
+    //     stack: error.stack,
+    //     errorCode: error.code || "UNKNOWN_ERROR",
+    //   }
+    // );
 
     res.status(500).json({
       success: false,
@@ -171,7 +171,7 @@ const deleteMembership = async (req, res) => {
   try {
     // Validate ID format with Mongoose
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      logger.warn(`Invalid membership ID format: ${id}`);
+      // logger.warn(`Invalid membership ID format: ${id}`);
       return res.status(400).json({
         success: false,
         message: "Invalid membership ID format",
@@ -186,7 +186,7 @@ const deleteMembership = async (req, res) => {
     );
 
     if (!deletedMembership) {
-      logger.warn(`Membership not found: ${id}`);
+      // logger.warn(`Membership not found: ${id}`);
       return res.status(404).json({
         success: false,
         message: "Membership not found",
@@ -200,10 +200,10 @@ const deleteMembership = async (req, res) => {
     });
   } catch (error) {
     // Log error details for production-level monitoring
-    logger.error(`Error deleting membership for ID ${id}: ${error.message}`, {
-      stack: error.stack,
-      errorCode: error.code || "UNKNOWN_ERROR",
-    });
+    // logger.error(`Error deleting membership for ID ${id}: ${error.message}`, {
+    //   stack: error.stack,
+    //   errorCode: error.code || "UNKNOWN_ERROR",
+    // });
 
     res.status(500).json({
       success: false,
