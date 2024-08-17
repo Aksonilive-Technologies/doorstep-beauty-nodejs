@@ -1,43 +1,40 @@
 const Admin = require("../models/adminModel.js");
 const Complaint = require("../models/customerComplainModel.js");
-
-const generateComplaintId = () => {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let complaintId = "";
-  for (let i = 0; i < 14; i++) {
-    complaintId += characters.charAt(
-      Math.floor(Math.random() * characters.length)
-    );
-  }
-  return complaintId;
-};
+const Customer = require("../models/customerModel.js");
+const mongoose = require("mongoose");
+const { validationResult } = require("express-validator");
 
 const createComplaint = async (req, res) => {
   try {
-    const { name, email, phone, complaintDescription, complaintCategory } =
-      req.body;
+    const { customerId, description, complaintCategory } = req.body;
 
     // Validation rules
     const requiredFields = [
-      { field: "name", value: name, message: "Name is required." },
-      { field: "email", value: email, message: "Email is required." },
-      { field: "phone", value: phone, message: "Phone number is required." },
+      {
+        field: "customerId",
+        value: customerId,
+        message: "customerId is required.",
+      },
       {
         field: "complaintCategory",
         value: complaintCategory,
         message: "Complaint category is required.",
       },
       {
-        field: "complaintDescription",
-        value: complaintDescription,
-        message: "Complaint description is required.",
+        field: "description",
+        value: description,
+        message: "Description is required.",
       },
     ];
 
-    // Regex patterns for validation
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    const phoneRegex = /^\d{10}$/;
+    const customerExists = await Customer.findById(customerId);
+    if (!customerExists) {
+      return res.status(404).json({ message: "Customer not found." });
+    }
+
+    if (!customerExists.isActive) {
+      return res.status(401).json({ message: "Customer is inactive." });
+    }
 
     // Check for missing required fields
     for (let i = 0; i < requiredFields.length; i++) {
@@ -46,50 +43,29 @@ const createComplaint = async (req, res) => {
       }
     }
 
-    // Additional validations
-    if (!emailRegex.test(email)) {
-      return res
-        .status(400)
-        .json({ message: "Please enter a valid email address." });
-    }
-    console.log("emailverifed")
-
-    if (!phoneRegex.test(phone)) {
-      return res
-        .status(400)
-        .json({ message: "Please enter a valid 10-digit phone number." });
+    // Check if customerId is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return res.status(400).json({ message: "Invalid customerId." });
     }
 
-    // Generate a 14-character complaint ID
-    console.log("phoneverifed")
-    const complaintId = generateComplaintId();
-
-    console.log("generateComplaintId = ", complaintId)
-
-    // Create a new complaint
+    // Create a new complaint instance
     const newComplaint = new Complaint({
-      name,
-      email,
-      phone,
-      complaintId,
-      complaintDescription,
+      customerId,
+      description, // Using correct field name
       complaintCategory,
     });
 
-    console.log("newComplaint = ", newComplaint);
-
     // Save the complaint to the database
     const savedComplaint = await newComplaint.save();
-    console.log("not coming")
 
     return res.status(201).json({
       message: "Complaint created successfully",
       complaint: savedComplaint,
     });
   } catch (error) {
-    // Handle duplicate key errors for email or phone
+    // Handle duplicate key errors (e.g., unique fields)
     if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyPattern)[0];
+      const duplicateField = Object.keys(error.keyValue)[0];
       return res.status(400).json({
         message: `${
           duplicateField.charAt(0).toUpperCase() + duplicateField.slice(1)
@@ -97,6 +73,17 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({
+        message: "Validation error",
+        errors: messages,
+      });
+    }
+
+    // General error handling
+    console.error("Error while creating complaint: ", error);
     return res.status(500).json({
       message: "An error occurred while creating the complaint.",
       error: error.message,
@@ -112,9 +99,7 @@ const getAllComplaints = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Retrieve complaints with pagination
-    const complaints = await Complaint.find()
-      .skip(skip)
-      .limit(limit);
+    const complaints = await Complaint.find().skip(skip).limit(limit);
 
     // Get total count of complaints
     const totalComplaints = await Complaint.countDocuments();
@@ -138,12 +123,26 @@ const getAllComplaints = async (req, res) => {
 
 const resolvedComplaint = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+        message: "Invalid input",
+      });
+    }
+
     const { complaintId } = req.query;
-    const { adminId } = req.body;
+    const { adminId, resolutionComment } = req.body;
 
-    //check lagao for resolution comment
+    // Validate presence of resolutionComment, complaintId, and adminId
+    if (!resolutionComment) {
+      return res.status(400).json({
+        success: false,
+        message: "Resolution comment is required",
+      });
+    }
 
-    // Validate inputs
     if (!complaintId) {
       return res.status(400).json({
         success: false,
@@ -160,8 +159,6 @@ const resolvedComplaint = async (req, res) => {
 
     // Fetch complaint and admin details
     const complaint = await Complaint.findById(complaintId);
-    const admin = await Admin.findById(adminId);
-
     if (!complaint) {
       return res.status(404).json({
         success: false,
@@ -169,6 +166,9 @@ const resolvedComplaint = async (req, res) => {
       });
     }
 
+    const admin = await Admin.findById(adminId).select(
+      "_id name username level"
+    );
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -176,17 +176,27 @@ const resolvedComplaint = async (req, res) => {
       });
     }
 
-    // Mark complaint as resolved
+    // Mark complaint as resolved and add resolution comment and resolvedBy admin
     complaint.resolved = true;
+    complaint.resolutionComment = resolutionComment;
+    complaint.resolvedBy = admin._id; // Assign the admin's ObjectId
+
     await complaint.save();
 
     return res.status(200).json({
       success: true,
       message: "Complaint resolved successfully",
-      data: { complaint : complaint, resolvedBy: admin },
+      data: {
+        complaint,
+        resolvedBy: {
+          _id: admin._id,
+          name: admin.name,
+          username: admin.username,
+          level: admin.level,
+        },
+      },
     });
   } catch (error) {
-    // Log the error for debugging purposes
     console.error("Error resolving complaint:", error);
 
     return res.status(500).json({
