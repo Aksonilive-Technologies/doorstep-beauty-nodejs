@@ -2,26 +2,12 @@ const { default: mongoose } = require("mongoose");
 
 const customerComplaintSchema = new mongoose.Schema(
   {
-    // 
-    // customerId rakhna hai
-    // name: {
-    //   type: String,
-    //   required: true,
-    // },
-    // email: {
-    //   type: String,
-    //   required: true,
-    //   lowercase: true,
-    // },
-    // phone: {
-    //   type: String,
-    //   required: true,
-    // },
-    // complaintId: {
-    //   type: String,
-    //   required: true,
-    //   unique: true,
-    // },
+    // Index added to optimize querying by customerId
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
+    },
     description: {
       type: String,
       trim: true,
@@ -39,16 +25,27 @@ const customerComplaintSchema = new mongoose.Schema(
       ref: "Admin",
       default: null,
     },
-    //change the name of resolution
     resolutionComment: {
       type: String,
       trim: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
   },
   {
     timestamps: true,
   }
 );
+
+customerComplaintSchema.pre("save", function (next) {
+  if (this.description) {
+    this.description = this.description.trim();
+  }
+  next();
+});
+
 const Complaint = mongoose.model("Complaint", customerComplaintSchema);
 
 module.exports = Complaint;
