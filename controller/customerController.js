@@ -636,7 +636,7 @@ exports.fetchWalletRechargeTransactions = async (req, res) => {
       customerId: id,
       transactionType: "Recharge Wallet",
       isDeleted: false,
-    }).sort({ createdAt: -1 }).select("__v");
+    }).sort({ createdAt: -1 }).select("- __v");
 
     if (!transactions || transactions.length === 0) {
       return res.status(404).json({
