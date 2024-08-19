@@ -44,9 +44,11 @@ exports.addItemToCart = async (req, res) => {
 
 // Fetch cart by customer ID
 exports.getCartByCustomerId = async (req, res) => {
-  const { customerId } = req.query;
+  const { id } = req.body;
+
+  const customerId = id;
   try {
-    const cart = await Cart.findOne({ customerId, isActive: true ,isDeleted: false }).populate('items.itemId');
+    const cart = await Cart.findOne({ customerId, isActive: true ,isDeleted: false }).populate('items.itemId').select('-__v');
 
     if (!cart) {
       return res.status(404).json({
@@ -180,7 +182,8 @@ exports.removeItemFromCart = async (req, res) => {
 
 // Empty cart
 exports.emptyCart = async (req, res) => {
-  const { customerId } = req.body;
+  const { id } = req.body;
+  const customerId = id ? id : req.user._id;
 
   try {
     const cart = await Cart.findOne({ customerId, isActive: true,isDeleted: false });
@@ -188,7 +191,7 @@ exports.emptyCart = async (req, res) => {
     if (!cart) {
       return res.status(404).json({
         success: false,
-        message: "Cart not found",
+        message: "Cart not found, may be deleted or deactivated temporarily",
       });
     }
 
@@ -205,5 +208,77 @@ exports.emptyCart = async (req, res) => {
       message: "Error emptying cart",
       errorMessage: error.message,
     });
+  }
+};
+
+exports.incrementItemQuantity = async (req, res) => {
+  try {
+    const { id, itemId, itemType } = req.body;
+
+    const cart = await Cart.findOne({ customerId : id, isActive: true,isDeleted: false });
+
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found, may be deleted or deactivated temporarily" });
+    }
+
+    const item = cart.items.find(
+      (item) => item.itemId.toString() === itemId && item.itemType === itemType
+    );
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Item With given id " + itemId + " not found in cart" });
+    }
+
+    item.quantity += 1;
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Item quantity incremented successfully",
+    });
+  } catch (error) {
+    console.error("Error incrementing item quantity:", error);
+    return res.status(500).json({ success: false, message: "Internal server error", errorMessage: error.message });
+  }
+};
+
+// Decrement Item Quantity in Cart
+exports.decrementItemQuantity = async (req, res) => {
+  try {
+    const { id, itemId, itemType } = req.body;
+
+    const cart = await Cart.findOne({ customerId : id, isActive: true ,isDeleted: false });
+
+    if (!cart) {
+      return res.status(404).json({success: false, message: "Cart not found, may be deleted or deactivated temporarily" });
+    }
+
+    const item = cart.items.find(
+      (item) => item.itemId.toString() === itemId && item.itemType === itemType
+    );
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Item wiht given id " + itemId + " not found in cart" });
+    }
+
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+    } else {
+      return res
+        .status(400)
+        .json({success: false, message: "Item quantity cannot be less than 1" });
+    }
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Item quantity decremented successfully",
+
+    });
+  } catch (error) {
+    console.error("Error decrementing item quantity:", error);
+    return res.status(500).json({success: false, message: "Internal server error", errorMessage: error.message });
   }
 };
