@@ -2,7 +2,7 @@ const Admin = require("../models/adminModel.js");
 const Complaint = require("../models/customerComplainModel.js");
 const Customer = require("../models/customerModel.js");
 const mongoose = require("mongoose");
-const { validationResult } = require("express-validator");
+// const { validationResult } = require("express-validator");
 
 const createComplaint = async (req, res) => {
   try {
@@ -123,19 +123,10 @@ const getAllComplaints = async (req, res) => {
 
 const resolvedComplaint = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array(),
-        message: "Invalid input",
-      });
-    }
-
     const { complaintId } = req.query;
     const { adminId, resolutionComment } = req.body;
 
-    // Validate presence of resolutionComment, complaintId, and adminId
+    // Manual validation for required fields
     if (!resolutionComment) {
       return res.status(400).json({
         success: false,
@@ -157,7 +148,7 @@ const resolvedComplaint = async (req, res) => {
       });
     }
 
-    // Fetch complaint and admin details
+    // Fetch complaint details
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
       return res.status(404).json({
@@ -166,6 +157,7 @@ const resolvedComplaint = async (req, res) => {
       });
     }
 
+    // Fetch admin details
     const admin = await Admin.findById(adminId).select(
       "_id name username level"
     );
@@ -176,7 +168,7 @@ const resolvedComplaint = async (req, res) => {
       });
     }
 
-    // Mark complaint as resolved and add resolution comment and resolvedBy admin
+    // Mark complaint as resolved and add resolution details
     complaint.resolved = true;
     complaint.resolutionComment = resolutionComment;
     complaint.resolvedBy = admin._id; // Assign the admin's ObjectId
@@ -206,6 +198,5 @@ const resolvedComplaint = async (req, res) => {
     });
   }
 };
-
 
 module.exports = { createComplaint, getAllComplaints, resolvedComplaint };
