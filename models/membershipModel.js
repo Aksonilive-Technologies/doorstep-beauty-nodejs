@@ -1,10 +1,16 @@
+// has to be approve
 const mongoose = require("mongoose");
 
 const membershipSchema = new mongoose.Schema(
   {
     tenure: {
+      type: Number,
+      required: true,
+    },
+    membershipType: {
       type: String,
       required: true,
+      enum: ["month", "weekly", "year"],
     },
     price: {
       type: Number,
@@ -36,3 +42,5 @@ const membershipSchema = new mongoose.Schema(
 const Membership = mongoose.model("Membership", membershipSchema);
 
 module.exports = Membership;
+
+
