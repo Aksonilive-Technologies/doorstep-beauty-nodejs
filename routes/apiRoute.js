@@ -10,11 +10,13 @@ const AppError = require("../utility/appError");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "100mb" }));
-app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 const multer = require("multer");
@@ -40,6 +42,7 @@ app.use("/api/v1/customer/service", require("./serviceRoute"));
 app.use("/api/v1/customer/address", require("./customerAddressRoute"));
 app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
 app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
+app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
@@ -61,18 +64,19 @@ app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
 
 //**************testing Apis************************ */
-app.use("/api/v1/testing/admin", require("./testingRoute.js"))
+app.use("/api/v1/testing/admin", require("./testingRoute.js"));
 
 //**************package Apis************************ */
 app.use("/api/v1/admin/package", require("./packageAdminRoute.js"));
 
-
 //**************Membership Apis************************ */
 app.use("/api/v1/admin/membership", require("./membershipRoute.js"));
 
-//**************admin Apis************************ */
+//**************complain Apis************************ */
 app.use("/api/v1/admin/complain", require("./customerComplainRoute.js"));
 
+//**************feedback Apis************************ */
+app.use("/api/v1/admin/feedback", require("./feedbackRoute.js"));
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
