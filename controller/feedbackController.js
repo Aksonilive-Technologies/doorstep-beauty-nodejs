@@ -70,6 +70,7 @@ const getAllFeedback = async (req, res) => {
     const totalFeedback = await Feedback.countDocuments();
 
     res.status(200).json({
+      message:"successfully retrived all the feedback",
       success: true,
       data: feedback,
       totalFeedback,
