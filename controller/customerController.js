@@ -431,12 +431,12 @@ exports.checkExistance = async (req, res) => {
 
 // Add money to wallet
 exports.addMoneyToWallet = async (req, res) => {
-  const { id, amount } = req.body;
+  const { id, amount ,paymentGateway } = req.body;
 
-  if (!id || !amount) {
+  if (!id || !amount || !paymentGateway) {
     return res.status(400).json({
       success: false,
-      message: "Customer ID and amount are required",
+      message: "Customer ID ,payment Gateway and amount are required",
     });
   }
 
@@ -454,9 +454,9 @@ exports.addMoneyToWallet = async (req, res) => {
     // Create a transaction record with status "Pending"
     const transaction = new Transaction({
       customerId: id,
-      transactionType: "recharge wallet",
+      transactionType: "recharge_wallet",
       amount: Number(amount),
-      paymentGateway: "wallet"
+      paymentGateway: paymentGateway
     });
 
     // Save the transaction record
@@ -537,6 +537,7 @@ exports.getWalletBalance = async (req, res) => {
     }
 
     return res.status(200).json({
+      success:true,
       message: "Wallet balance fetched successfully",
       data: {Balance : customer.walletBalance},
     });
@@ -547,7 +548,7 @@ exports.getWalletBalance = async (req, res) => {
 };
 
 exports.updateTransactionStatus = async (req, res) => {
-  const { transactionId, status } = req.body;
+  const { transactionId, status ,paymentGatewayId } = req.body;
 
   if (!transactionId || !status) {
     return res.status(400).json({
@@ -577,6 +578,7 @@ exports.updateTransactionStatus = async (req, res) => {
     if (status === "success") {
       // Update the transaction status to "Completed"
       transactionRecord.status = "completed";
+      transactionRecord.transactionRefId=paymentGatewayId;
       await transactionRecord.save();
 
       // Add money to the wallet
@@ -647,14 +649,14 @@ exports.fetchWalletRechargeTransactions = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Wallet recharge transactions fetched successfully",
-      data : transactions
+      message: "Wallet transactions fetched successfully",
+      data : {creditTransaction:transactions,debitTransaction:[]}
     });
   } catch (error) {
-    console.error("Error fetching wallet recharge transactions:", error);
+    console.error("Error fetching Wallet transactions:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching wallet recharge transactions",
+      message: "Error fetching Wallet transactions",
       errorMessage: error.message,
     });
   }
