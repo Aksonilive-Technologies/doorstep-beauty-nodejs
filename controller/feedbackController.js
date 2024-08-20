@@ -15,15 +15,16 @@ const createFeedback = async (req, res) => {
 
   try {
     // Check if customer exists
-    const customer = await Customer.findById(id).lean();
+    const customer = await Customer.findById(id);
     if (!customer) {
       return res
         .status(404)
         .json({ success: false, message: "Customer not found" });
     }
 
+    console.log("customer", customer);
     // Validate required fields
-    if (!rating && !suggestedImprovement && review && rating) {
+    if (!rating && !suggestedImprovement && !review) {
       return res.status(400).json({
         success: false,
         message: "Please add atleast one field",
@@ -32,7 +33,8 @@ const createFeedback = async (req, res) => {
 
     // Create feedback
     const feedback = new Feedback({
-		customerId:id,
+      customerId:id,
+      customer: customer.toObject(),
       rating,
       review,
       suggestedImprovement,
@@ -70,7 +72,7 @@ const getAllFeedback = async (req, res) => {
     const totalFeedback = await Feedback.countDocuments();
 
     res.status(200).json({
-      message:"successfully retrived all the feedback",
+      message: "successfully retrived all the feedback",
       success: true,
       data: feedback,
       totalFeedback,
