@@ -27,6 +27,10 @@ const feedbackSchema = new mongoose.Schema(
       trim: true,
       maxlength: 1000, // Limit the suggestion length for consistency
     },
+    customer: {
+      type: Object, // Store the whole customer document as an object
+      required: true,
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
@@ -36,4 +40,3 @@ const feedbackSchema = new mongoose.Schema(
 const Feedback = mongoose.model("Feedback", feedbackSchema);
 //export the model
 module.exports = Feedback;
-
