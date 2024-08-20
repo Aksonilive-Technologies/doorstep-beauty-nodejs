@@ -29,23 +29,25 @@ const createComplaint = async (req, res) => {
 
     const customerExists = await Customer.findById(customerId);
     if (!customerExists) {
-      return res.status(404).json({ message: "Customer not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found." });
     }
 
     if (!customerExists.isActive) {
-      return res.status(401).json({ message: "Customer is inactive." });
+      return res.status(401).json({success:false,  message: "Customer is inactive." });
     }
 
     // Check for missing required fields
     for (let i = 0; i < requiredFields.length; i++) {
       if (!requiredFields[i].value) {
-        return res.status(400).json({ message: requiredFields[i].message });
+        return res.status(400).json({success:false,  message: requiredFields[i].message });
       }
     }
 
     // Check if customerId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({ message: "Invalid customerId." });
+      return res.status(400).json({success:false,  message: "Invalid customerId." });
     }
 
     // Create a new complaint instance
@@ -59,14 +61,16 @@ const createComplaint = async (req, res) => {
     const savedComplaint = await newComplaint.save();
 
     return res.status(201).json({
+      success: true,
       message: "Complaint created successfully",
-      complaint: savedComplaint,
+      data: savedComplaint,
     });
   } catch (error) {
     // Handle duplicate key errors (e.g., unique fields)
     if (error.code === 11000) {
       const duplicateField = Object.keys(error.keyValue)[0];
       return res.status(400).json({
+        success: false,
         message: `${
           duplicateField.charAt(0).toUpperCase() + duplicateField.slice(1)
         } already exists.`,
@@ -77,6 +81,7 @@ const createComplaint = async (req, res) => {
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((val) => val.message);
       return res.status(400).json({
+        success:false, 
         message: "Validation error",
         errors: messages,
       });
@@ -85,6 +90,7 @@ const createComplaint = async (req, res) => {
     // General error handling
     console.error("Error while creating complaint: ", error);
     return res.status(500).json({
+      success:false, 
       message: "An error occurred while creating the complaint.",
       error: error.message,
     });
@@ -105,6 +111,7 @@ const getAllComplaints = async (req, res) => {
     const totalComplaints = await Complaint.countDocuments();
 
     return res.status(200).json({
+      success: true,
       message: "Complaints retrieved successfully",
       complaints,
       pagination: {
@@ -115,6 +122,7 @@ const getAllComplaints = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
+      success:false, 
       message: "An error occurred while retrieving complaints.",
       error: error.message,
     });
@@ -124,10 +132,10 @@ const getAllComplaints = async (req, res) => {
 const resolvedComplaint = async (req, res) => {
   try {
     const { complaintId } = req.query;
-    const { adminId, resolutionComment } = req.body;
+    const { adminId, closingRemark } = req.body;
 
     // Manual validation for required fields
-    if (!resolutionComment) {
+    if (!closingRemark) {
       return res.status(400).json({
         success: false,
         message: "Resolution comment is required",
@@ -170,7 +178,7 @@ const resolvedComplaint = async (req, res) => {
 
     // Mark complaint as resolved and add resolution details
     complaint.resolved = true;
-    complaint.resolutionComment = resolutionComment;
+    complaint.closingRemark = closingRemark;
     complaint.resolvedBy = admin._id; // Assign the admin's ObjectId
 
     await complaint.save();
