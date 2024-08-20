@@ -454,9 +454,9 @@ exports.addMoneyToWallet = async (req, res) => {
     // Create a transaction record with status "Pending"
     const transaction = new Transaction({
       customerId: id,
-      transactionType: "Recharge Wallet",
+      transactionType: "recharge wallet",
       amount: Number(amount),
-      paymentGateway: "Wallet"
+      paymentGateway: "wallet"
     });
 
     // Save the transaction record
@@ -567,16 +567,16 @@ exports.updateTransactionStatus = async (req, res) => {
       });
     }
 
-    if (transactionRecord.status !== "Pending") {
+    if (transactionRecord.status !== "pending") {
       return res.status(400).json({
         success: false,
         message: `Transaction is already marked as ${transactionRecord.status}`,
       });
     }
 
-    if (status === "Success") {
+    if (status === "success") {
       // Update the transaction status to "Completed"
-      transactionRecord.status = "Completed";
+      transactionRecord.status = "completed";
       await transactionRecord.save();
 
       // Add money to the wallet
@@ -595,9 +595,9 @@ exports.updateTransactionStatus = async (req, res) => {
         message: `Transaction completed successfully. ₹${transactionRecord.amount} added to wallet.`,
         data :{Transaction: transactionRecord}
       });
-    } else if (status === "Failure") {
-      // Update the transaction status to "Failed"
-      transactionRecord.status = "Failed";
+    } else if (status === "failure") {
+      // Update the transaction status to "failed"
+      transactionRecord.status = "failed";
       await transactionRecord.save();
 
       return res.status(200).json({
@@ -634,7 +634,7 @@ exports.fetchWalletRechargeTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       customerId: id,
-      transactionType: "Recharge Wallet",
+      transactionType: "recharge wallet",
       isDeleted: false,
     }).sort({ createdAt: -1 });
 

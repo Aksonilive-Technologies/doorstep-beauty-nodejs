@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema(
     },
     transactionType: {
       type: String,
-      enum: ["Recharge Wallet", "Book Product using Wallet", "Book product using payment gateway"],
+      enum: ["recharge wallet", "book product using wallet", "book product using payment gateway"],
       required: true,
     },
     amount: {
@@ -18,7 +18,7 @@ const transactionSchema = new mongoose.Schema(
     },
     paymentGateway: {
       type: String,
-      enum: ["Cashfree", "Razorpay", "Wallet"],
+      enum: ["cashfree", "razorpay", "wallet"],
       required: true,
     },
     transactionRefId: {
@@ -27,7 +27,7 @@ const transactionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Completed", "Failed"],
+      enum: ["pending", "completed", "failed"],
       default: "Pending",
     },
     isDeleted: {
