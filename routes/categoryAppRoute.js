@@ -13,7 +13,7 @@ const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 router.get("/fetch/all", categoryController.getAllCategoriesCustomer);
 
 // Get a single category by ID
-// router.get("/fetch/single", categoryController.getCategoryById);
+router.get("/fetch/single", categoryController.getCategoryById);
 
 // Update a category by ID
 // router.put("/update/single", uploadSingleImage, categoryController.updateCategory);

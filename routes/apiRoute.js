@@ -33,7 +33,7 @@ const authorizationRoute = require("./authorizationRoute");
 //***************Customer Route************************ */
 
 app.use("/api/v1/customer/auth/otp", authorizationRoute);
-app.use("/api/v1/customer/category", require("./categoryRoute"));
+app.use("/api/v1/customer/category", require("./categoryAppRoute"));
 
 app.use("/api/v1/customer/product", require("./productRoute"));
 app.use("/api/v1/customer/order", require("./orderRoute"));
@@ -45,6 +45,7 @@ app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
 app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
 app.use("/api/v1/customer/complain", require("./customerComplaintRoute.js"));
 app.use("/api/v1/customer/membership", require("./membershipCustomerRoute.js"));
+app.use("/api/v1/customer/wallet", require("./customerRoute"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 

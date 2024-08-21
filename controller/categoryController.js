@@ -102,37 +102,26 @@ exports.getAllCategories = async (req, res) => {
 // need to modify
 exports.getAllCategoriesCustomer = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
+  
     // Find categories with pagination
-    const categories = await Category.find({isActive})
+    const categories = await Category.find({isActive: true, isDeleted: false})
       .select("-__v")
-      .sort({ position: 1 }) // Sort by position in ascending order
-      .skip(skip)
-      .limit(limit)
+      .sort({ position: 1 }) 
       .lean(); // Use lean for better performance
 
     // Populate each category with related products and packages
     for (const category of categories) {
-      const products = await Product.find({ categoryId: category._id }).select("-__v");
-      const packages = await Package.find({ categoryId: category._id }).select("-__v");
+      const products = await Product.find({ categoryId: category._id ,isDeleted: false,isActive: true}).limit(10).select("-__v");
+      const packages = await Package.find({ categoryId: category._id,isDeleted: false,isActive: true }).limit(10).select("-__v");
       category.products = products;
       category.packages = packages;
     }
-
-    // Get the total number of categories (for pagination info)
-    const totalCategories = await Category.countDocuments();
-    const totalPages = Math.ceil(totalCategories / limit);
+    
 
     res.status(200).json({
       success: true,
-      message: "Categories, products, and packages retrieved successfully",
+      message: "All Categories retrieved successfully",
       data: categories,
-      currentPage: page,
-      totalPages: totalPages,
-      totalCategories: totalCategories,
     });
   } catch (error) {
     console.error("Error fetching categories, products, and packages:", error);
@@ -147,14 +136,34 @@ exports.getAllCategoriesCustomer = async (req, res) => {
 
 // Get a single category by ID
 exports.getCategoryById = async (req, res) => {
-  const { id } = req.query;
+  const { id ,page = 1, limit = 10} = req.query;
 
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ID {id} is required",
+    });
+  }
+
+  // Calculate the number of products to skip based on the current page and limit
+  const skip = (page - 1) * limit;
   try {
-    const category = await Category.findById(id);
+    const category = await Category.find({_id: id, isActive: true, isDeleted: false}).lean().select("-__v");
+
+    if (category.length === 0 || category === null) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found or deleted or inactive temporarily",
+      });
+    }
+    const products = await Product.find({ categoryId: category[0]._id ,isDeleted: false,isActive: true}).limit(limit).skip(skip).select("-__v");
+    const packages = await Package.find({ categoryId: category[0]._id,isDeleted: false,isActive: true }).limit(limit).skip(skip).select("-__v");
+    category[0].products = products;
+    category[0].packages = packages;
     res.status(200).json({
       success: true,
-      message: "Category retrieved successfully",
-      data: category,
+      message: "Category product and package retrieved successfully",
+      data: category[0],
     });
   } catch (error) {
     console.error("Error fetching category:", error);
