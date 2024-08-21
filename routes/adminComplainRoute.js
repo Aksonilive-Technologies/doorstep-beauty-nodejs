@@ -7,7 +7,7 @@ const {
 } = require("../controller/customerComplainController.js");
 const router = express.Router();
 
-router.post("/create", createComplaint);
+// router.post("/create", createComplaint);
 router.get("/all", getAllComplaints);
 router.put("/resolved", resolvedComplaint);
 module.exports = router;

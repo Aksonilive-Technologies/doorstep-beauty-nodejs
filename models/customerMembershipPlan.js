@@ -1,4 +1,3 @@
-//has to be approve
 const mongoose = require("mongoose");
 
 const planSchema = new mongoose.Schema(
@@ -19,15 +18,7 @@ const planSchema = new mongoose.Schema(
     },
     expiryDate: {
       type: Date,
-      // Automatically calculate expiry date based on membership tenure
-      default: async function () {
-        const membership = await mongoose.model("Membership").findById(this.membership);
-        if (membership) {
-          const tenureInMs = calculateTenureInMs(membership.tenure, membership.membershipType);
-          return new Date(this.createdAt.getTime() + tenureInMs);
-        }
-        return null;
-      },
+      default: null, // Will be calculated after the document is created
     },
     isActive: {
       type: Boolean,
@@ -44,11 +35,11 @@ const planSchema = new mongoose.Schema(
 );
 
 // Helper function to calculate tenure in milliseconds
-function calculateTenureInMs(tenure, membershipType) {
-  switch (membershipType) {
+function calculateTenureInMs(tenure, tenureType) {
+  switch (tenureType) {
     case "month":
       return tenure * 30 * 24 * 60 * 60 * 1000; // Convert months to milliseconds
-    case "weekly":
+    case "week":
       return tenure * 7 * 24 * 60 * 60 * 1000; // Convert weeks to milliseconds
     case "year":
       return tenure * 365 * 24 * 60 * 60 * 1000; // Convert years to milliseconds
@@ -56,6 +47,23 @@ function calculateTenureInMs(tenure, membershipType) {
       return 0;
   }
 }
+
+// Middleware to calculate expiryDate after the document is created
+planSchema.pre("save", async function (next) {
+  if (!this.expiryDate) {
+    const membership = await mongoose
+      .model("Membership")
+      .findById(this.membership);
+    if (membership) {
+      const tenureInMs = calculateTenureInMs(
+        membership.tenure,
+        membership.tenureType
+      );
+      this.expiryDate = new Date(this.createdAt.getTime() + tenureInMs);
+    }
+  }
+  next();
+});
 
 // Middleware to check if the plan has expired and set isValid and isActive
 planSchema.post("save", function (doc, next) {
