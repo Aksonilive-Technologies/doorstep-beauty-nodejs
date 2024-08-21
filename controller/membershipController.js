@@ -4,7 +4,7 @@ const Membership = require("../models/membershipModel.js");
 
 const createMembership = async (req, res) => {
   try {
-    const requiredFields = ["tenure", "price"];
+    const requiredFields = ["tenure", "tenureType", "price"];
     const missingFields = requiredFields.filter(
       (field) => !req.body[field] || req.body[field] === null
     );

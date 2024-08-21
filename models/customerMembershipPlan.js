@@ -61,7 +61,7 @@ function calculateTenureInMs(tenure, membershipType) {
 planSchema.post("save", function (doc, next) {
   if (doc.expiryDate && doc.expiryDate < Date.now()) {
     doc.isValid = false;
-    doc.isActive = false;
+    // doc.isActive = false;
     doc.save(); // Ensure that the changes are saved after middleware runs
   }
   next();

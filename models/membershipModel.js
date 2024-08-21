@@ -7,10 +7,10 @@ const membershipSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    membershipType: {
+    tenureType: {
       type: String,
       required: true,
-      enum: ["month", "weekly", "year"],
+      enum: ["month", "week", "year"],
     },
     price: {
       type: Number,
@@ -21,9 +21,9 @@ const membershipSchema = new mongoose.Schema(
       type: Number,
       min: [0, "Discounted price cannot be negative"],
     },
-    discountedPercentage: {
+    discountPercentage: {
       type: Number,
-      min: [0, "Discounted percentage cannot be negative"],
+      min: [0, "Discount percentage cannot be negative"],
     },
     isActive: {
       type: Boolean,
