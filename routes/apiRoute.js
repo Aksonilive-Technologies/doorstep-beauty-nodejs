@@ -43,6 +43,8 @@ app.use("/api/v1/customer/address", require("./customerAddressRoute"));
 app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
 app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
 app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
+app.use("/api/v1/customer/complain", require("./customerComplaintRoute.js"));
+app.use("/api/v1/customer/membership", require("./membershipCustomerRoute.js"));
 app.use("/api/v1/customer/wallet", require("./customerRoute"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
@@ -74,7 +76,7 @@ app.use("/api/v1/admin/package", require("./packageAdminRoute.js"));
 app.use("/api/v1/admin/membership", require("./membershipRoute.js"));
 
 //**************complain Apis************************ */
-app.use("/api/v1/admin/complain", require("./customerComplainRoute.js"));
+app.use("/api/v1/admin/complain", require("./adminComplainRoute.js"));
 
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/feedback", require("./feedbackRoute.js"));

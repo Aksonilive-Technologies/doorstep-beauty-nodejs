@@ -138,7 +138,7 @@ const resolvedComplaint = async (req, res) => {
     if (!closingRemark) {
       return res.status(400).json({
         success: false,
-        message: "Resolution comment is required",
+        message: "closing remark is required",
       });
     }
 
