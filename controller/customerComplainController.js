@@ -105,7 +105,7 @@ const getAllComplaints = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Retrieve complaints with pagination
-    const complaints = await Complaint.find().skip(skip).limit(limit);
+    const data = await Complaint.find().skip(skip).limit(limit);
 
     // Get total count of complaints
     const totalComplaints = await Complaint.countDocuments();
@@ -113,7 +113,7 @@ const getAllComplaints = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Complaints retrieved successfully",
-      complaints,
+      data,
       pagination: {
         totalComplaints,
         currentPage: page,
