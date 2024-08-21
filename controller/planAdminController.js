@@ -1,0 +1,120 @@
+const Customer = require("../models/customerModel.js");
+const Membership = require("../models/membershipModel.js");
+const Plan = require("../models/customerMembershipPlan.js"); // Assuming this is the correct path for your Plan model
+
+exports.buyMembershipPlan = async (req, res) => {
+  const { customerId } = req.query;
+
+  try {
+    // Find the customer by ID
+    const customer = await Customer.findById(customerId);
+
+    // Check if customer exists
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
+    }
+
+    // Check if customer is active and not deleted
+    if (!customer.isActive || customer.isDeleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer is not eligible for membership",
+      });
+    }
+
+    const { membershipId } = req.body;
+
+    // Find the membership by ID
+    const membership = await Membership.findById(membershipId);
+
+    // Check if membership exists
+    if (!membership) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Membership not found" });
+    }
+
+    // Assuming there's a field to store the membership ID in the customer model
+    // customer.membership = membership._id;
+    // await customer.save();
+
+    // Create a new membership plan
+    const newPlan = new Plan({
+      customer,
+      membership,
+    });
+
+    // Save the new plan to the database
+    await newPlan.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Membership plan created successfully",
+      plan: newPlan,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "error while buying membership",
+      error: error.message,
+    });
+  }
+};
+
+exports.getPlansByCustomerId = async (req, res) => {
+  const { customerId } = req.query;
+  const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+  const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
+
+  try {
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Find all plans associated with the customerId that are valid, active, and not deleted
+    const plans = await Plan.find({
+      customer: customerId,
+      isValid: true,
+      isActive: true,
+      isDeleted: false,
+    })
+      .populate("membership")
+      .skip(skip)
+      .limit(limit);
+
+    // Count the total number of matching documents
+    const totalPlans = await Plan.countDocuments({
+      customer: customerId,
+      isValid: true,
+      isActive: true,
+      isDeleted: false,
+    });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalPlans / limit);
+
+    // Check if any plans were found
+    if (!plans.length) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "No valid plans found for this customer.",
+        });
+    }
+
+    return res.status(200).json({
+      success: true,
+      plans,
+      pagination: {
+        totalPlans,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

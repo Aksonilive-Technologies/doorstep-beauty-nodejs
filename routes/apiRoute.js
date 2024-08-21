@@ -44,6 +44,7 @@ app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
 app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
 app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
 app.use("/api/v1/customer/complain", require("./customerComplaintRoute.js"));
+app.use("/api/v1/customer/membership", require("./membershipCustomerRoute.js"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
