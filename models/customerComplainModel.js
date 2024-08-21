@@ -25,7 +25,8 @@ const customerComplaintSchema = new mongoose.Schema(
       ref: "Admin",
       default: null,
     },
-    resolutionComment: {
+    // resolutionComment
+    closingRemark: {
       type: String,
       trim: true,
     },
