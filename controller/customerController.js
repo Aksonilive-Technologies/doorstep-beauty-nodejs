@@ -670,21 +670,22 @@ exports.fetchWalletTransactions = async (req, res) => {
       });
     }
 
-    const creditTransactions = transactions.filter(
-      (transaction) => transaction.transactionType === "recharge_wallet"
-    );
+    // const creditTransactions = transactions.filter(
+    //   (transaction) => transaction.transactionType === "recharge_wallet"
+    // );
 
-    const debitTransactions = transactions.filter(
-      (transaction) => transaction.transactionType === "wallet_booking"
-    );
+    // const debitTransactions = transactions.filter(
+    //   (transaction) => transaction.transactionType === "wallet_booking"
+    // );
 
     res.status(200).json({
       success: true,
       message: "Wallet transactions fetched successfully",
-      data: {
-        credit: creditTransactions,
-        debit: debitTransactions,
-      },
+      // data: {
+      //   credit: creditTransactions,
+      //   debit: debitTransactions,
+      // },
+      data: transactions,
     });
   } catch (error) {
     console.error("Error fetching wallet transactions:", error);
