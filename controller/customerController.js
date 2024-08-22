@@ -592,7 +592,7 @@ exports.updateTransactionStatus = async (req, res) => {
       });
     }
 
-    if (status === "success") {
+    if (status === "completed") {
       // Update the transaction status to "Completed"
       transactionRecord.status = "completed";
       transactionRecord.transactionRefId = paymentGatewayId;
@@ -616,10 +616,10 @@ exports.updateTransactionStatus = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: `Transaction completed successfully. ₹${transactionRecord.amount} added to wallet.`,
+        message: `Transaction updated successfully. ₹${transactionRecord.amount} added to wallet.`,
         data: { Transaction: transactionRecord },
       });
-    } else if (status === "failure") {
+    } else if (status === "failed") {
       // Update the transaction status to "failed"
       transactionRecord.status = "failed";
       await transactionRecord.save();
