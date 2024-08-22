@@ -1,0 +1,37 @@
+name: Auto Delete Branch
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  delete-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is merged
+        if: github.event.pull_request.merged == true
+        run: echo "PR is merged"
+
+      - name: Checkout Repository
+        if: github.event.pull_request.merged == true
+        uses: actions/checkout@v3
+
+      - name: Configure Git User
+        if: github.event.pull_request.merged == true
+        run: |
+          git config --global user.name "Ashutosh Kumar"
+          git config --global user.email "ashutosh.soni2505@gmail.com"
+
+      - name: Delete Merged Branch
+        if: github.event.pull_request.merged == true
+        run: |
+          BRANCH_TO_DELETE=$(echo $GITHUB_HEAD_REF)
+          if [ "$BRANCH_TO_DELETE" != "beta" ] && [ "$BRANCH_TO_DELETE" != "main" ] && [ "$BRANCH_TO_DELETE" != "production" ]; then
+            git push origin --delete $BRANCH_TO_DELETE
+            echo "Branch $BRANCH_TO_DELETE has been deleted."
+          else
+            echo "Branch $BRANCH_TO_DELETE is protected and will not be deleted."
+          fi
