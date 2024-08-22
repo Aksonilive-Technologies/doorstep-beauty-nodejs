@@ -23,7 +23,7 @@ const transactionSchema = new mongoose.Schema(
     },
     transactionRefId: {
       type: String,
-      default: "NA"
+      default: null,
     },
     status: {
       type: String,
