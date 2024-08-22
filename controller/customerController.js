@@ -17,6 +17,7 @@ const validateUserInput = (name, email, mobile) => {
   return null;
 };
 
+
 exports.register = async (req, res) => {
   const { name, email, mobile } = req.body;
 
