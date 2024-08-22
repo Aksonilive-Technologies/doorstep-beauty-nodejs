@@ -47,7 +47,7 @@ exports.createAddress = async (req, res) => {
       customer: customerId,
       address,
       addressType,
-      isPrimary: primaryStatus || false, // Use the computed primary status
+      isPrimary: primaryStatus || false, 
     });
 
     const savedAddress = await newAddress.save();
