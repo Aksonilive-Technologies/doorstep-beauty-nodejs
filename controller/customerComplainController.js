@@ -35,24 +35,30 @@ const createComplaint = async (req, res) => {
     }
 
     if (!customerExists.isActive) {
-      return res.status(401).json({success:false,  message: "Customer is inactive." });
+      return res
+        .status(401)
+        .json({ success: false, message: "Customer is inactive." });
     }
 
     // Check for missing required fields
     for (let i = 0; i < requiredFields.length; i++) {
       if (!requiredFields[i].value) {
-        return res.status(400).json({success:false,  message: requiredFields[i].message });
+        return res
+          .status(400)
+          .json({ success: false, message: requiredFields[i].message });
       }
     }
 
     // Check if customerId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({success:false,  message: "Invalid customerId." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid customerId." });
     }
 
     // Create a new complaint instance
     const newComplaint = new Complaint({
-      customerId,
+      customerId: customerExists,
       description, // Using correct field name
       complaintCategory,
     });
@@ -81,7 +87,7 @@ const createComplaint = async (req, res) => {
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((val) => val.message);
       return res.status(400).json({
-        success:false, 
+        success: false,
         message: "Validation error",
         errors: messages,
       });
@@ -90,7 +96,7 @@ const createComplaint = async (req, res) => {
     // General error handling
     console.error("Error while creating complaint: ", error);
     return res.status(500).json({
-      success:false, 
+      success: false,
       message: "An error occurred while creating the complaint.",
       error: error.message,
     });
@@ -104,8 +110,11 @@ const getAllComplaints = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Retrieve complaints with pagination
-    const data = await Complaint.find().skip(skip).limit(limit);
+    // Retrieve complaints with pagination and populate customer details
+    const data = await Complaint.find()
+      .skip(skip)
+      .limit(limit)
+      .populate("customerId"); // Populates the customer details using customerId
 
     // Get total count of complaints
     const totalComplaints = await Complaint.countDocuments();
@@ -113,7 +122,7 @@ const getAllComplaints = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Complaints retrieved successfully",
-      data,
+      data, // Data now includes populated customer details
       pagination: {
         totalComplaints,
         currentPage: page,
@@ -122,7 +131,7 @@ const getAllComplaints = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      success:false, 
+      success: false,
       message: "An error occurred while retrieving complaints.",
       error: error.message,
     });
