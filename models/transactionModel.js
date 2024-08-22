@@ -28,7 +28,7 @@ const transactionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["pending", "completed", "failed"],
-      default: "Pending",
+      default: "pending",
     },
     isDeleted: {
       type: Boolean,

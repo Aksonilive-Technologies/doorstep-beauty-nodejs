@@ -134,7 +134,7 @@ exports.getAllCustomers = async (req, res) => {
 
 exports.updateCustomer = async (req, res) => {
   const { id, name, email, mobile } = req.body;
-  const file = req.file;  // Accessing the file from req.file
+  const file = req.file; // Accessing the file from req.file
 
   console.log("Request received with body:", req.body);
   console.log("File received:", file);
@@ -194,7 +194,7 @@ exports.updateCustomer = async (req, res) => {
           overwrite: true,
         });
         console.log("Image uploaded successfully:", result.secure_url);
-        updateFields.image = result.secure_url;  // Add the image URL to the updateFields object
+        updateFields.image = result.secure_url; // Add the image URL to the updateFields object
       } catch (error) {
         console.error("Error uploading image to Cloudinary:", error.message);
         return res.status(500).json({
@@ -235,8 +235,6 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
-
-
 
 //delete customer
 exports.deleteCustomer = async (req, res) => {
@@ -431,7 +429,7 @@ exports.checkExistance = async (req, res) => {
 
 // Add money to wallet
 exports.addMoneyToWallet = async (req, res) => {
-  const { id, amount ,paymentGateway } = req.body;
+  const { id, amount, paymentGateway } = req.body;
 
   if (!id || !amount || !paymentGateway) {
     return res.status(400).json({
@@ -442,12 +440,17 @@ exports.addMoneyToWallet = async (req, res) => {
 
   try {
     // Find the customer
-    const customerRecord = await Customer.findOne({ _id: id, isActive: true, isDeleted: false });
+    const customerRecord = await Customer.findOne({
+      _id: id,
+      isActive: true,
+      isDeleted: false,
+    });
 
     if (!customerRecord) {
       return res.status(404).json({
         success: false,
-        message: "Customer not found, may be deleted or deactivated temporarily",
+        message:
+          "Customer not found, may be deleted or deactivated temporarily",
       });
     }
 
@@ -456,7 +459,7 @@ exports.addMoneyToWallet = async (req, res) => {
       customerId: id,
       transactionType: "recharge_wallet",
       amount: Number(amount),
-      paymentGateway: paymentGateway
+      paymentGateway: paymentGateway,
     });
 
     // Save the transaction record
@@ -465,7 +468,7 @@ exports.addMoneyToWallet = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `₹${amount} recharge initiated for ${customerRecord.name}'s wallet.`,
-      data: {Transaction:transaction}, 
+      data: { Transaction: transaction },
     });
   } catch (error) {
     console.error("Error adding money to wallet:", error);
@@ -489,7 +492,11 @@ exports.debitMoneyFromWallet = async (req, res) => {
   }
 
   try {
-    const customer = await Customer.findOne({ _id: id , isActive: true, isDeleted: false });
+    const customer = await Customer.findOne({
+      _id: id,
+      isActive: true,
+      isDeleted: false,
+    });
 
     if (!customerRecord || customer.length === 0 || customer === null) {
       return res.status(404).json({
@@ -497,7 +504,6 @@ exports.debitMoneyFromWallet = async (req, res) => {
         message: "Customer not found,may be deleted or deactivated temporarily",
       });
     }
-
 
     if (customer.walletBalance < amount) {
       return res.status(400).json({
@@ -525,21 +531,30 @@ exports.debitMoneyFromWallet = async (req, res) => {
 
 exports.getWalletBalance = async (req, res) => {
   try {
-    const {id} = req.body;
+    const { id } = req.body;
 
     if (!id) {
-      return res.status(400).json({ success : false, message: "Customer ID {id} is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Customer ID {id} is required" });
     }
-    const customer = await Customer.findOne({ _id: id, isActive: true, isDeleted: false });
+    const customer = await Customer.findOne({
+      _id: id,
+      isActive: true,
+      isDeleted: false,
+    });
 
     if (!customer) {
-      return res.status(404).json({ success : false, message: "Customer not found,may be deleted or deactivated temporarily" });
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found,may be deleted or deactivated temporarily",
+      });
     }
 
     return res.status(200).json({
-      success:true,
+      success: true,
       message: "Wallet balance fetched successfully",
-      data: {Balance : customer.walletBalance},
+      data: { Balance: customer.walletBalance },
     });
   } catch (error) {
     console.error("Error fetching wallet balance:", error);
@@ -548,7 +563,7 @@ exports.getWalletBalance = async (req, res) => {
 };
 
 exports.updateTransactionStatus = async (req, res) => {
-  const { transactionId, status ,paymentGatewayId } = req.body;
+  const { transactionId, status, paymentGatewayId } = req.body;
 
   if (!transactionId || !status) {
     return res.status(400).json({
@@ -559,12 +574,14 @@ exports.updateTransactionStatus = async (req, res) => {
 
   try {
     const transactionRecord = await Transaction.findOne({
-      _id: transactionId,isDeleted: false});
+      _id: transactionId,
+      isDeleted: false,
+    });
 
     if (!transactionRecord) {
       return res.status(404).json({
         success: false,
-        message: "Transaction not found with given ID"+transactionId,
+        message: "Transaction not found with given ID" + transactionId,
       });
     }
 
@@ -575,18 +592,23 @@ exports.updateTransactionStatus = async (req, res) => {
       });
     }
 
-    if (status === "success") {
+    if (status === "completed") {
       // Update the transaction status to "Completed"
       transactionRecord.status = "completed";
-      transactionRecord.transactionRefId=paymentGatewayId;
+      transactionRecord.transactionRefId = paymentGatewayId;
       await transactionRecord.save();
 
       // Add money to the wallet
-      const customerRecord = await Customer.findOne({_id:transactionRecord.customerId,isDeleted: false, isActive: true});
-      if(!customerRecord){
+      const customerRecord = await Customer.findOne({
+        _id: transactionRecord.customerId,
+        isDeleted: false,
+        isActive: true,
+      });
+      if (!customerRecord) {
         return res.status(404).json({
           success: false,
-          message: "Customer not found,may be deleted or deactivated temporarily",
+          message:
+            "Customer not found,may be deleted or deactivated temporarily",
         });
       }
       customerRecord.walletBalance += transactionRecord.amount;
@@ -594,10 +616,10 @@ exports.updateTransactionStatus = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: `Transaction completed successfully. ₹${transactionRecord.amount} added to wallet.`,
-        data :{Transaction: transactionRecord}
+        message: `Transaction updated successfully. ₹${transactionRecord.amount} added to wallet.`,
+        data: { Transaction: transactionRecord },
       });
-    } else if (status === "failure") {
+    } else if (status === "failed") {
       // Update the transaction status to "failed"
       transactionRecord.status = "failed";
       await transactionRecord.save();
@@ -605,7 +627,7 @@ exports.updateTransactionStatus = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Transaction marked as failed. No money added to wallet.",
-        data :{Transaction: transactionRecord}
+        data: { Transaction: transactionRecord },
       });
     } else {
       return res.status(400).json({
@@ -623,7 +645,7 @@ exports.updateTransactionStatus = async (req, res) => {
   }
 };
 
-exports.fetchWalletRechargeTransactions = async (req, res) => {
+exports.fetchWalletTransactions = async (req, res) => {
   const { id } = req.body;
 
   if (!id) {
@@ -636,27 +658,39 @@ exports.fetchWalletRechargeTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       customerId: id,
-      transactionType: "recharge wallet",
+      transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
+      status: "completed",
       isDeleted: false,
     }).sort({ createdAt: -1 });
 
     if (!transactions || transactions.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No wallet recharge transactions found for this customer",
+        message: "No wallet transactions found for this customer",
       });
     }
+
+    const creditTransactions = transactions.filter(
+      (transaction) => transaction.transactionType === "recharge_wallet"
+    );
+
+    const debitTransactions = transactions.filter(
+      (transaction) => transaction.transactionType === "wallet_booking"
+    );
 
     res.status(200).json({
       success: true,
       message: "Wallet transactions fetched successfully",
-      data : {creditTransaction:transactions,debitTransaction:[]}
+      data: {
+        credit: creditTransactions,
+        debit: debitTransactions,
+      },
     });
   } catch (error) {
-    console.error("Error fetching Wallet transactions:", error);
+    console.error("Error fetching wallet transactions:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching Wallet transactions",
+      message: "Error fetching wallet transactions",
       errorMessage: error.message,
     });
   }
