@@ -3,7 +3,6 @@ const { cloudinary } = require("../config/cloudinary.js");
 const Product = require("../models/productModel.js");
 const Package = require("../models/packageModel.js");
 
-
 // Create a new category
 exports.createCategory = async (req, res) => {
   const { name, image, position } = req.body;
@@ -36,17 +35,17 @@ exports.createCategory = async (req, res) => {
     }
 
     // Create and save the new category
-        // Upload the image to Cloudinary if a file is present
-        let imageUrl;
-        if (req.file) {
-          const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: "category",
-            public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
-            overwrite: true,
-          });
-          imageUrl = result.secure_url;
-        }
-    const category = new Category({ name, image:imageUrl, position });
+    // Upload the image to Cloudinary if a file is present
+    let imageUrl;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "category",
+        public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    }
+    const category = new Category({ name, image: imageUrl, position });
     await category.save();
 
     res.status(201).json({
@@ -102,21 +101,31 @@ exports.getAllCategories = async (req, res) => {
 // need to modify
 exports.getAllCategoriesCustomer = async (req, res) => {
   try {
-  
     // Find categories with pagination
-    const categories = await Category.find({isActive: true, isDeleted: false})
+    const categories = await Category.find({ isActive: true, isDeleted: false })
       .select("-__v")
-      .sort({ position: 1 }) 
+      .sort({ position: 1 })
       .lean(); // Use lean for better performance
 
     // Populate each category with related products and packages
     for (const category of categories) {
-      const products = await Product.find({ categoryId: category._id ,isDeleted: false,isActive: true}).limit(10).select("-__v");
-      const packages = await Package.find({ categoryId: category._id,isDeleted: false,isActive: true }).limit(10).select("-__v");
+      const products = await Product.find({
+        categoryId: category._id,
+        isDeleted: false,
+        isActive: true,
+      })
+        .limit(10)
+        .select("-__v");
+      const packages = await Package.find({
+        categoryId: category._id,
+        isDeleted: false,
+        isActive: true,
+      })
+        .limit(10)
+        .select("-__v");
       category.products = products;
       category.packages = packages;
     }
-    
 
     res.status(200).json({
       success: true,
@@ -133,37 +142,100 @@ exports.getAllCategoriesCustomer = async (req, res) => {
   }
 };
 
-
 // Get a single category by ID
 exports.getCategoryById = async (req, res) => {
-  const { id ,page = 1, limit = 10} = req.query;
+  const { id, page = 1, limit = 10 } = req.query;
 
   if (!id) {
     return res.status(400).json({
       success: false,
-      message: "Category ID {id} is required",
+      message: "Category ID is required",
     });
   }
 
-  // Calculate the number of products to skip based on the current page and limit
+  // Calculate the number of products/packages to skip based on the current page and limit
   const skip = (page - 1) * limit;
-  try {
-    const category = await Category.find({_id: id, isActive: true, isDeleted: false}).lean().select("-__v");
 
-    if (category.length === 0 || category === null) {
+  try {
+    // Fetch the category
+    const category = await Category.findOne({
+      _id: id,
+      isActive: true,
+      isDeleted: false,
+    })
+      .lean()
+      .select("-__v");
+
+    if (!category) {
       return res.status(404).json({
         success: false,
         message: "Category not found or deleted or inactive temporarily",
       });
     }
-    const products = await Product.find({ categoryId: category[0]._id ,isDeleted: false,isActive: true}).limit(limit).skip(skip).select("-__v");
-    const packages = await Package.find({ categoryId: category[0]._id,isDeleted: false,isActive: true }).limit(limit).skip(skip).select("-__v");
-    category[0].products = products;
-    category[0].packages = packages;
+
+    // Fetch products and packages for the category
+    const [products, packages] = await Promise.all([
+      Product.find({
+        categoryId: category._id,
+        isDeleted: false,
+        isActive: true,
+      })
+        .skip(skip)
+        .limit(limit)
+        .select("-__v"),
+      Package.find({
+        categoryId: category._id,
+        isDeleted: false,
+        isActive: true,
+      })
+        .skip(skip)
+        .limit(limit)
+        .select("-__v"),
+    ]);
+
+    // Count total number of products and packages
+    const [totalProducts, totalPackages] = await Promise.all([
+      Product.countDocuments({
+        categoryId: category._id,
+        isDeleted: false,
+        isActive: true,
+      }),
+      // Package.countDocuments({
+      //   categoryId: category._id,
+      //   isDeleted: false,
+      //   isActive: true,
+      // }),
+    ]);
+
+    // Calculate total pages for products and packages
+    const totalPagesProducts = Math.ceil(totalProducts / limit);
+    // const totalPagesPackages = Math.ceil(totalPackages / limit);
+
+    // Add pagination information
+    category.products = {
+      data: products,
+      pagination: {
+        totalItems: totalProducts,
+        totalPages: totalPagesProducts,
+        currentPage: page,
+        pageSize: limit,
+      },
+    };
+
+    // category.packages = {
+    //   data: packages,
+    //   pagination: {
+    //     totalItems: totalPackages,
+    //     totalPages: totalPagesPackages,
+    //     currentPage: page,
+    //     pageSize: limit,
+    //   },
+    // };
+
     res.status(200).json({
       success: true,
-      message: "Category product and package retrieved successfully",
-      data: category[0],
+      message: "Category products and packages retrieved successfully",
+      data: category,
     });
   } catch (error) {
     console.error("Error fetching category:", error);
@@ -177,7 +249,7 @@ exports.getCategoryById = async (req, res) => {
 
 // Update a category by ID
 exports.updateCategory = async (req, res) => {
-  const { id } = req.query;  // Using query parameters instead of params
+  const { id } = req.query; // Using query parameters instead of params
   const updates = req.body;
 
   try {
@@ -194,10 +266,10 @@ exports.updateCategory = async (req, res) => {
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "category",
-        public_id: `${Date.now()}_${req.file.originalname.split('.')[0]}`,
+        public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
-      updates.image = result.secure_url;  // Add the image URL to the updates
+      updates.image = result.secure_url; // Add the image URL to the updates
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(id, updates, {
@@ -225,7 +297,6 @@ exports.updateCategory = async (req, res) => {
     });
   }
 };
-
 
 // Soft delete a category by ID
 exports.deleteCategory = async (req, res) => {
