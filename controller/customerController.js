@@ -4,6 +4,8 @@ const generateCode = require("../helper/generateCode.js");
 const generateRandomCode = require("../helper/generateCode.js");
 const { cloudinary } = require("../config/cloudinary");
 const Transaction = require("../models/transactionModel.js");
+const Plan = require("../models/customerMembershipPlan.js");
+const Membership = require("../models/membershipModel.js");
 //Create Register
 const validateUserInput = (name, email, mobile) => {
   if (!name) return "Please fill the name field";
@@ -16,7 +18,6 @@ const validateUserInput = (name, email, mobile) => {
 
   return null;
 };
-
 
 exports.register = async (req, res) => {
   const { name, email, mobile } = req.body;
@@ -693,6 +694,82 @@ exports.fetchWalletTransactions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching wallet transactions",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.updateMembershipTransactionStatus = async (req, res) => {
+  const { transactionId, status, paymentGatewayId, membershipId } = req.body;
+
+  if (!transactionId || !status) {
+    return res.status(400).json({
+      success: false,
+      message: "Transaction ID and status are required",
+    });
+  }
+
+  try {
+    const transactionRecord = await Transaction.findOne({
+      _id: transactionId,
+      isDeleted: false,
+    });
+
+    // const membership = await M
+
+    if (!transactionRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found with given ID" + transactionId,
+      });
+    }
+
+    if (transactionRecord.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: `Transaction is already marked as ${transactionRecord.status}`,
+      });
+    }
+
+    if (status === "completed") {
+      // Update the transaction status to "Completed"
+      transactionRecord.status = "completed";
+      transactionRecord.transactionRefId = paymentGatewayId;
+      await transactionRecord.save();
+
+      const plan = new Plan({
+        customer: transactionRecord.customerId,
+        membership: membershipId,
+      });
+
+      await plan.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Transaction updated successfully, membership plan purchased successfully.`,
+        data: { Transaction: transactionRecord },
+      });
+    } else if (status === "failed") {
+      // Update the transaction status to "failed"
+      transactionRecord.status = "failed";
+      await transactionRecord.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Transaction marked as failed, no plan purchased.",
+        data: { Transaction: transactionRecord },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value",
+      });
+    }
+  } catch (error) {
+    console.error("Error updating transaction status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating transaction status",
       errorMessage: error.message,
     });
   }

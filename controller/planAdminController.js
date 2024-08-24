@@ -1,6 +1,7 @@
 const Customer = require("../models/customerModel.js");
 const Membership = require("../models/membershipModel.js");
 const Plan = require("../models/customerMembershipPlan.js"); // Assuming this is the correct path for your Plan model
+const Transaction = require("../models/transactionModel.js");
 
 exports.buyMembershipPlan = async (req, res) => {
   const { customerId } = req.query;
@@ -24,7 +25,7 @@ exports.buyMembershipPlan = async (req, res) => {
       });
     }
 
-    const { membershipId } = req.body;
+    const { membershipId, paymentGateway } = req.body;
 
     // Find the membership by ID
     const membership = await Membership.findById(membershipId);
@@ -36,31 +37,70 @@ exports.buyMembershipPlan = async (req, res) => {
         .json({ success: false, message: "Membership not found" });
     }
 
-    // Assuming there's a field to store the membership ID in the customer model
-    // customer.membership = membership._id;
-    // await customer.save();
+    // Check if customer is active and not deleted
+    if (!membership.isActive || membership.isDeleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Membership not found.",
+      });
+    }
 
-    // Create a new membership plan
-    const newPlan = new Plan({
-      customer,
-      membership,
+    console.log(membership);
+
+    // Create a transaction record with status "Pending"
+    const transaction = new Transaction({
+      customerId: customerId,
+      transactionType: "membership_plan_purchase",
+      amount: membership.discountedPrice,
+      paymentGateway: paymentGateway,
     });
 
-    // Save the new plan to the database
-    await newPlan.save();
+    // Save the transaction record
+    await transaction.save();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Membership plan created successfully",
-      plan: newPlan,
+      message: `₹${membership.discountedPrice} transaction initiated by ${
+        customer.name
+      } for ${
+        membership.tenure + " " + membership.tenureType
+      } membership plan purchase.`,
+      data: { Transaction: transaction },
     });
   } catch (error) {
-    return res.status(500).json({
+    console.error("Error whilte purchasing membership plan :", error);
+    res.status(500).json({
       success: false,
-      message: "error while buying membership",
-      error: error.message,
+      message: "Error whilte purchasing membership plan.",
+      errorMessage: error.message,
     });
   }
+
+  // Assuming there's a field to store the membership ID in the customer model
+  // customer.membership = membership._id;
+  // await customer.save();
+
+  //   // Create a new membership plan
+  //   const newPlan = new Plan({
+  //     customer,
+  //     membership,
+  //   });
+
+  //   // Save the new plan to the database
+  //   await newPlan.save();
+
+  //   return res.status(200).json({
+  //     success: true,
+  //     message: "Membership plan created successfully",
+  //     plan: newPlan,
+  //   });
+  // } catch (error) {
+  //   return res.status(500).json({
+  //     success: false,
+  //     message: "error while buying membership",
+  //     error: error.message,
+  //   });
+  // }
 };
 
 exports.getPlansByCustomerId = async (req, res) => {
@@ -96,12 +136,10 @@ exports.getPlansByCustomerId = async (req, res) => {
 
     // Check if any plans were found
     if (!plans.length) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "No valid plans found for this customer.",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "No valid plans found for this customer.",
+      });
     }
 
     return res.status(200).json({
