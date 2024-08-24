@@ -75,6 +75,6 @@ planSchema.post("save", function (doc, next) {
   next();
 });
 
-const Plan = mongoose.model("Plan", planSchema);
+const PlanPurchaseHistory = mongoose.model("PlanPurchaseHistory", planSchema);
 
-module.exports = Plan;
+module.exports = PlanPurchaseHistory;

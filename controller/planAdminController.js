@@ -68,46 +68,22 @@ exports.buyMembershipPlan = async (req, res) => {
       data: { Transaction: transaction },
     });
   } catch (error) {
-    console.error("Error whilte purchasing membership plan :", error);
+    console.error("Error while purchasing membership plan :", error);
     res.status(500).json({
       success: false,
-      message: "Error whilte purchasing membership plan.",
+      message: "Error while purchasing membership plan.",
       errorMessage: error.message,
     });
   }
-
-  // Assuming there's a field to store the membership ID in the customer model
-  // customer.membership = membership._id;
-  // await customer.save();
-
-  //   // Create a new membership plan
-  //   const newPlan = new Plan({
-  //     customer,
-  //     membership,
-  //   });
-
-  //   // Save the new plan to the database
-  //   await newPlan.save();
-
-  //   return res.status(200).json({
-  //     success: true,
-  //     message: "Membership plan created successfully",
-  //     plan: newPlan,
-  //   });
-  // } catch (error) {
-  //   return res.status(500).json({
-  //     success: false,
-  //     message: "error while buying membership",
-  //     error: error.message,
-  //   });
-  // }
 };
 
 exports.getPlansByCustomerId = async (req, res) => {
   const { customerId } = req.query;
   const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
-
+  console.log("custrmerID", customerId)
+  const customeror = Customer.findById({customerId})
+  console.log(customeror)
   try {
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
@@ -122,6 +98,7 @@ exports.getPlansByCustomerId = async (req, res) => {
       .populate("membership")
       .skip(skip)
       .limit(limit);
+      
 
     // Count the total number of matching documents
     const totalPlans = await Plan.countDocuments({

@@ -662,6 +662,7 @@ exports.fetchWalletTransactions = async (req, res) => {
       customerId: id,
       transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
       status: "completed",
+
       isDeleted: false,
     }).sort({ createdAt: -1 });
 
@@ -672,21 +673,11 @@ exports.fetchWalletTransactions = async (req, res) => {
       });
     }
 
-    // const creditTransactions = transactions.filter(
-    //   (transaction) => transaction.transactionType === "recharge_wallet"
-    // );
-
-    // const debitTransactions = transactions.filter(
-    //   (transaction) => transaction.transactionType === "wallet_booking"
-    // );
 
     res.status(200).json({
       success: true,
       message: "Wallet transactions fetched successfully",
-      // data: {
-      //   credit: creditTransactions,
-      //   debit: debitTransactions,
-      // },
+
       data: transactions,
     });
   } catch (error) {
@@ -699,78 +690,4 @@ exports.fetchWalletTransactions = async (req, res) => {
   }
 };
 
-exports.updateMembershipTransactionStatus = async (req, res) => {
-  const { transactionId, status, paymentGatewayId, membershipId } = req.body;
 
-  if (!transactionId || !status) {
-    return res.status(400).json({
-      success: false,
-      message: "Transaction ID and status are required",
-    });
-  }
-
-  try {
-    const transactionRecord = await Transaction.findOne({
-      _id: transactionId,
-      isDeleted: false,
-    });
-
-    // const membership = await M
-
-    if (!transactionRecord) {
-      return res.status(404).json({
-        success: false,
-        message: "Transaction not found with given ID" + transactionId,
-      });
-    }
-
-    if (transactionRecord.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: `Transaction is already marked as ${transactionRecord.status}`,
-      });
-    }
-
-    if (status === "completed") {
-      // Update the transaction status to "Completed"
-      transactionRecord.status = "completed";
-      transactionRecord.transactionRefId = paymentGatewayId;
-      await transactionRecord.save();
-
-      const plan = new Plan({
-        customer: transactionRecord.customerId,
-        membership: membershipId,
-      });
-
-      await plan.save();
-
-      return res.status(200).json({
-        success: true,
-        message: `Transaction updated successfully, membership plan purchased successfully.`,
-        data: { Transaction: transactionRecord },
-      });
-    } else if (status === "failed") {
-      // Update the transaction status to "failed"
-      transactionRecord.status = "failed";
-      await transactionRecord.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Transaction marked as failed, no plan purchased.",
-        data: { Transaction: transactionRecord },
-      });
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value",
-      });
-    }
-  } catch (error) {
-    console.error("Error updating transaction status:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating transaction status",
-      errorMessage: error.message,
-    });
-  }
-};
