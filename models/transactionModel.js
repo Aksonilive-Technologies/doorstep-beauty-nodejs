@@ -9,7 +9,12 @@ const transactionSchema = new mongoose.Schema(
     },
     transactionType: {
       type: String,
-      enum: ["recharge_wallet", "wallet_booking", "gateway_booking"],
+      enum: [
+        "recharge_wallet",
+        "wallet_booking",
+        "gateway_booking",
+        "membership_plan_purchase",
+      ],
       required: true,
     },
     amount: {
