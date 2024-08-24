@@ -14,6 +14,7 @@ const {
   getWalletBalance,
   updateTransactionStatus,
   fetchWalletTransactions,
+  updateMembershipTransactionStatus,
 } = require("../controller/customerController.js");
 const verifyToken = require("../middleware/verifyToken.js");
 const { uploadSingleImage } = require("../middleware/uploadMiddleware");
@@ -32,5 +33,9 @@ router.post("/debit", debitMoneyFromWallet);
 router.post("/fetch", getWalletBalance);
 router.post("/update-transaction-status", updateTransactionStatus);
 router.post("/fetch-transactions", fetchWalletTransactions);
+router.post(
+  "/update-membership-transaction-status",
+  updateMembershipTransactionStatus
+);
 
 module.exports = router;
