@@ -7,7 +7,7 @@ exports.getAllMembership = async (req, res) => {
   const { customerId } = req.body; // Assuming customerId is passed as a route parameter
   const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
-  console.log(customerId, typeof customerId);
+  // console.log(customerId, typeof customerId);
 
   try {
     // Calculate the number of documents to skip
@@ -34,12 +34,14 @@ exports.getAllMembership = async (req, res) => {
       isActive: true,
       isDeleted: false,
     });
-    // console.log("29", plan);
+    console.log("29", plan);
 
 
 
     if (plan !== null) {
       for (let i = 0; i < memberships.length; i++) {
+        console.log("43", memberships[i]._id),
+        console.log("44", plan.membership)
         if (plan.membership.toString() === memberships[i]._id.toString()) {
           memberships[i].isActivePlan = true;
         } else {
@@ -48,23 +50,11 @@ exports.getAllMembership = async (req, res) => {
       }
     }
 
-    console.log("after :", memberships);
 
-    // Add a new key 'isActivePlan' to each membership object
-    // const updatedMemberships = memberships.map((membership) => {
-    //   return { ...membership.toObject(), isActivePlan: true };
-    // });
 
-    // Calculate total pages
+    
     const totalPages = Math.ceil(totalPlans / limit);
 
-    // Check if any memberships were found
-    // if (!updatedMemberships.length) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     message: "No valid plans found for this customer.",
-    //   });
-    // }
 
     return res.status(200).json({
       success: true,
@@ -89,7 +79,7 @@ exports.updateMembershipTransactionStatus = async (req, res) => {
   if (!transactionId || !status || !membershipId) {
     return res.status(400).json({
       success: false,
-      message: "Transaction ID and status are required",
+      message: "Transaction ID membershipId, and status are required",
     });
   }
 
