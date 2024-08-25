@@ -4,7 +4,8 @@ const Plan = require("../models/customerMembershipPlan.js"); // Assuming this is
 const Transaction = require("../models/transactionModel.js");
 
 exports.buyMembershipPlan = async (req, res) => {
-  const { customerId } = req.query;
+  // const { customerId } = req.query;
+  const { customerId } = req.body;
 
   try {
     // Find the customer by ID
@@ -81,9 +82,9 @@ exports.getPlansByCustomerId = async (req, res) => {
   const { customerId } = req.query;
   const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
-  console.log("custrmerID", customerId)
-  const customeror = Customer.findById({customerId})
-  console.log(customeror)
+  console.log("custrmerID", customerId);
+  const customeror = Customer.findById({ customerId });
+  console.log(customeror);
   try {
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
@@ -98,7 +99,6 @@ exports.getPlansByCustomerId = async (req, res) => {
       .populate("membership")
       .skip(skip)
       .limit(limit);
-      
 
     // Count the total number of matching documents
     const totalPlans = await Plan.countDocuments({
