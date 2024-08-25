@@ -37,7 +37,7 @@ exports.buyMembershipPlan = async (req, res) => {
     if (isPlanActive) {
       return res.status(400).json({
         success: false,
-        message: "Customer already has an active membership plan",
+        message: "One plan is already active",
       });
     }
 
