@@ -2,6 +2,7 @@ const Customer = require("../models/customerModel.js");
 const Membership = require("../models/membershipModel.js");
 const Plan = require("../models/customerMembershipPlan.js"); // Assuming this is the correct path for your Plan model
 const Transaction = require("../models/transactionModel.js");
+const PlanPurchaseHistory = require("../models/PlanPurchaseHistoryModel.js");
 
 exports.buyMembershipPlan = async (req, res) => {
   // const { customerId } = req.query;
@@ -23,6 +24,20 @@ exports.buyMembershipPlan = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Customer is not eligible for membership",
+      });
+    }
+
+    const isPlanActive = await PlanPurchaseHistory.findOne({
+      customer: customerId,
+      isActive: true,
+      isDeleted: false,
+      isValid: true,
+    });
+
+    if (isPlanActive) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer already has an active membership plan",
       });
     }
 
