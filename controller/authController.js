@@ -14,7 +14,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
      })
   }
   if (!signature) {
-    signature = "door-step-beauty";
+    signature = "doorsbeauty";
   }
 
   if (!/^\d{10}$/.test(mobile)) {
