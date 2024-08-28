@@ -13,6 +13,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
       message: "please enter mobile number",
      })
   }
+  // Change signature name
   if (!signature) {
     signature = "doorsbeauty";
   }
