@@ -62,14 +62,6 @@ exports.sendOTP = catchAsync(async (req, res) => {
 
   mobile = Number(mobile);
 
-  if(mobile == 9820709112){
-    return res.status(200).json({
-      success: true,
-      message: "OTP sent successfully",
-      data: null,
-    });
-  }
-
   try {
     console.log("Sending OTP...");
     // Implement actual OTP sending logic here
@@ -134,13 +126,6 @@ exports.verifyOTP = catchAsync(async (req, res) => {
       })
     }
   } else {
-    if(mobile == 9820709112 && otp == 9999){
-      return res.status(200).json({
-        success: true,
-        message: "OTP verified successfully",
-        data: null,
-      })
-    }
     const verification = await otpModel.findOne({ mobile });
 
     if (!verification) {
