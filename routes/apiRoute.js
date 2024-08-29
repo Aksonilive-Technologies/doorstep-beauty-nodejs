@@ -81,6 +81,12 @@ app.use("/api/v1/admin/complain", require("./adminComplainRoute.js"));
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/feedback", require("./feedbackRoute.js"));
 
+//**************feedback Apis************************ */
+app.use("/api/v1/admin/notification", require("./notificationRoutes.js"));
+
+//**************feedback Apis************************ */
+app.use("/api/v1/admin/offers", require("./offerRoute.js"));
+
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
     success: false,
