@@ -13,9 +13,9 @@ const offerSchema = new mongoose.Schema(
     applicableOn: {
       type: String,
       required: true,
-      enum: ["wallet_booking", "package_booking", "cc", "debit_card", "upi"], 
+      enum: ["wallet_booking", "package_booking", "credit_card", "debit_card", "upi"], 
     },
-    validOn: {
+    offerValidOn : {
       type: Number,
       required: true,
       trim: true,

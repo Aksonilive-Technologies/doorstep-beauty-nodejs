@@ -7,7 +7,7 @@ const createOffer = async (req, res) => {
       offerName,
       offerDescription,
       applicableOn,
-      validOn,
+      offerValidOn ,
       offerType,
       offerValue,
       offerValidity,
@@ -15,17 +15,15 @@ const createOffer = async (req, res) => {
 
     // Validate required fields
     if (
-      !offerName ||
-      !offerValidity ||
       !offerValue ||
       !offerType ||
-      !validOn ||
+      !offerValidOn  ||
       !applicableOn
     ) {
       return res.status(400).send({
         success: false,
         message:
-          "offerName, offerValidity, offerValue, offerType, validOn, and applicableOn are required fields.",
+          " offerValue, offerType, offerValidOn , and applicableOn are required fields.",
       });
     }
 
@@ -33,7 +31,7 @@ const createOffer = async (req, res) => {
       offerName,
       offerDescription,
       applicableOn,
-      validOn,
+      offerValidOn ,
       offerType,
       offerValue,
       offerValidity,
@@ -65,7 +63,7 @@ const getOffers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch the offers with pagination
-    const offers = await Offer.find({ isActive: true, isDeleted: false })
+    const offers = await Offer.find()
       .skip(skip)
       .limit(limit);
 
@@ -74,7 +72,8 @@ const getOffers = async (req, res) => {
 
     res.status(200).send({
       success: true,
-      offers,
+      message:"offer retrieved successfully",
+      data:offers,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalOffers / limit),
@@ -142,7 +141,7 @@ const changeOfferStatus = async (req, res) => {
     res.status(200).send({
       success: true,
       message: `Offer is ${offer.isActive ? "Activated" : "Deactivated"} now`,
-      offer,
+      data:offer,
     });
   } catch (error) {
     res.status(500).send({
