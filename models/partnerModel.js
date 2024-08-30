@@ -24,6 +24,16 @@ const PartnersSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    rating: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 5,
+    },
+    walletBalance: {
+      type: Number,
+      default: 0,
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -39,6 +39,9 @@ const stockSchema = new Schema(
       trim: true,
       sparse: true, // Allows unique to be null
     },
+    image: {
+      type: String,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

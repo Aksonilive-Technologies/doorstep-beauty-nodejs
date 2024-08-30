@@ -46,6 +46,7 @@ app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
 app.use("/api/v1/customer/complain", require("./customerComplaintRoute.js"));
 app.use("/api/v1/customer/membership", require("./membershipCustomerRoute.js"));
 app.use("/api/v1/customer/wallet", require("./customerRoute"));
+app.use("/api/v1/customer/slot", require("./slotCustomerRoute.js"));
 //app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
 app.use("/api/v1/customer", require("./customerRoute"));
 
@@ -54,11 +55,11 @@ app.use("/api/v1/customer", require("./customerRoute"));
 app.use("/api/v1/admin", require("./adminRoute"));
 
 //**************Partner Route************************ */
-app.use("/api/v1/partner", require("./partnerRoute"));
+app.use("/api/v1/admin/partner", require("./partnerRoute"));
 
 //**************Banner Route************************ */
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
-app.use("/api/v1/customer/stock", require("./stockRoute"));
+// app.use("/api/v1/customer/stock", require("./stockRoute"));
 app.use("/api/v1/admin/category", require("./categoryRoute"));
 
 //**************Product Route************************ */
@@ -87,6 +88,15 @@ app.use("/api/v1/admin/notification", require("./notificationRoutes.js"));
 
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/offers", require("./offerRoute.js"));
+
+
+//**************Slots Apis************************ */
+app.use("/api/v1/admin/slot", require("./slotRoutes.js"));
+
+//**************Slots Apis************************ */
+app.use("/api/v1/admin/category", require("./slotRoutes.js"));
+
+app.use("/api/v1/admin/stock", require("./stockRoute"));
 
 // need to be approve
 // *************firebase token apis****************** */
