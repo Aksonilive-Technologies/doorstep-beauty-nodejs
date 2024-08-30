@@ -16,15 +16,21 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       maxlength: 500,
     },
+    // (optional audiance) rakhna hai from comma seperated multiple users
     targetAudience: {
       type: String,
       required: true,
     },
-    releaseDate: {
+    audienceType: {
+      type: String,
+      required: true,
+      enum: ["customer", "partner"],
+    },
+    notificationDate: {
       type: String,
       required: true,
     },
-    releaseTime: {
+    notificationTime: {
       type: String,
       required: true,
     },
@@ -44,4 +50,3 @@ const notificationSchema = new mongoose.Schema(
 const Notification = mongoose.model("Notification", notificationSchema);
 
 module.exports = Notification;
-

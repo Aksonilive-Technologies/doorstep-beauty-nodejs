@@ -6,9 +6,9 @@ const Notification = require("../models/notificationModel.js");
 exports.createNotification = async (req, res) => {
   try {
     // Validate required fields
-    const { title, body, targetAudience, releaseDate, releaseTime } = req.body;
+    const { title, body, targetAudience, notificationDate, notificationTime } = req.body;
 
-    if (!title || !body || !targetAudience || !releaseDate || !releaseTime) {
+    if (!title || !body || !targetAudience || !notificationDate || !notificationTime) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
@@ -30,8 +30,8 @@ exports.createNotification = async (req, res) => {
     const notification = new Notification({
       title,
       body,
-      releaseDate,
-      releaseTime,
+      notificationDate,
+      notificationTime,
       imageUrl, // Add the imageUrl if available
     });
 
@@ -119,7 +119,7 @@ exports.getNotifications = async (req, res) => {
 exports.updateNotification = async (req, res) => {
   try {
     const { id } = req.query;
-    const { title, body, targetAudience, releaseDate, releaseTime } = req.body;
+    const { title, body, targetAudience, notificationDate, notificationTime } = req.body;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -145,8 +145,8 @@ exports.updateNotification = async (req, res) => {
       title,
       body,
       targetAudience,
-      releaseDate,
-      releaseTime,
+      notificationDate,
+      notificationTime,
     };
     if (imageUrl) {
       updateData.image = imageUrl;
