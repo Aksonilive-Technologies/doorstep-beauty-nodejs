@@ -36,7 +36,7 @@ app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/customer/category", require("./categoryAppRoute"));
 
 app.use("/api/v1/customer/product", require("./productRoute"));
-app.use("/api/v1/customer/order", require("./orderRoute"));
+app.use("/api/v1/customer/booking", require("./bookingRoute.js"));
 app.use("/api/v1/customer/cart", require("./cartRoute"));
 app.use("/api/v1/customer/service", require("./serviceRoute"));
 app.use("/api/v1/customer/address", require("./customerAddressRoute"));
