@@ -55,11 +55,11 @@ app.use("/api/v1/customer", require("./customerRoute"));
 app.use("/api/v1/admin", require("./adminRoute"));
 
 //**************Partner Route************************ */
-app.use("/api/v1/partner", require("./partnerRoute"));
+app.use("/api/v1/admin/partner", require("./partnerRoute"));
 
 //**************Banner Route************************ */
 app.use("/api/v1/admin/banner", require("./bannerRoute"));
-app.use("/api/v1/customer/stock", require("./stockRoute"));
+// app.use("/api/v1/customer/stock", require("./stockRoute"));
 app.use("/api/v1/admin/category", require("./categoryRoute"));
 
 //**************Product Route************************ */
@@ -93,6 +93,8 @@ app.use("/api/v1/admin/slot", require("./slotRoutes.js"));
 
 //**************Slots Apis************************ */
 app.use("/api/v1/admin/category", require("./slotRoutes.js"));
+
+app.use("/api/v1/admin/stock", require("./stockRoute"));
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({

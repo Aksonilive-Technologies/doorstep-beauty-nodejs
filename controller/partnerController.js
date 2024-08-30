@@ -72,17 +72,14 @@ exports.register = async (req, res) => {
         pincode: pin,
       });
 
-      if (!serviceablePincode) {
+      
         // If the pincode doesn't exist, create a new pincode document
         serviceablePincode = new ServiceablePincode({
           pincode: pin,
           partner: user._id,
         });
         await serviceablePincode.save();
-      } else {
-        // If the pincode already exists, you can associate the partner with it
-        // Or handle it according to your application's logic
-      }
+      
     }
 
     res.status(201).json({
@@ -181,8 +178,7 @@ exports.updatePartner = async (req, res) => {
   }
 };
 
-//delete partner
-
+//delete
 exports.deletePartner = async (req, res) => {
   const { id } = req.query;
 
