@@ -1,5 +1,6 @@
 const Stock = require("../models/stockModel");
 const mongoose = require("mongoose");
+const { cloudinary } = require("../config/cloudinary.js");
 
 exports.createStock = async (req, res) => {
   const requiredFields = [
@@ -18,13 +19,51 @@ exports.createStock = async (req, res) => {
   if (missingFields.length > 0) {
     return res.status(400).json({
       success: false,
-      error: ` ${missingFields.join(", ")} are required fields`,
+      error: `${missingFields.join(", ")} are required fields`,
     });
   }
 
+  let imageUrl = null;
+  if (req.file) {
+    try {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "Stock",
+        public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: "An error occurred while uploading the image",
+        details: error.message,
+      });
+    }
+  }
+
   try {
+    // Extract fields from req.body
+    const {
+      name,
+      brand,
+      size,
+      currentStock,
+      mrp,
+      purchasingRate,
+      barcodeNumber,
+    } = req.body;
+
     // Create the stock item
-    const stock = await Stock.create(req.body);
+    const stock = await Stock.create({
+      name,
+      brand,
+      size,
+      currentStock,
+      mrp,
+      purchasingRate,
+      barcodeNumber,
+      image:imageUrl, // Add imageUrl if available
+    });
 
     return res.status(201).json({
       success: true,
@@ -67,7 +106,7 @@ exports.fetchAllStocks = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Successfully retrieved all the stocks",
-      data:stocks,
+      data: stocks,
       currentPage: page,
       totalPages,
       totalStocks,
@@ -166,7 +205,6 @@ exports.changeStatus = async (req, res) => {
       message: `Stock is now ${
         updatedStock.isActive ? "active" : "deactivated"
       }`,
-      
     });
   } catch (err) {
     // Log the error and send a generic error message
