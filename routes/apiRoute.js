@@ -82,11 +82,13 @@ app.use("/api/v1/admin/complain", require("./adminComplainRoute.js"));
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/feedback", require("./feedbackRoute.js"));
 
+
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/notification", require("./notificationRoutes.js"));
 
 //**************feedback Apis************************ */
 app.use("/api/v1/admin/offers", require("./offerRoute.js"));
+
 
 //**************Slots Apis************************ */
 app.use("/api/v1/admin/slot", require("./slotRoutes.js"));
@@ -95,6 +97,14 @@ app.use("/api/v1/admin/slot", require("./slotRoutes.js"));
 app.use("/api/v1/admin/category", require("./slotRoutes.js"));
 
 app.use("/api/v1/admin/stock", require("./stockRoute"));
+
+// need to be approve
+// *************firebase token apis****************** */
+app.use("/api/v1/user/fcm/token", require("./firebaseTokenRoute.js"));
+
+// *************app version Apis****************** */
+app.use("/api/v1/user/app/version", require("./appVersionUrlRoute.js"));
+
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
