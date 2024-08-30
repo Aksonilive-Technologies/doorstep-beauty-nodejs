@@ -23,7 +23,7 @@ const transactionSchema = new mongoose.Schema(
     },
     paymentGateway: {
       type: String,
-      enum: ["cashfree", "razorpay", "wallet"],
+      enum: ["cashfree", "razorpay", "wallet","cash"],
       required: true,
     },
     transactionRefId: {
