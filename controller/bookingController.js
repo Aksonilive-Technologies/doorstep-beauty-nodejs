@@ -1,7 +1,7 @@
 const CustomerAddress = require("../models/customerAddressModel");
 const Booking = require("../models/bookingModel");
 const Transaction = require("../models/transactionModel");
-
+const moment = require("moment"); 
 exports.bookProduct = async (req, res) => {
   const {
     customerId,
@@ -98,6 +98,78 @@ exports.bookProduct = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error booking product",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.fetchBookings = async (req, res) => {
+  const { customerId } = req.query;
+
+  try {
+    // Validate the customerId
+    if (!customerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    // Fetch bookings with populated fields
+    const bookings = await Booking.find({ customer: customerId, isDeleted: false })
+      .populate("product.product")
+      .populate("partner.partner");
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found",
+      });
+    }
+
+    // Current date for comparison
+    const now = moment();
+
+    // Categorize bookings
+    const categorized = {
+      Ongoing: [],
+      Upcoming: [],
+      Previous: []
+    };
+
+    bookings.forEach(booking => {
+      if (booking.serviceStatus === "ongoing") {
+        // Ongoing bookings
+        categorized.Ongoing.push(booking);
+      } else if (booking.scheduleFor && booking.scheduleFor.date) {
+        const scheduleDate = moment(booking.scheduleFor.date);
+        if (scheduleDate.isAfter(now)) {
+          // Upcoming bookings
+          categorized.Upcoming.push(booking);
+        } else {
+          // Previous bookings
+          categorized.Previous.push(booking);
+        }
+      } else {
+        // If no scheduleFor date but completed or other statuses, consider them as Previous
+        categorized.Previous.push(booking);
+      }
+    });
+
+    // Sort categories
+    categorized.Upcoming.sort((a, b) => moment(a.scheduleFor.date).diff(moment(b.scheduleFor.date)));
+    categorized.Previous.sort((a, b) => moment(b.scheduleFor.date).diff(moment(a.scheduleFor.date)));
+
+    res.status(200).json({
+      success: true,
+      message: "Bookings fetched and categorized successfully",
+      data: categorized
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching bookings",
       errorMessage: error.message,
     });
   }

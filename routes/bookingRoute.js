@@ -6,7 +6,7 @@ const Order = require("../controller/bookingController")
 
 router.post("/create", Order.bookProduct);
 // router.put("/update", Order.updateOrder);
-// router.get("/fetch/single", Order.getOrderById);
+router.get("/fetch/all", Order.fetchBookings);
 // router.delete("/delete", Order.deleteOrder);
 
 
