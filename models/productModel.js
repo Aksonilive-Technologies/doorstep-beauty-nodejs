@@ -65,6 +65,10 @@ const productSchema = new mongoose.Schema(
         finalPrice : {
             type: Number
         },
+        rating: {
+            type: Number,
+            default: 0
+        },
         isActive: {
             type: Boolean,
             default: true,

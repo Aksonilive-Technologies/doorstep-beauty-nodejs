@@ -2,6 +2,7 @@ const CustomerAddress = require("../models/customerAddressModel");
 const Booking = require("../models/bookingModel");
 const Transaction = require("../models/transactionModel");
 const moment = require("moment"); 
+const Product = require("../models/productModel");
 exports.bookProduct = async (req, res) => {
   const {
     customerId,
@@ -234,8 +235,7 @@ exports.fetchRecentBookedProducts = async (req, res) => {
     // Fetch bookings for the customer and populate products
     const bookings = await Booking.find({ customer: customerId, isDeleted: false })
       .populate("product.product")
-      .sort({ createdAt: -1 }) 
-      .limit(10); 
+      .sort({ createdAt: -1 }); // Sort by most recent bookings
 
     if (bookings.length === 0) {
       return res.status(404).json({
@@ -244,10 +244,16 @@ exports.fetchRecentBookedProducts = async (req, res) => {
       });
     }
 
+    // Extract recent booked products from the bookings
+    const recentProducts = bookings.flatMap(booking => booking.product.map(p => p.product));
+
+    // Limit the result to the last 10 products
+    const limitedProducts = recentProducts.slice(0, 10);
+
     res.status(200).json({
       success: true,
       message: "Recent booked products fetched successfully",
-      data: bookings,
+      data: limitedProducts,
     });
 
   } catch (error) {
@@ -257,4 +263,144 @@ exports.fetchRecentBookedProducts = async (req, res) => {
       errorMessage: error.message,
     });
   }
+};
+
+exports.ratePartner = async (req, res) => {
+  const { partnerId, bookingId, rating } = req.body;
+
+  try {
+    // Validate inputs
+    if (!partnerId || !bookingId || !rating) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner ID, Order ID, and Rating are required",
+      });
+    }
+
+    // Find the booking by bookingId
+    const booking = await Booking.findOne({_id: bookingId, isDeleted: false});
+    
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    // Find the partner within the booking
+    const partnerIndex = booking.partner.findIndex(p => p.partner.toString() === partnerId);
+
+    if (partnerIndex !== -1) {
+      // Partner found, update the rating
+      const existingRating = booking.partner[partnerIndex].rating;
+      booking.partner[partnerIndex].rating = (existingRating + rating) / 2;
+    } else {
+      // Partner not found, push the new partner with the rating
+      booking.partner.push({
+        partner: partnerId,
+        rating: rating,
+      });
+    }
+
+    // Save the booking
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Partner rated successfully",
+      data: booking.partner,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error rating partner",
+      errorMessage: error.message,
+    });
+  }
+};
+
+
+exports.rateBooking = async (req, res) => {
+  try {
+      const { bookingId, rating } = req.body;
+
+      // Step 1: Find the booking by ID
+      const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+      if (!booking) {
+          return res.status(404).json({ success: false, message: 'Booking not found' });
+      }
+
+      // Step 2: Update the rating for the booking
+      if (booking.rating === 0) {
+          booking.rating = rating;
+      } else {
+          booking.rating = (booking.rating + rating) / 2;
+      }
+
+      // Save the updated booking
+      await booking.save();
+
+      // Step 3: Update the ratings for each product in the booking
+      for (const item of booking.product) {
+          const productId = item.product;
+
+          const product = await Product.findById(productId);
+          if (product) {
+              if (product.rating === 0) {
+                  product.rating = rating;
+              } else {
+                  product.rating = (product.rating + rating) / 2;
+              }
+              await product.save();
+          }
+      }
+
+      // Respond with success
+      res.status(200).json({ success: true, message: 'Booking and product ratings updated successfully' ,data : {rating : booking.rating}});
+  } catch (error) {
+      console.error('Error updating booking and product ratings:', error);
+      res.status(500).json({ success: false, message: 'Server error', errorMessage: error.message });
+  }}
+
+exports.updateTransaction = async (req, res) => {
+    try {
+        const { bookingId, transactionStatus } = req.body;
+
+        const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+        if (!booking) {
+            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
+        }
+
+        // Step 1: Find and update the transaction
+        const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
+        if (!transaction) {
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
+        }
+        if (transaction.status.toLowerCase() === 'completed' || transaction.status.toLowerCase() === 'failed'){
+            return res.status(400).json({ success: false, message: 'Transaction already marked as '+ transaction.status } );
+        }
+
+        // Update transaction status
+        transaction.status = transactionStatus;
+        await transaction.save();
+
+        // Step 2: Find and update the booking
+        
+        // Update booking fields based on the transaction status
+        if (transactionStatus === 'completed') {
+            booking.paymentStatus = 'completed';
+            booking.status = 'completed';
+        } else if (transactionStatus === 'failed') {
+            booking.paymentStatus = 'failed';
+            booking.status = 'failed';
+        }
+
+        await booking.save();
+
+        // Respond with success
+        res.status(200).json({ Success: true, message: 'Transaction and booking updated successfully' });
+    } catch (error) {
+        console.error('Error updating transaction and booking:', error);
+        res.status(500).json({Success: false, message: 'Server error', errorMessage: error.message });
+    }
 };
