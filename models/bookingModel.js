@@ -45,7 +45,9 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
     partner: [
-     { partner : {
+     { 
+      _id: false, 
+      partner : {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Partner"
                  },
