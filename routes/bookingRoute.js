@@ -9,5 +9,6 @@ router.post("/create", Order.bookProduct);
 router.get("/fetch/all", Order.fetchBookings);
 // router.delete("/delete", Order.deleteOrder);
 router.post("/cancel", Order.cancelBooking);
+router.get("/fetch/recent", Order.fetchRecentBookedProducts);
 
 module.exports = router
