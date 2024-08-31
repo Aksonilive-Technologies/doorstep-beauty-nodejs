@@ -8,6 +8,6 @@ router.post("/create", Order.bookProduct);
 // router.put("/update", Order.updateOrder);
 router.get("/fetch/all", Order.fetchBookings);
 // router.delete("/delete", Order.deleteOrder);
-
+router.post("/cancel", Order.cancelBooking);
 
 module.exports = router
