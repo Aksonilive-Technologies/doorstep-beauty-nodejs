@@ -218,3 +218,43 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+
+exports.fetchRecentBookedProducts = async (req, res) => {
+  const { customerId } = req.query;
+
+  try {
+    // Validate the customerId
+    if (!customerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    // Fetch bookings for the customer and populate products
+    const bookings = await Booking.find({ customer: customerId, isDeleted: false })
+      .populate("product.product")
+      .sort({ createdAt: -1 }) 
+      .limit(10); 
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Recent booked products fetched successfully",
+      data: bookings,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching recent booked products",
+      errorMessage: error.message,
+    });
+  }
+};
