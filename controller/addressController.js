@@ -264,9 +264,7 @@ exports.getPrimaryAddress = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Primary address fetched successfully",
-      data: {
-        address,
-      },
+      data: address,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
