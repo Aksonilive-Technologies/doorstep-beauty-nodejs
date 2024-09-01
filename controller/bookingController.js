@@ -3,6 +3,8 @@ const Booking = require("../models/bookingModel");
 const Transaction = require("../models/transactionModel");
 const moment = require("moment"); 
 const Product = require("../models/productModel");
+const MostBookedProduct = require("../models/mostBookedProductModel");
+const Customer = require("../models/customerModel");
 exports.bookProduct = async (req, res) => {
   const {
     customerId,
@@ -13,7 +15,6 @@ exports.bookProduct = async (req, res) => {
     offerType,
     offerRefId,
     customerAddressId,
-    paymentType,
     scheduleFor,
   } = req.body;
 
@@ -25,7 +26,7 @@ exports.bookProduct = async (req, res) => {
     if (!customerId) missingFields.push("customerId");
     if (!products || products.length === 0) missingFields.push("products");
     if (!totalPrice) missingFields.push("totalPrice");
-    if (!paymentType) missingFields.push("paymentType");
+
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -60,15 +61,6 @@ exports.bookProduct = async (req, res) => {
 
     const finalPrice = totalPrice - discount;
 
-    // Create transaction record
-    const transaction = new Transaction({
-      customerId,
-      transactionType: paymentType === "wallet" ? "wallet_booking" : "gateway_booking",
-      amount: finalPrice,
-      paymentGateway: paymentType,
-    });
-
-    const savedTransaction = await transaction.save();
 
     // Create Booking
     const newBooking = new Booking({
@@ -82,13 +74,31 @@ exports.bookProduct = async (req, res) => {
       offerType,
       offerRefId,
       customerAddress,
-      transaction: savedTransaction._id,
       scheduleFor,
       isActive: true,
       isDeleted: false,
     });
 
     await newBooking.save();
+
+       // Update MostBookedProduct Schema
+       for (const product of products) {
+        const existingRecord = await MostBookedProduct.findOne({
+          product: product.product,
+          isActive: true,
+          isDeleted: false,
+        });
+  
+        if (existingRecord) {
+          existingRecord.count += 1;
+          await existingRecord.save();
+        } else {
+          await MostBookedProduct.create({
+            product: product.product,
+            count: 1,
+          });
+        }
+      }
 
     res.status(201).json({
       success: true,
@@ -403,4 +413,128 @@ exports.updateTransaction = async (req, res) => {
         console.error('Error updating transaction and booking:', error);
         res.status(500).json({Success: false, message: 'Server error', errorMessage: error.message });
     }
+};
+
+
+exports.initiatePayment = async (req, res) => {
+  const { bookingId, paymentMode } = req.body;
+  try {
+    // Find the booking based on bookingId
+    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Get the final price from the booking
+    const finalPrice = booking.finalPrice;
+
+    // Initialize transaction object
+    const transactionData = {
+      customerId: booking.customer,
+      amount: finalPrice,
+      paymentGateway:paymentMode,
+    };
+
+    if (paymentMode === 'wallet') {
+      // Deduct from wallet and create a debit transaction
+      const customer = await Customer.findOne({ _id: booking.customer, isDeleted: false });
+      if (!customer) {
+        return res.status(404).json({ success: false, message: 'Customer not found' });
+      }
+
+      if (customer.walletBalance < finalPrice) {
+        return res.status(400).json({ success: false, message: 'Insufficient wallet balance' });
+      }
+
+      customer.walletBalance -= finalPrice;
+      await customer.save();
+
+      transactionData.transactionType = 'wallet_booking';
+      transactionData.status = 'completed';
+
+      const transaction = new Transaction(transactionData);
+      await transaction.save();
+
+      booking.paymentStatus = 'completed';
+      booking.status = 'completed';
+      booking.transaction = transaction._id;
+      await booking.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment processed successfully via wallet and booking updated',
+        data: booking,
+      });
+    } else if (['cashfree', 'razorpay', 'cash'].includes(paymentMode)) {
+      // Create a pending transaction for gateway payments
+      transactionData.transactionType = 'gateway_booking';
+      transactionData.status = 'pending';
+
+      const transaction = new Transaction(transactionData);
+      await transaction.save();
+
+      booking.transaction = transaction._id;
+      await booking.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Transaction initiated successfully via ' + paymentMode,
+        data: booking,
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment gateway',
+      });
+    }
+  } catch (error) {
+    console.error('Error processing payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      errorMessage: error.message,
+    });
+  }
+};
+
+
+exports.getMostBookedProducts = async (req, res) => {
+  try {
+    const mostBookedProducts = await MostBookedProduct.find({
+      isActive: true,
+      isDeleted: false,
+    })
+      .sort({ count: -1 }) // Sort by count in descending order
+      .limit(10) // Limit the response to 10 products
+      .populate('product'); 
+
+      if(!mostBookedProducts){
+        return res.status(404).json({
+          success: false,
+          message: 'No most booked products found',
+         })
+      }
+
+    if (!mostBookedProducts || mostBookedProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No most booked products found',
+      });
+    }
+
+    const products = mostBookedProducts.map(item => item.product);
+
+    res.status(200).json({
+      success: true,
+      message: 'Most booked products fetched successfully',
+      data: products,
+    });
+  } catch (error) {
+    console.error('Error fetching most booked products:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching most booked products',
+      errorMessage: error.message,
+    });
+  }
 };
