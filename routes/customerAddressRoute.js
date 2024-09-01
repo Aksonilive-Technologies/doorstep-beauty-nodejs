@@ -8,5 +8,6 @@ router.get('/fetch/all', customerAddressController.getAddressesByCustomer);
 // router.get('/', customerAddressController.getAddressById);
 router.post('/update', customerAddressController.updateAddress);
 router.delete('/delete', customerAddressController.deleteAddress);
+router.get("/fetch/primary", customerAddressController.getPrimaryAddress)
 
 module.exports = router;

@@ -148,3 +148,41 @@ exports.updateMembershipTransactionStatus = async (req, res) => {
     });
   }
 };
+
+exports.getActivePlan = async (req, res) => {
+  const { customerId } = req.query;
+
+  try {
+    // Validate the customerId
+    if (!customerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
+
+    const plan = await PlanPurchaseHistory.findOne({
+      customer: customerId,
+      isValid: true,
+      isActive: true,
+      isDeleted: false,
+    });
+
+    if(!plan){
+      return res.status(404).json({
+        success: false,
+        message: "No active membership plan found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Active membership plan fetched successfully",
+      data: {
+        plan,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
