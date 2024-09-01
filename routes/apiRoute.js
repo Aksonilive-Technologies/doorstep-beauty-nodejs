@@ -103,7 +103,7 @@ app.use("/api/v1/admin/stock", require("./stockRoute"));
 app.use("/api/v1/user/fcm/token", require("./firebaseTokenRoute.js"));
 
 // *************app version Apis****************** */
-app.use("/api/v1/user/app/version", require("./appVersionUrlRoute.js"));
+app.use("/api/v1/user/app/version", require("./appVersionRoute.js"));
 
 
 app.all("*", async (request, response, next) => {

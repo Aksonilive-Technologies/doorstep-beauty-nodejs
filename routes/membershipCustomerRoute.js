@@ -19,5 +19,6 @@ router.post(
   "/update-transaction-status",
   updateMembershipTransactionStatus
 );
+router.get("/fetch/active-plan", getActivePlan);
 
 module.exports = router;
