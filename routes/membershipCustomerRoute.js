@@ -7,6 +7,7 @@ const {
 const {
   getAllMembership,
   updateMembershipTransactionStatus,
+  getActivePlan
 } = require("../controller/membershipCustomerController.js");
 
 const router = express.Router();
