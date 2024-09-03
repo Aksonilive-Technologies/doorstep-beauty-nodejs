@@ -6,6 +6,7 @@ const { cloudinary } = require("../config/cloudinary");
 const Transaction = require("../models/transactionModel.js");
 const Plan = require("../models/customerMembershipPlan.js");
 const Membership = require("../models/membershipModel.js");
+const CustomerAddress = require('../models/customerAddressModel'); 
 //Create Register
 const validateUserInput = (name, email, mobile) => {
   if (!name) return "Please fill the name field";
@@ -111,7 +112,19 @@ exports.getAllCustomers = async (req, res) => {
     const customers = await Customer.find()
       .select("-__v")
       .skip(skip)
-      .limit(limit);
+      .limit(limit).lean();
+
+      for(let i = 0; i < customers.length; i++) {
+        const address = await CustomerAddress.findOne({
+          customer: customers[i]._id,
+          isDeleted: false,
+          isActive: true,
+          isPrimary: true,
+        });
+        if(address) {
+          customers[i].address = address.address;
+        }
+      }
 
     const totalCustomers = await Customer.countDocuments(); // Get the total number of customers
     const totalPages = Math.ceil(totalCustomers / limit); // Calculate total pages
