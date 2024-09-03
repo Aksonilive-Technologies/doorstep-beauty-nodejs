@@ -122,14 +122,24 @@ exports.getPartners = async (req, res) => {
 
     const partners = await Partner.find()
       .limit(limit * 1) // Convert string to number
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
 
     const totalPartners = await Partner.countDocuments();
+
+    for(let i = 0; i < partners.length; i++) {
+      const partner = partners[i];
+      const serviceablePincodes = await ServiceablePincode.find({
+        partner: partner._id,
+      }).select("pincode -_id");
+      partner.pincodes = serviceablePincodes.map((pincode) => pincode.pincode);
+    }
 
     res.status(200).json({
       success: true,
       message: "Partners retrieved successfully",
       data: partners,
+      totalPartners,
       totalPages: Math.ceil(totalPartners / limit),
       currentPage: page,
     });
