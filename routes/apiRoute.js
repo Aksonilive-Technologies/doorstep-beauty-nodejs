@@ -46,6 +46,7 @@ const categoryRoute = require("./categoryRoute");
 const offerRoute = require("./offerRoute");
 const stockRoute = require("./stockRoute");
 const adminRoute = require("./adminRoute");
+const notificationRoute = require("./notificationRoutes");
 
 //***************Customer Route************************ */
 
