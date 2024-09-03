@@ -19,7 +19,7 @@ const notificationSchema = new mongoose.Schema(
     // (optional audiance) rakhna hai from comma seperated multiple users
     targetAudience: {
       type: String,
-      required: true,
+      // required: true,
     },
     audienceType: {
       type: String,

@@ -59,8 +59,26 @@ exports.register = async (req, res) => {
         .json({ success: false, message: "Email already registered" });
     }
 
+    // need to approve
+    // Upload the image to Cloudinary if present
+    let imageUrl = undefined;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "customers",
+        public_id: `${Date.now()}_${name}`,
+        overwrite: true,
+      });
+      imageUrl = result.secure_url;
+    }
+
     // Create a new partner
-    const user = new Partner({ name, email, phone, address });
+    const user = new Partner({
+      name,
+      email,
+      phone,
+      address,
+      image: imageUrl || undefined,
+    });
     await user.save();
 
     // Split the pincode string into an array
@@ -72,14 +90,12 @@ exports.register = async (req, res) => {
         pincode: pin,
       });
 
-      
-        // If the pincode doesn't exist, create a new pincode document
-        serviceablePincode = new ServiceablePincode({
-          pincode: pin,
-          partner: user._id,
-        });
-        await serviceablePincode.save();
-      
+      // If the pincode doesn't exist, create a new pincode document
+      serviceablePincode = new ServiceablePincode({
+        pincode: pin,
+        partner: user._id,
+      });
+      await serviceablePincode.save();
     }
 
     res.status(201).json({
