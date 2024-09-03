@@ -9,10 +9,12 @@ const {
   changeStatus,
 } = require("../controller/partnerController");
 const verifyToken = require("../middleware/verifyToken");
+const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 
-router.post("/register", register);
+// need to approve
+router.post("/register", uploadSingleImage, register);
 router.get("/all", getPartners);
-router.put("/update", updatePartner);
+router.put("/update", uploadSingleImage, updatePartner);
 router.delete("/delete", deletePartner);
 router.put("/change-status", changeStatus);
 

@@ -2,19 +2,31 @@ const { default: mongoose } = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Notification = require("../models/notificationModel.js");
 
+// need to approve
 // Create a new notification
 exports.createNotification = async (req, res) => {
   try {
-    // Validate required fields
-    const { title, body, targetAudience, notificationDate, notificationTime } = req.body;
+    const {
+      title,
+      body,
+      targetAudience,
+      audienceType,
+      notificationDate,
+      notificationTime,
+    } = req.body;
 
-    if (!title || !body || !targetAudience || !notificationDate || !notificationTime) {
+    // Check if all required fields are present
+    if (
+      !title ||
+      !body ||
+      !audienceType ||
+      !notificationDate ||
+      !notificationTime
+    ) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
-
-    
 
     let imageUrl;
     if (req.file) {
@@ -30,9 +42,11 @@ exports.createNotification = async (req, res) => {
     const notification = new Notification({
       title,
       body,
+      targetAudience,
+      audienceType,
       notificationDate,
       notificationTime,
-      imageUrl, // Add the imageUrl if available
+      image: imageUrl || undefined, // Include the imageUrl if available
     });
 
     // Save the notification
@@ -42,11 +56,11 @@ exports.createNotification = async (req, res) => {
     res.status(201).json({
       success: true,
       data: notification,
-      message: "Succefully created notification",
+      message: "Successfully created notification",
     });
   } catch (error) {
-    // Pass any errors to the global error handler
-    res.status(404).json({
+    // Handle errors
+    res.status(500).json({
       success: false,
       message: "Error while creating the message",
       error: error.message,
@@ -114,12 +128,11 @@ exports.getNotifications = async (req, res) => {
   }
 };
 
-
-
 exports.updateNotification = async (req, res) => {
   try {
     const { id } = req.query;
-    const { title, body, targetAudience, notificationDate, notificationTime } = req.body;
+    const { title, body, targetAudience, notificationDate, notificationTime } =
+      req.body;
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -138,9 +151,8 @@ exports.updateNotification = async (req, res) => {
       });
       imageUrl = result.secure_url;
     }
-    console.log(title, imageUrl)
 
-    // Update the notification
+    // Prepare the data to be updated
     const updateData = {
       title,
       body,
@@ -148,22 +160,24 @@ exports.updateNotification = async (req, res) => {
       notificationDate,
       notificationTime,
     };
+    // If an image was uploaded, include it in the update
     if (imageUrl) {
       updateData.image = imageUrl;
     }
 
+    // Find and update the notification by ID
     const notification = await Notification.findByIdAndUpdate(id, updateData, {
       new: true,
     });
 
-    // Handle case where notification is not found
+    // If the notification is not found, return a 404 error
     if (!notification) {
       return res
         .status(404)
         .json({ success: false, message: "Notification not found" });
     }
 
-    // Successfully updated
+    // Return success response with the updated notification
     res.status(200).json({
       success: true,
       data: notification,

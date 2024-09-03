@@ -1,3 +1,4 @@
+const { cloudinary } = require("../config/cloudinary.js");
 const Partner = require("../models/partnerModel.js");
 const ServiceablePincode = require("../models/servicablePincodeModel.js");
 
@@ -43,6 +44,7 @@ const validateUserInput = (input) => {
 
 exports.register = async (req, res) => {
   const { name, email, phone, address, pincode } = req.body;
+  console.log("Received body:", req.body);
 
   // Validate user input
   const validationError = validateUserInput({ name, email, phone, address });
@@ -64,7 +66,7 @@ exports.register = async (req, res) => {
     let imageUrl = undefined;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "customers",
+        folder: "partners",
         public_id: `${Date.now()}_${name}`,
         overwrite: true,
       });
@@ -101,6 +103,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Partner created successfully",
+      data: user,
     });
   } catch (error) {
     console.error("Error creating partner:", error); // Log the error for debugging
@@ -139,10 +142,10 @@ exports.getPartners = async (req, res) => {
   }
 };
 
-//update partner
 exports.updatePartner = async (req, res) => {
   const { id } = req.query;
   const { name, email, phone, address } = req.body;
+  const file = req.file;
 
   try {
     const partner = await Partner.findById(id);
@@ -168,11 +171,38 @@ exports.updatePartner = async (req, res) => {
       });
     }
 
-    const partnerUpdated = await Partner.findByIdAndUpdate(
-      id,
-      { name, email, phone, address },
-      { new: true }
-    );
+    let updateData = { name, email, phone, address };
+
+    // Handle image upload if a new file is provided
+    if (file) {
+      try {
+        // Delete the old image from Cloudinary if it exists
+        if (partner.image) {
+          const publicId = partner.image.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+
+        // Upload the new image
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "partners",
+          public_id: `${Date.now()}_${name}`,
+          overwrite: true,
+        });
+
+        updateData.image = result.secure_url;
+      } catch (uploadError) {
+        console.error("Error uploading image:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: uploadError.message,
+        });
+      }
+    }
+
+    const partnerUpdated = await Partner.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     if (!partnerUpdated) {
       return res.status(500).json({
@@ -184,8 +214,10 @@ exports.updatePartner = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Partner updated successfully",
+      data: partnerUpdated,
     });
   } catch (error) {
+    console.error("Error updating partner:", error);
     res.status(500).json({
       success: false,
       message: "Error updating partner",
@@ -193,7 +225,6 @@ exports.updatePartner = async (req, res) => {
     });
   }
 };
-
 //delete
 exports.deletePartner = async (req, res) => {
   const { id } = req.query;

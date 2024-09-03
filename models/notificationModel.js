@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const notificationSchema = new mongoose.Schema(
   {
     image: {
@@ -16,10 +15,9 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       maxlength: 500,
     },
-    // (optional audiance) rakhna hai from comma seperated multiple users
+    // need to approve
     targetAudience: {
-      type: String,
-      // required: true,
+      type: [String], // Changed to an array of strings
     },
     audienceType: {
       type: String,
