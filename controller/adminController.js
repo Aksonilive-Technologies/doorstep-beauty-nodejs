@@ -321,10 +321,8 @@ exports.updateAdminPassword = async (req, res) => {
 
     // Create an update object dynamically
     const updateData = {};
-    if (password) {
-      const hashedPassword = await bcryptjs.hash(password, 10);
+    const hashedPassword = await bcryptjs.hash(password, 10);
       updateData.password = hashedPassword;
-    }
 
     await Admin.findByIdAndUpdate(adminId, updateData, { new: true });
 
@@ -399,6 +397,67 @@ exports.changeStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update the status",
+    });
+  }
+};
+
+exports.updateAdminRole = async (req, res) => {
+  try {
+    const { superadminId, Id, role } = req.body;
+
+    if(!superadminId){
+      return res.status(400).json({
+        success: false,
+        message: "superadmin ID is required",
+      });
+    }
+    else if(!Id){
+      return res.status(400).json({
+        success: false,
+        message: "admin ID is required",
+      });
+    }else if(!role){
+      return res.status(400).json({
+        success: false,
+        message: "Admin role is required",
+      });
+    }
+    const loggedInUser = await Admin.findById(superadminId);
+    if (!loggedInUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Superadmin not found",
+      });
+    }
+    if(loggedInUser.role !== 'all'){
+      return res.status(401).json({
+        message: "You are not authorized",
+        success: false,
+      });
+    }
+    const admin = await Admin.findById(Id);
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // Create an update object dynamically
+    const updateData = {role: role};
+
+    await Admin.findByIdAndUpdate(Id, updateData, { new: true });
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin role updated successfully",
+    });
+  } catch (error) {
+    console.error("Error while updating admin role:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      errorMessage: error.message,
     });
   }
 };

@@ -7,6 +7,7 @@ const {
   allAdmin,
   deleteAdmin,
   updateAdminPassword,
+  updateAdminRole,
   changeStatus,
 } = require("../controller/adminController");
 const verifyToken = require("../middleware/verifyToken");
@@ -18,5 +19,6 @@ router.get("/all", verifyToken, allAdmin);
 router.put("/toggle/status", verifyToken,  changeStatus);
 router.put("/delete", verifyToken,  deleteAdmin);
 router.post("/update/password", verifyToken, updateAdminPassword);
+router.post("/update/role", updateAdminRole);
 
 module.exports = router;
