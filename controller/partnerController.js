@@ -133,7 +133,8 @@ exports.getPartners = async (req, res) => {
       const serviceablePincodes = await ServiceablePincode.find({
         partner: partner._id,
       }).select("pincode -_id");
-      partner.pincodes = serviceablePincodes.map((pincode) => pincode.pincode);
+      // Generate a comma-separated string of pincodes
+  partner.pincode = serviceablePincodes.map(pincode => pincode.pincode).join(",");
     }
 
     res.status(200).json({
