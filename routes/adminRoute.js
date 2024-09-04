@@ -19,6 +19,6 @@ router.get("/all", verifyToken, allAdmin);
 router.put("/toggle/status", verifyToken,  changeStatus);
 router.put("/delete", verifyToken,  deleteAdmin);
 router.post("/update/password", verifyToken, updateAdminPassword);
-router.post("/update/role", updateAdminRole);
+router.post("/update/role", verifyToken, updateAdminRole);
 
 module.exports = router;
