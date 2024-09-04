@@ -6,7 +6,7 @@ const {
   login,
   allAdmin,
   deleteAdmin,
-  updateAdmin,
+  updateAdminPassword,
   changeStatus,
 } = require("../controller/adminController");
 const verifyToken = require("../middleware/verifyToken");
@@ -15,8 +15,8 @@ router.post("/register", register);
 router.post("/login", login);
 
 router.get("/all", verifyToken, allAdmin);
-router.put("/status", verifyToken, changeStatus);
-router.put("/delete", verifyToken, deleteAdmin);
-router.put("/update", verifyToken, updateAdmin);
+router.put("/toggle/status", verifyToken,  changeStatus);
+router.put("/delete", verifyToken,  deleteAdmin);
+router.post("/update/password", verifyToken, updateAdminPassword);
 
 module.exports = router;
