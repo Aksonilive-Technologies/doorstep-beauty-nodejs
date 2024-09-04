@@ -8,28 +8,28 @@ exports.register = async (req, res) => {
   const { adminId } = req.query;
 
   try {
-    if(!adminId){
-      return res
-        .status(400)
-        .json({ success: false, message: "Admin ID is missing" });
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin ID is missing",
+      });
     }
+
     const admin = await Admin.findById(adminId);
-    if (!admin) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Admin not found" });
+    if (!admin || admin.role !== 'all') {
+      return res.status(admin ? 401 : 404).json({
+        success: false,
+        message: admin ? "You are not authorized" : "Admin not found",
+      });
     }
-    if(admin.role !== 'all'){
-      return res
-        .status(401)
-        .json({ success: false, message: "You are not authorized" });}
 
     const requiredFields = { name, username, password, email, role };
     for (const [key, value] of Object.entries(requiredFields)) {
       if (!value) {
-        return res
-          .status(400)
-          .json({ success: false, message: `Please fill ${key}` });
+        return res.status(400).json({
+          success: false,
+          message: `Please fill ${key}`,
+        });
       }
     }
 
@@ -38,36 +38,24 @@ exports.register = async (req, res) => {
       Admin.findOne({ email }),
     ]);
 
-    if (existingAdminUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Username already exists" });
-    }
-
-    if (existingAdminEmail) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already exists" });
+    if (existingAdminUser || existingAdminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: existingAdminUser ? "Username already exists" : "Email already exists",
+      });
     }
 
     const hashedPassword = await bcryptjs.hash(password, 10);
-
-    const newAdmin = new Admin({
-      name,
-      username,
-      password: hashedPassword,
-      email,
-      role,
-    });
+    const newAdmin = new Admin({ name, username, password: hashedPassword, email, role });
 
     await newAdmin.save();
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Admin registered successfully",
     });
   } catch (error) {
     console.error("Error while registering Admin:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error occurred while registering admin",
     });
@@ -76,56 +64,33 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
-  //
-  // Validate request data
-  if (!username) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Please fill username" });
-  }
-  if (!password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Please fill password" });
+
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: !username ? "Please fill username" : "Please fill password",
+    });
   }
 
   try {
-    // Fetch admin data
     const admin = await Admin.findOne({ username });
-    if (!admin) {
+    if (!admin || !await bcryptjs.compare(password, admin.password)) {
       return res.status(401).json({
         success: false,
         message: "Invalid username or password",
       });
     }
-    if (admin.isActive === false) {
-      return res.status(401).json({
+    if (!admin.isActive || admin.isDeleted) {
+      return res.status(403).json({
         success: false,
-        message: "Your account is inactive, please contact superadmin.",
-      });
-    }
-    if (admin.isDeleted === true) {
-      return res.status(401).json({
-        success: false,
-        message: "Your account is suspended, please contact superadmin.",
+        message: admin.isDeleted
+          ? "Your account is suspended, please contact superadmin."
+          : "Your account is inactive, please contact superadmin.",
       });
     }
 
-    // Validate password
-    const isValidPassword = await bcryptjs.compare(password, admin.password);
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid username or password",
-      });
-    }
+    const token = jwt.sign({ AdminId: admin._id }, process.env.SECRET_KEY, { expiresIn: "1d" });
 
-    // Generate JWT token
-    const token = jwt.sign({ AdminId: admin._id }, process.env.SECRET_KEY, {
-      expiresIn: "1d",
-    });
-
-    // Return success response with admin name and id
     return res.status(200).json({
       success: true,
       message: "Admin logged in successfully",
@@ -133,82 +98,74 @@ exports.login = async (req, res) => {
         id: admin._id,
         name: admin.name,
         username: admin.username,
-        token: token,
+        token,
         role: admin.role,
       },
     });
   } catch (error) {
     console.error("Error while logging in:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
       success: false,
+      message: "Internal Server Error",
     });
   }
 };
 
 exports.allAdmin = async (req, res) => {
   const { adminId } = req.query;
-  try {
 
+  try {
     if (!adminId) {
       return res.status(400).json({
-        message: "Admin ID is required",
         success: false,
+        message: "Admin ID is required",
       });
     }
 
-    // Find the logged-in user's level
     const loggedInUser = await Admin.findById(adminId);
     if (!loggedInUser) {
       return res.status(404).json({
-        message: "Admin not found",
         success: false,
+        message: "Admin not found",
       });
     }
-    if(loggedInUser.role !== 'all'){
+
+    if (loggedInUser.role !== 'all') {
       return res.status(401).json({
-        message: "You are not authorized to view this page",
         success: false,
+        message: "You are not authorized to view this page",
       });
     }
 
     // Handle pagination parameters
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
 
-    // Find admins with a higher level than the logged-in user, with pagination
-    // Change: Updated condition to { $gt: existingLevel } to match the logic for counting total admins later
-    const admins = await Admin.find({
-      _id: { $ne: adminId }
-    })
+    // Retrieve admins excluding the logged-in admin, with pagination
+    const admins = await Admin.find({ _id: { $ne: adminId } })
       .select("-password -__v")
       .skip(skip)
       .limit(limit);
 
-    // Change: Added check for admins.length === 0 to correctly handle the case where no admins are found
-    if (!admins || admins.length === 0) {
+    if (admins.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No admins found",
       });
     }
 
-    // Count the total number of admins with a higher level than the logged-in user
-    // Change: Updated condition to { $gt: existingLevel } to match the logic for finding admins earlier
-    const totalAdmins = await Admin.countDocuments({
-      _id: { $ne: adminId },
-    });
+    const totalAdmins = await Admin.countDocuments({ _id: { $ne: adminId } });
 
     return res.status(200).json({
       success: true,
-      message:
-        "Successfully retrieved all admins",
+      message: "Successfully retrieved all admins",
       data: admins,
       totalPages: Math.ceil(totalAdmins / limit),
       currentPage: page,
     });
   } catch (error) {
+    console.error("Error while retrieving admins:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while retrieving admins",
@@ -218,32 +175,23 @@ exports.allAdmin = async (req, res) => {
 
 exports.deleteAdmin = async (req, res) => {
   try {
-    const {superadminId, Id } = req.query;
-    if(!superadminId){
+    const { superadminId, Id } = req.query;
+
+    if (!superadminId || !Id) {
       return res.status(400).json({
         success: false,
-        message: "Superadmin ID is required",
-      });}
-    if(!Id){
-      return res.status(400).json({
-        success: false,
-        message: "Admin ID is required",
+        message: !superadminId ? "Superadmin ID is required" : "Admin ID is required",
       });
     }
 
     const loggedInUser = await Admin.findById(superadminId);
-    if (!loggedInUser) {
-      return res.status(404).json({
+    if (!loggedInUser || loggedInUser.role !== 'all') {
+      return res.status(loggedInUser ? 401 : 404).json({
         success: false,
-        message: "Superadmin not found",
+        message: loggedInUser ? "You are not authorized" : "Superadmin not found",
       });
     }
-    if(loggedInUser.role !== 'all'){
-      return res.status(401).json({
-        message: "You are not authorized",
-        success: false,
-      });
-    }
+
     const admin = await Admin.findById(Id);
     if (!admin) {
       return res.status(404).json({
@@ -254,16 +202,11 @@ exports.deleteAdmin = async (req, res) => {
     if (admin.isDeleted) {
       return res.status(400).json({
         success: false,
-        message:
-          "Account is already suspended",
+        message: "Account is already suspended",
       });
     }
 
-    await Admin.findByIdAndUpdate(
-      Id,
-      { isDeleted: true },
-      { new: true }
-    );
+    await Admin.findByIdAndUpdate(Id, { isDeleted: true }, { new: true });
 
     return res.status(200).json({
       success: true,
@@ -282,23 +225,15 @@ exports.updateAdminPassword = async (req, res) => {
   try {
     const { adminId, username, password } = req.body;
 
-    if(!adminId){
+    if (!adminId || !username || !password) {
       return res.status(400).json({
         success: false,
-        message: "Admin ID is required",
+        message: !adminId ? "Admin ID is required" 
+                          : !username ? "Username is required" 
+                                      : "Password is required",
       });
     }
-    else if(!username){
-      return res.status(400).json({
-        success: false,
-        message: "Username is required",
-      });
-    }else if(!password){
-      return res.status(400).json({
-        success: false,
-        message: "Password is required",
-      });
-    }
+
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({
@@ -306,25 +241,21 @@ exports.updateAdminPassword = async (req, res) => {
         message: "Admin not found",
       });
     }
-    else if (admin.isDeleted === true || admin.isActive === false) {
-      return res.status(404).json({
+    if (admin.isDeleted || !admin.isActive) {
+      return res.status(403).json({
         success: false,
-        message:
-          "Account is already suspended, kindly contact superadmin",
+        message: "Account is suspended, please contact superadmin",
       });
-    }else if(admin.username !== username){
-      return res.status(404).json({
+    }
+    if (admin.username !== username) {
+      return res.status(400).json({
         success: false,
-        message: "Please enter correct username",
+        message: "Incorrect username",
       });
     }
 
-    // Create an update object dynamically
-    const updateData = {};
     const hashedPassword = await bcryptjs.hash(password, 10);
-      updateData.password = hashedPassword;
-
-    await Admin.findByIdAndUpdate(adminId, updateData, { new: true });
+    await Admin.findByIdAndUpdate(adminId, { password: hashedPassword }, { new: true });
 
     return res.status(200).json({
       success: true,
@@ -341,34 +272,24 @@ exports.updateAdminPassword = async (req, res) => {
 };
 
 exports.changeStatus = async (req, res) => {
-  const {superadminId, Id } = req.query;
+  const { superadminId, Id } = req.query;
+
+  if (!superadminId || !Id) {
+    return res.status(400).json({
+      success: false,
+      message: `${!superadminId ? 'Superadmin ID' : 'Admin ID'} is required`,
+    });
+  }
 
   try {
-    if(!superadminId){
-      return res.status(400).json({
-        success: false,
-        message: "Superadmin ID is required",
-      });
-    }else if(!Id){
-      return res.status(400).json({
-        success: false,
-        message: "Admin ID is required",
-      });
-    }
-    
     const loggedInUser = await Admin.findById(superadminId);
-    if (!loggedInUser) {
-      return res.status(404).json({
+    if (!loggedInUser || loggedInUser.role !== 'all') {
+      return res.status(loggedInUser ? 401 : 404).json({
         success: false,
-        message: "Superadmin not found",
+        message: loggedInUser ? "You are not authorized" : "Superadmin not found",
       });
     }
-    if(loggedInUser.role !== 'all'){
-      return res.status(401).json({
-        message: "You are not authorized",
-        success: false,
-      });
-    }
+
     const admin = await Admin.findById(Id);
     if (!admin) {
       return res.status(404).json({
@@ -377,20 +298,15 @@ exports.changeStatus = async (req, res) => {
       });
     }
 
-    const updatedStatus = !admin.isActive;
+    admin.isActive = !admin.isActive;
+    await admin.save();
 
-    await Admin.findByIdAndUpdate(
-      Id,
-      { isActive: updatedStatus },
-      { new: true }
-    );
-
-    const message = updatedStatus
+    const message = admin.isActive
       ? "Account activated successfully"
       : "Account blocked successfully";
     return res.status(200).json({
       success: true,
-      message: message,
+      message,
     });
   } catch (error) {
     console.error("Error while changing admin status:", error);
@@ -402,39 +318,26 @@ exports.changeStatus = async (req, res) => {
 };
 
 exports.updateAdminRole = async (req, res) => {
-  try {
-    const { superadminId, Id, role } = req.body;
+  const { superadminId, Id, role } = req.body;
 
-    if(!superadminId){
-      return res.status(400).json({
-        success: false,
-        message: "superadmin ID is required",
-      });
-    }
-    else if(!Id){
-      return res.status(400).json({
-        success: false,
-        message: "admin ID is required",
-      });
-    }else if(!role){
-      return res.status(400).json({
-        success: false,
-        message: "Admin role is required",
-      });
-    }
+  if (!superadminId || !Id || !role) {
+    return res.status(400).json({
+      success: false,
+      message: `${
+        !superadminId ? 'Superadmin ID' : !Id ? 'Admin ID' : 'Admin role'
+      } is required`,
+    });
+  }
+
+  try {
     const loggedInUser = await Admin.findById(superadminId);
-    if (!loggedInUser) {
-      return res.status(404).json({
+    if (!loggedInUser || loggedInUser.role !== 'all') {
+      return res.status(loggedInUser ? 401 : 404).json({
         success: false,
-        message: "Superadmin not found",
+        message: loggedInUser ? "You are not authorized" : "Superadmin not found",
       });
     }
-    if(loggedInUser.role !== 'all'){
-      return res.status(401).json({
-        message: "You are not authorized",
-        success: false,
-      });
-    }
+
     const admin = await Admin.findById(Id);
     if (!admin) {
       return res.status(404).json({
@@ -443,10 +346,8 @@ exports.updateAdminRole = async (req, res) => {
       });
     }
 
-    // Create an update object dynamically
-    const updateData = {role: role};
-
-    await Admin.findByIdAndUpdate(Id, updateData, { new: true });
+    admin.role = role;
+    await admin.save();
 
     return res.status(200).json({
       success: true,
