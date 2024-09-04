@@ -50,6 +50,12 @@ exports.register = async (req, res) => {
   if (validationError) {
     return res.status(400).json({ success: false, message: validationError });
   }
+  if (typeof pincode !== "string") {
+    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+  }
+  if(pincode.includes(" ")){
+    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
+  }
 
   try {
     // Check if email already exists
@@ -127,7 +133,8 @@ exports.getPartners = async (req, res) => {
       const serviceablePincodes = await ServiceablePincode.find({
         partner: partner._id,
       }).select("pincode -_id");
-      partner.pincodes = serviceablePincodes.map((pincode) => pincode.pincode);
+      // Generate a comma-separated string of pincodes
+  partner.pincode = serviceablePincodes.map(pincode => pincode.pincode).join(",");
     }
 
     res.status(200).json({
@@ -163,6 +170,12 @@ exports.updatePartner = async (req, res) => {
       success: false,
       message: "Please provide at least one field to update.",
     });
+  }
+  if (typeof pincode !== "string") {
+    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+  }
+  if(pincode.includes(" ")){
+    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
   }
 
   try {
