@@ -10,6 +10,7 @@ exports.fetchBookings = async (req, res) => {
     const bookings = await Booking.find()
       .populate("product.product")
       .populate("partner.partner")
+      .populate("customer")
       .sort({ "scheduleFor.date": 1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
