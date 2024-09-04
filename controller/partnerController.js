@@ -50,6 +50,12 @@ exports.register = async (req, res) => {
   if (validationError) {
     return res.status(400).json({ success: false, message: validationError });
   }
+  if (typeof pincode !== "string") {
+    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+  }
+  if(pincode.includes(" ")){
+    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
+  }
 
   try {
     // Check if email already exists
@@ -163,6 +169,12 @@ exports.updatePartner = async (req, res) => {
       success: false,
       message: "Please provide at least one field to update.",
     });
+  }
+  if (typeof pincode !== "string") {
+    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+  }
+  if(pincode.includes(" ")){
+    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
   }
 
   try {
