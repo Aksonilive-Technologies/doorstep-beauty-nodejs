@@ -112,6 +112,7 @@ const getAllComplaints = async (req, res) => {
 
     // Retrieve complaints with pagination and populate customer details
     const data = await Complaint.find()
+    .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("customerId"); // Populates the customer details using customerId
@@ -216,4 +217,50 @@ const resolvedComplaint = async (req, res) => {
   }
 };
 
-module.exports = { createComplaint, getAllComplaints, resolvedComplaint };
+const getAllComplaintWithCustomerId = async (req, res) => {
+  try {
+    // Get the customerId from query parameters
+    const { customerId } = req.query;
+
+    if (!customerId) {
+      return res.status(400).json({
+        success: false,
+        message: "customerId is required.",
+      });
+    }
+
+    // Get pagination parameters from query, with default values
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Retrieve complaints with pagination for the given customerId
+    const data = await Complaint.find({ customerId })
+      .skip(skip)
+      .limit(limit)
+      .populate("customerId"); // Populates the customer details using customerId
+
+    // Get total count of complaints for the given customerId
+    const totalComplaints = await Complaint.countDocuments({ customerId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Complaints retrieved successfully",
+      data, // Data now includes populated customer details
+      pagination: {
+        totalComplaints,
+        currentPage: page,
+        totalPages: Math.ceil(totalComplaints / limit),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving complaints.",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { createComplaint, getAllComplaints, resolvedComplaint, getAllComplaintWithCustomerId };

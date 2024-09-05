@@ -29,57 +29,78 @@ db.once("open", () => {
 });
 
 const authorizationRoute = require("./authorizationRoute");
+const bookingRoute = require("./bookingRoute.js");
+const bookingAdminRoute = require("./bookingAdminRoute.js");
+const productRoute = require("./productRoute");
+const partnerRoute = require("./partnerRoute");
+const slotCustomerRoute = require("./slotCustomerRoute");
+const slotRoute = require("./slotRoutes");
+const appVersionRoute = require("./appVersionRoute");
+const customerRoute = require("./customerRoute");
+const cartRoute = require("./cartRoute");
+const bannerRoute = require("./bannerRoute");
+const membershipRoute = require("./membershipRoute");
+const feedbackRoute = require("./feedbackRoute");
+const customerAddressRoute = require("./customerAddressRoute");
+const categoryRoute = require("./categoryRoute");
+const offerRoute = require("./offerRoute");
+const stockRoute = require("./stockRoute");
+const adminRoute = require("./adminRoute");
+const notificationRoute = require("./notificationRoutes");
+const productAdminRoute = require("./productAdminRoute");
+const packageAdminRoute = require("./packageAdminRoute");
+const adminComplainRoute = require("./adminComplainRoute");
+const categoryAdminRoutes = require("./categoryAdminRoutes");
+const packageAppRoute = require("./packageAppRoute");
+const bannerAppRoute = require("./bannerAppRoute");
+const categoryAppRoute = require("./categoryAppRoute");
+const feedbackCustomerRoute = require("./feedbackCustomerRoute");
+const customerComplaintRoute = require("./customerComplaintRoute");
+const membershipCustomerRoute = require("./membershipCustomerRoute");
 
-//***************Customer Route************************ */
+//***************Customer Route API************************ */
 
 app.use("/api/v1/customer/auth/otp", authorizationRoute);
-app.use("/api/v1/customer/category", require("./categoryAppRoute"));
+app.use("/api/v1/customer/category", categoryAppRoute);
+app.use("/api/v1/customer/product", productRoute);
+app.use("/api/v1/customer/booking", bookingRoute);
+app.use("/api/v1/customer/cart", cartRoute);
+app.use("/api/v1/customer/address", customerAddressRoute);
+app.use("/api/v1/customer/banner", bannerAppRoute);
+app.use("/api/v1/customer/package", packageAppRoute);
+app.use("/api/v1/customer/feedback", feedbackCustomerRoute);
+app.use("/api/v1/customer/complain", customerComplaintRoute);
+app.use("/api/v1/customer/membership", membershipCustomerRoute);
+app.use("/api/v1/customer/wallet", customerRoute);
+app.use("/api/v1/customer/slot", slotCustomerRoute);
+app.use("/api/v1/customer", customerRoute);
 
-app.use("/api/v1/customer/product", require("./productRoute"));
-app.use("/api/v1/customer/order", require("./orderRoute"));
-app.use("/api/v1/customer/cart", require("./cartRoute"));
-app.use("/api/v1/customer/service", require("./serviceRoute"));
-app.use("/api/v1/customer/address", require("./customerAddressRoute"));
-app.use("/api/v1/customer/banner", require("./bannerAppRoute"));
-app.use("/api/v1/customer/package", require("./packageAppRoute.js"));
-app.use("/api/v1/customer/feedback", require("./feedbackCustomerRoute.js"));
-app.use("/api/v1/customer/complain", require("./customerComplaintRoute.js"));
-app.use("/api/v1/customer/membership", require("./membershipCustomerRoute.js"));
-app.use("/api/v1/customer/wallet", require("./customerRoute"));
-//app.use("/api/v1/customer/wishlist", require("./wishlistRoute"));
-app.use("/api/v1/customer", require("./customerRoute"));
 
-//**************Admin Route**************************** */
+//**************Admin Route API**************************** */
+app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/admin/partner", partnerRoute);
+app.use("/api/v1/admin/banner", bannerRoute);
+app.use("/api/v1/admin/category", categoryRoute);
+app.use("/api/v1/admin/product", productAdminRoute);
+app.use("/api/v1/admin/package", packageAdminRoute);
+app.use("/api/v1/admin/membership", membershipRoute);
+app.use("/api/v1/admin/complain", adminComplainRoute);
+app.use("/api/v1/admin/feedback", feedbackRoute);
+app.use("/api/v1/admin/notification", notificationRoute);
+app.use("/api/v1/admin/offers", offerRoute);
+app.use("/api/v1/admin/slot", slotRoute);
+app.use("/api/v1/admin/category", categoryAdminRoutes);
+app.use("/api/v1/admin/stock", stockRoute);
+app.use("/api/v1/admin/booking", bookingAdminRoute);
 
-app.use("/api/v1/admin", require("./adminRoute"));
-
-//**************Partner Route************************ */
-app.use("/api/v1/partner", require("./partnerRoute"));
-
-//**************Banner Route************************ */
-app.use("/api/v1/admin/banner", require("./bannerRoute"));
-app.use("/api/v1/customer/stock", require("./stockRoute"));
-app.use("/api/v1/admin/category", require("./categoryRoute"));
-
-//**************Product Route************************ */
-app.use("/api/v1/admin/product", require("./productAdminRoute"));
-app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
-app.use("/api/v1/admin/pakage", require("./packageAdminRoute"));
-
-//**************testing Apis************************ */
+//**************Testing Route API************************ */
 app.use("/api/v1/testing/admin", require("./testingRoute.js"));
 
-//**************package Apis************************ */
-app.use("/api/v1/admin/package", require("./packageAdminRoute.js"));
+//**************User Route API************************ */
+app.use("/api/v1/user/fcm/token", require("./firebaseTokenRoute.js"));
+app.use("/api/v1/user/app/version", appVersionRoute);
+ // comment
 
-//**************Membership Apis************************ */
-app.use("/api/v1/admin/membership", require("./membershipRoute.js"));
-
-//**************complain Apis************************ */
-app.use("/api/v1/admin/complain", require("./adminComplainRoute.js"));
-
-//**************feedback Apis************************ */
-app.use("/api/v1/admin/feedback", require("./feedbackRoute.js"));
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({

@@ -114,7 +114,8 @@ exports.getAllNewProducts = async (req, res) => {
       isActive: true,
       isDeleted: false,
       isnew: true,
-    }).select("-__v");
+    }).sort({ createdAt: -1 })
+    .select("-__v");
     res.status(200).json({
       success: true,
       message: "All products fetched successfully",
