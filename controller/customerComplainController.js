@@ -112,6 +112,7 @@ const getAllComplaints = async (req, res) => {
 
     // Retrieve complaints with pagination and populate customer details
     const data = await Complaint.find()
+    .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("customerId"); // Populates the customer details using customerId

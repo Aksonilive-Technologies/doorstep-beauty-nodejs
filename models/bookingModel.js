@@ -60,7 +60,7 @@ const BookingSchema = new mongoose.Schema(
     discountType: {
       type: String,
       enum: ["percentage", "flat_amount","product"],
-      default: "flat_amount",
+      default: null,
     },
     discountValue: {
       type: Number,
