@@ -59,6 +59,7 @@ const feedbackCustomerRoute = require("./feedbackCustomerRoute");
 const customerComplaintRoute = require("./customerComplaintRoute");
 const membershipCustomerRoute = require("./membershipCustomerRoute");
 const firebaseTokenRoute = require("./firebaseTokenRoute");
+const partnerWalletRoute = require("./partnerWalletRoute");
 
 //***************Customer Route API************************ */
 
@@ -79,6 +80,7 @@ app.use("/api/v1/customer", customerRoute);
 
 //**************Partner Route API************************ */
 app.use("/api/v1/partner", partnerRoute);
+app.use("/api/v1/partner/wallet", partnerWalletRoute);
 
 
 //**************Admin Route API**************************** */
