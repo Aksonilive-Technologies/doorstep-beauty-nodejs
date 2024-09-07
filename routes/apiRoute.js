@@ -30,7 +30,7 @@ db.once("open", () => {
 
 const authorizationRoute = require("./authorizationRoute");
 const bookingRoute = require("./bookingRoute.js");
-const partnerBookingRoute = require("./partnerBookingRoute.js");
+const partnerBookingRoute = require("./partnerBookingRoute");
 const bookingAdminRoute = require("./bookingAdminRoute.js");
 const productRoute = require("./productRoute");
 const partnerRoute = require("./partnerRoute");

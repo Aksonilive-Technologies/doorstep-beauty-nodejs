@@ -1,8 +1,8 @@
 const express = require("express");
-router = express.Router();
-const Bookings = require("../controller/partnerBookingController.js")
+const router = express.Router();
+const Bookings = require("../controller/partnerBookingController.js");
 
 
-router.get("/fetch", Bookings.fetchBookings);
 router.post("/fetch/unconfirmed", Bookings.fetchUnconfirmedBookings);
+router.post("/accept", Bookings.acceptBooking);
 module.exports = router
