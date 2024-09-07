@@ -1,380 +1,367 @@
-const { cloudinary } = require("../config/cloudinary.js");
-const Partner = require("../models/partnerModel.js");
-const ServiceablePincode = require("../models/servicablePincodeModel.js");
+const Partner = require("../models/PartnerModel.js");
+const jwt = require("jsonwebtoken");
+const generateCode = require("../helper/generateCode.js");
+const generateRandomCode = require("../helper/generateCode.js");
+const { cloudinary } = require("../config/cloudinary");
+const Transaction = require("../models/transactionModel.js");
+const ServicablePincode = require('../models/servicablePincodeModel');
+//Create Register
 
-//register the partner
-const validationRules = {
-  name: "Please fill the name",
-  email: "Please fill the email",
-  phone: {
-    message: "Please fill the mobile number",
-    length: 10,
-    lengthError: "Mobile number must have 10 digits",
-  },
-  address: "Please fill the address field",
-};
-
-// Validate user input
-const validateUserInput = (input) => {
-  // Check for missing fields
-  for (const [key, rule] of Object.entries(validationRules)) {
-    if (typeof rule === "string") {
-      if (!input[key]) {
-        return rule;
-      }
-    } else if (typeof rule === "object") {
-      if (!input[key]) {
-        return rule.message;
-      }
-      if (input[key].length !== rule.length) {
-        return rule.lengthError;
-      }
-    }
-  }
-
-  // Validate email format
-  const email = input.email;
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (email && !emailRegex.test(email)) {
-    return "Invalid email";
-  }
-
-  return null;
-};
-
-exports.register = async (req, res) => {
-  const { name, email, phone, address, pincode } = req.body;
-
-  // Validate user input
-  const validationError = validateUserInput({ name, email, phone, address });
-  if (validationError) {
-    return res.status(400).json({ success: false, message: validationError });
-  }
-  if (typeof pincode !== "string") {
-    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
-  }
-  if(pincode.includes(" ")){
-    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
-  }
-
-  try {
-    // Check if email already exists
-    const existingUser = await Partner.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already registered" });
-    }
-
-    // need to approve
-    // Upload the image to Cloudinary if present
-    let imageUrl = undefined;
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "partners",
-        public_id: `${Date.now()}_${name}`,
-        overwrite: true,
-      });
-      imageUrl = result.secure_url;
-    }
-
-    // Create a new partner
-    const user = new Partner({
-      name,
-      email,
-      phone,
-      address,
-      image: imageUrl || undefined,
-    });
-    await user.save();
-
-    // Split the pincode string into an array
-    const pincodes = pincode.split(",").map((pin) => pin.trim());
-
-    for (const pin of pincodes) {
-
-      //create a new pincode document
-      const serviceablePincode = new ServiceablePincode({
-        pincode: pin,
-        partner: user._id,
-      });
-      await serviceablePincode.save();
-    }
-
-    res.status(201).json({
-      success: true,
-      message: "Partner created successfully",
-      data: user,
-    });
-  } catch (error) {
-    console.error("Error creating partner:", error); // Log the error for debugging
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while creating the partner",
-      errorMessage: error.message,
-    });
-  }
-};
-
-//fetching all the partners
-exports.getPartners = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
-
-    const partners = await Partner.find()
-      .limit(limit * 1) // Convert string to number
-      .skip((page - 1) * limit)
-      .lean();
-
-    const totalPartners = await Partner.countDocuments();
-
-    for(let i = 0; i < partners.length; i++) {
-      const partner = partners[i];
-      const serviceablePincodes = await ServiceablePincode.find({
-        partner: partner._id,
-      }).select("pincode -_id");
-      // Generate a comma-separated string of pincodes
-  partner.pincode = serviceablePincodes.map(pincode => pincode.pincode).join(",");
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Partners retrieved successfully",
-      data: partners,
-      totalPartners,
-      totalPages: Math.ceil(totalPartners / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while fetching partners",
-      errorMessage: error.message,
-    });
-  }
-};
-
-exports.updatePartner = async (req, res) => {
+exports.partnerById = async (req, res) => {
   const { id } = req.query;
-  const { name, email, phone, address, pincode } = req.body;
-
-  if (!id) {
-    return res.status(400).json({
-      success: false,
-      message: "Partner ID is required.",
-    });
-  }
-
-  if (!name && !email && !phone && !address && !pincode) {
-    return res.status(400).json({
-      success: false,
-      message: "Please provide at least one field to update.",
-    });
-  }
-  if (typeof pincode !== "string") {
-    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
-  }
-  if(pincode.includes(" ")){
-    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
-  }
-
   try {
-    const partner = await Partner.findById(id);
+    if (!id) {
+      return res.status(404).json({
+        success: false,
+        message: "Partner ID is required.",
+      });
+    }
+    const partner = await Partner.findById(id)
+      .select("-__v");
 
     if (!partner) {
       return res.status(404).json({
         success: false,
         message: "Partner not found",
-      });
-    }
-
-    if (partner.isActive === false) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is suspended",
       });
     }
 
     if (partner.isDeleted === true) {
-      return res.status(403).json({
+      return res.status(404).json({
         success: false,
         message: "Your account is deactivated, please contact the support team",
       });
     }
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
-    if (address) updateData.address = address;
-    if(Object.keys(updateData).length > 0){
-    const partnerUpdated = await Partner.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
-
-    if (!partnerUpdated) {
-      return res.status(500).json({
+    if (partner.isActive === false) {
+      return res.status(404).json({
         success: false,
-        message: "Error updating partner details",
+        message: "Your account is suspended for now",
       });
-    }}
-    
-    if (pincode) {
-      try {
-        const pincodes = pincode.split(",").map(pin => parseInt(pin.trim(), 10));
-        const existingPincodes = await ServiceablePincode.find({ partner: id }).select('pincode _id');
-        const existingPincodesArray = existingPincodes.map(p => ({
-          pincode: p.pincode,
-          id: p._id
-        }));
-
-        // Determine which pincodes need to be added
-        const pincodesToAdd = pincodes.filter(pin => 
-          !existingPincodesArray.some(existing => existing.pincode === pin)
-        );
-        
-        // Determine which pincodes need to be removed
-        const pincodesToRemove = existingPincodesArray
-          .filter(existing => !pincodes.includes(existing.pincode))
-          .map(existing => existing.id);
-
-        // Remove old pincodes
-        if (pincodesToRemove.length > 0) {
-          await ServiceablePincode.deleteMany({ _id: { $in: pincodesToRemove } });
-        }
-
-        // Add new pincodes
-        if (pincodesToAdd.length > 0) {
-          const newPincodes = pincodesToAdd.map(pin => ({
-            pincode: pin,
-            partner: id,
-          }));
-          await ServiceablePincode.insertMany(newPincodes);
-        }
-        
-      } catch (error) {
-        return res.status(500).json({
-          success: false,
-          message: "Error updating pincode",
-          errorMessage: error.message,
-        });
-      }
     }
-    
 
     res.status(200).json({
       success: true,
-      message: "Partner updated successfully",
+      message: "Partner fetched successfully",
+      data: partner,
     });
   } catch (error) {
-    console.error("Error updating partner:", error);
     res.status(500).json({
       success: false,
-      message: "Error updating partner",
-      errorMessage: error.message,
-    });
-  }
-};
-//delete
-exports.deletePartner = async (req, res) => {
-  const { id } = req.query;
-
-  // Validate the presence of 'id'
-  if (!id) {
-    return res.status(400).json({
-      success: false,
-      message: "Partner ID is required.",
-    });
-  }
-
-  try {
-    // Find the partner by ID
-    const partner = await Partner.findById(id);
-
-    if (!partner) {
-      return res.status(404).json({
-        success: false,
-        message: "Partner not found",
-      });
-    }
-
-    // Check if the partner is already deleted or inactive
-    if (partner.isDeleted) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Your account is already deleted. Please contact the support team for assistance.",
-      });
-    }
-
-    // if (!partner.isActive) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Your account is currently inactive.",
-    //   });
-    // }
-
-    // Mark the partner as deleted
-    const partnerDeleted = await Partner.findByIdAndUpdate(
-      id,
-      { isDeleted: true },
-      { new: true }
-    );
-
-    if (!partnerDeleted) {
-      return res.status(500).json({
-        success: false,
-        message: "Error deleting partner",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Your account has been successfully deleted.",
-    });
-  } catch (error) {
-    console.error("Error deleting partner:", error); // Log the error for debugging
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred while deleting the partner.",
+      message: "Error fetching partner",
       errorMessage: error.message,
     });
   }
 };
 
-exports.changeStatus = async (req, res) => {
-  const { id } = req.query;
+exports.checkExistance = async (req, res) => {
+  const { mobile } = req.query;
 
   try {
-    // Find the admin by ID
-    const partner = await Partner.findById(id);
-
+    if (!mobile) {
+      return res.status(404).json({
+        success: false,
+        message: "Mobile number is required",
+      });
+    }
+    console.log(mobile);
+    const partner = await Partner.findOne({ phone: mobile })
+      .select("-__v");
     if (!partner) {
+      return res.status(404).json({
+        success: false,
+        message: "Partner with mobile number " + mobile + " not found",
+      });
+    }
+    if (partner.isDeleted === true) {
+      return res.status(404).json({
+        success: false,
+        message: "Your account is deactivated, please contact the support team",
+      });
+    }
+    if (partner.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message: "Your account is suspended for now",
+      });
+    }
+    if (partner) {
+      return res.status(200).json({
+        success: true,
+        message: "Partner is found",
+        data: partner,
+      });
+    } else {
       return res.status(404).json({
         success: false,
         message: "Partner not found",
       });
     }
-
-    const updatedStatus = !partner.isActive;
-
-    await Partner.findByIdAndUpdate(
-      id,
-      { isActive: updatedStatus },
-      { new: true }
-    );
-
-    const message = updatedStatus
-      ? "Account activated successfully"
-      : "Account blocked successfully";
-    return res.status(200).json({
-      success: true,
-      message: message,
-    });
   } catch (error) {
-    console.error("Error while changing partner status:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Failed to update the status",
+      message: "Error checking partner existence",
+      errorMessage: error.message,
     });
   }
 };
+
+// Add money to wallet
+// exports.addMoneyToWallet = async (req, res) => {
+//   const { id, amount, paymentGateway } = req.body;
+
+//   if (!id || !amount || !paymentGateway) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Customer ID ,payment Gateway and amount are required",
+//     });
+//   }
+
+//   try {
+//     // Find the customer
+//     const customerRecord = await Customer.findOne({
+//       _id: id,
+//       isActive: true,
+//       isDeleted: false,
+//     });
+
+//     if (!customerRecord) {
+//       return res.status(404).json({
+//         success: false,
+//         message:
+//           "Customer not found, may be deleted or deactivated temporarily",
+//       });
+//     }
+
+//     // Create a transaction record with status "Pending"
+//     const transaction = new Transaction({
+//       customerId: id,
+//       transactionType: "recharge_wallet",
+//       amount: Number(amount),
+//       paymentGateway: paymentGateway,
+//     });
+
+//     // Save the transaction record
+//     await transaction.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: `₹${amount} recharge initiated for ${customerRecord.name}'s wallet.`,
+//       data: { Transaction: transaction },
+//     });
+//   } catch (error) {
+//     console.error("Error adding money to wallet:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error adding money to wallet",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
+// // Debit money from wallet
+// exports.debitMoneyFromWallet = async (req, res) => {
+//   const { id, amount } = req.body;
+
+//   if (!id || !amount) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Customer ID and amount are required",
+//     });
+//   }
+
+//   try {
+//     const customer = await Customer.findOne({
+//       _id: id,
+//       isActive: true,
+//       isDeleted: false,
+//     });
+
+//     if (!customerRecord || customer.length === 0 || customer === null) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Customer not found,may be deleted or deactivated temporarily",
+//       });
+//     }
+
+//     if (customer.walletBalance < amount) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Insufficient balance in the wallet",
+//       });
+//     }
+
+//     customer.walletBalance -= amount;
+//     await customer.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: `₹${amount} debited from wallet successfully`,
+//     });
+//   } catch (error) {
+//     console.error("Error debiting money from wallet:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error debiting money from wallet",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
+// exports.getWalletBalance = async (req, res) => {
+//   try {
+//     const { id } = req.body;
+
+//     if (!id) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Customer ID {id} is required" });
+//     }
+//     const customer = await Customer.findOne({
+//       _id: id,
+//       isActive: true,
+//       isDeleted: false,
+//     });
+
+//     if (!customer) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Customer not found,may be deleted or deactivated temporarily",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Wallet balance fetched successfully",
+//       data: { Balance: customer.walletBalance },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching wallet balance:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
+// exports.updateTransactionStatus = async (req, res) => {
+//   const { transactionId, status, paymentGatewayId } = req.body;
+
+//   if (!transactionId || !status) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Transaction ID and status are required",
+//     });
+//   }
+
+//   try {
+//     const transactionRecord = await Transaction.findOne({
+//       _id: transactionId,
+//       isDeleted: false,
+//     });
+
+//     if (!transactionRecord) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Transaction not found with given ID" + transactionId,
+//       });
+//     }
+
+//     if (transactionRecord.status !== "pending") {
+//       return res.status(400).json({
+//         success: false,
+//         message: `Transaction is already marked as ${transactionRecord.status}`,
+//       });
+//     }
+
+//     if (status === "completed") {
+//       // Update the transaction status to "Completed"
+//       transactionRecord.status = "completed";
+//       transactionRecord.transactionRefId = paymentGatewayId;
+//       await transactionRecord.save();
+
+//       // Add money to the wallet
+//       const customerRecord = await Customer.findOne({
+//         _id: transactionRecord.customerId,
+//         isDeleted: false,
+//         isActive: true,
+//       });
+//       if (!customerRecord) {
+//         return res.status(404).json({
+//           success: false,
+//           message:
+//             "Customer not found,may be deleted or deactivated temporarily",
+//         });
+//       }
+//       customerRecord.walletBalance += transactionRecord.amount;
+//       await customerRecord.save();
+
+//       return res.status(200).json({
+//         success: true,
+//         message: `Transaction updated successfully. ₹${transactionRecord.amount} added to wallet.`,
+//         data: { Transaction: transactionRecord },
+//       });
+//     } else if (status === "failed") {
+//       // Update the transaction status to "failed"
+//       transactionRecord.status = "failed";
+//       await transactionRecord.save();
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Transaction marked as failed. No money added to wallet.",
+//         data: { Transaction: transactionRecord },
+//       });
+//     } else {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid status value",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error updating transaction status:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error updating transaction status",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
+// exports.fetchWalletTransactions = async (req, res) => {
+//   const { id } = req.body;
+
+//   if (!id) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Customer ID is required",
+//     });
+//   }
+
+//   try {
+//     const transactions = await Transaction.find({
+//       customerId: id,
+//       transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
+//       status: "completed",
+
+//       isDeleted: false,
+//     }).sort({ createdAt: -1 });
+
+//     if (!transactions || transactions.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No wallet transactions found for this customer",
+//       });
+//     }
+
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Wallet transactions fetched successfully",
+
+//       data: transactions,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching wallet transactions:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error fetching wallet transactions",
+//       errorMessage: error.message,
+//     });
+//   }
+// };

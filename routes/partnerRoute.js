@@ -1,21 +1,24 @@
+// partnerRoute.js
 const express = require("express");
-router = express.Router();
-
+const router = express.Router();
 const {
-  register,
-  getPartners,
-  updatePartner,
-  deletePartner,
-  changeStatus,
-} = require("../controller/partnerController");
-const verifyToken = require("../middleware/verifyToken");
-const { uploadSingleImage } = require("../middleware/uploadMiddleware");
+  partnerById,
+  checkExistance,
+  addMoneyToWallet,
+  debitMoneyFromWallet,
+  getWalletBalance,
+  updateTransactionStatus,
+  fetchWalletTransactions,
+} = require("../controller/partnerController.js");
+const verifyToken = require("../middleware/verifyToken.js");
 
-// need to approve
-router.post("/register", uploadSingleImage, register);
-router.get("/all", getPartners);
-router.put("/update", uploadSingleImage, updatePartner);
-router.delete("/delete", deletePartner);
-router.put("/change-status", changeStatus);
+router.get("/profile/fetch", partnerById);
+router.get("/check-existence", checkExistance);
+// router.post("/add", addMoneyToWallet);
+// router.post("/debit", debitMoneyFromWallet);
+// router.post("/fetch", getWalletBalance);
+// router.post("/update-transaction-status", updateTransactionStatus);
+// router.post("/fetch-transactions", fetchWalletTransactions);
+
 
 module.exports = router;
