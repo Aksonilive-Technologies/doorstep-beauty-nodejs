@@ -10,10 +10,10 @@ const {
 } = require("../controller/partnerWalletController.js");
 const verifyToken = require("../middleware/verifyToken.js");
 
-// router.post("/add", addMoneyToWallet);
+router.post("/recharge", addMoneyToWallet);
 // router.post("/debit", debitMoneyFromWallet);
 router.post("/fetch", getWalletBalance);
-// router.post("/update-transaction-status", updateTransactionStatus);
+router.post("/update-transaction-status", updateTransactionStatus);
 // router.post("/fetch-transactions", fetchWalletTransactions);
 
 

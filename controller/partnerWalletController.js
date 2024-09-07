@@ -3,62 +3,62 @@ const jwt = require("jsonwebtoken");
 const generateCode = require("../helper/generateCode.js");
 const generateRandomCode = require("../helper/generateCode.js");
 const { cloudinary } = require("../config/cloudinary");
-const Transaction = require("../models/transactionModel.js");
+const PartnerTransaction = require("../models/partnerTransactionModel.js");
 const ServicablePincode = require('../models/servicablePincodeModel');
 const { partnerById } = require("./partnerController.js");
 
 // Add money to wallet
-// exports.addMoneyToWallet = async (req, res) => {
-//   const { id, amount, paymentGateway } = req.body;
+exports.addMoneyToWallet = async (req, res) => {
+  const { id, amount, paymentGateway } = req.body;
 
-//   if (!id || !amount || !paymentGateway) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Customer ID ,payment Gateway and amount are required",
-//     });
-//   }
+  if (!id || !amount || !paymentGateway) {
+    return res.status(400).json({
+      success: false,
+      message: "Partner ID ,payment Gateway and amount are required",
+    });
+  }
 
-//   try {
-//     // Find the customer
-//     const customerRecord = await Customer.findOne({
-//       _id: id,
-//       isActive: true,
-//       isDeleted: false,
-//     });
+  try {
+    // Find the partner
+    const partnerRecord = await Partner.findOne({
+      _id: id,
+      isActive: true,
+      isDeleted: false,
+    });
 
-//     if (!customerRecord) {
-//       return res.status(404).json({
-//         success: false,
-//         message:
-//           "Customer not found, may be deleted or deactivated temporarily",
-//       });
-//     }
+    if (!partnerRecord) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Partner not found, may be deleted or deactivated temporarily",
+      });
+    }
 
-//     // Create a transaction record with status "Pending"
-//     const transaction = new Transaction({
-//       customerId: id,
-//       transactionType: "recharge_wallet",
-//       amount: Number(amount),
-//       paymentGateway: paymentGateway,
-//     });
+    // Create a transaction record with status "Pending"
+    const partnerTransaction = new PartnerTransaction({
+      partnerId: id,
+      transactionType: "recharge_wallet",
+      amount: Number(amount),
+      paymentGateway: paymentGateway,
+    });
 
-//     // Save the transaction record
-//     await transaction.save();
+    // Save the transaction record
+    await partnerTransaction.save();
 
-//     res.status(200).json({
-//       success: true,
-//       message: `₹${amount} recharge initiated for ${customerRecord.name}'s wallet.`,
-//       data: { Transaction: transaction },
-//     });
-//   } catch (error) {
-//     console.error("Error adding money to wallet:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error adding money to wallet",
-//       errorMessage: error.message,
-//     });
-//   }
-// };
+    res.status(200).json({
+      success: true,
+      message: `₹${amount} recharge initiated for ${partnerRecord.name}'s wallet.`,
+      data: { Transaction: partnerTransaction },
+    });
+  } catch (error) {
+    console.error("Error adding money to wallet:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error adding money to wallet",
+      errorMessage: error.message,
+    });
+  }
+};
 
 // // Debit money from wallet
 // exports.debitMoneyFromWallet = async (req, res) => {
@@ -142,88 +142,88 @@ exports.getWalletBalance = async (req, res) => {
   }
 };
 
-// exports.updateTransactionStatus = async (req, res) => {
-//   const { transactionId, status, paymentGatewayId } = req.body;
+exports.updateTransactionStatus = async (req, res) => {
+  const { transactionId, status, paymentGatewayId } = req.body;
 
-//   if (!transactionId || !status) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Transaction ID and status are required",
-//     });
-//   }
+  if (!transactionId || !status) {
+    return res.status(400).json({
+      success: false,
+      message: "Transaction ID and status are required",
+    });
+  }
 
-//   try {
-//     const transactionRecord = await Transaction.findOne({
-//       _id: transactionId,
-//       isDeleted: false,
-//     });
+  try {
+    const partnertransactionRecord = await PartnerTransaction.findOne({
+      _id: transactionId,
+      isDeleted: false,
+    });
 
-//     if (!transactionRecord) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Transaction not found with given ID" + transactionId,
-//       });
-//     }
+    if (!partnertransactionRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found with given ID" + transactionId,
+      });
+    }
 
-//     if (transactionRecord.status !== "pending") {
-//       return res.status(400).json({
-//         success: false,
-//         message: `Transaction is already marked as ${transactionRecord.status}`,
-//       });
-//     }
+    if (partnertransactionRecord.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: `Transaction is already marked as ${partnertransactionRecord.status}`,
+      });
+    }
 
-//     if (status === "completed") {
-//       // Update the transaction status to "Completed"
-//       transactionRecord.status = "completed";
-//       transactionRecord.transactionRefId = paymentGatewayId;
-//       await transactionRecord.save();
+    if (status === "completed") {
+      // Update the transaction status to "Completed"
+      partnertransactionRecord.status = "completed";
+      partnertransactionRecord.transactionRefId = paymentGatewayId;
+      await partnertransactionRecord.save();
 
-//       // Add money to the wallet
-//       const customerRecord = await Customer.findOne({
-//         _id: transactionRecord.customerId,
-//         isDeleted: false,
-//         isActive: true,
-//       });
-//       if (!customerRecord) {
-//         return res.status(404).json({
-//           success: false,
-//           message:
-//             "Customer not found,may be deleted or deactivated temporarily",
-//         });
-//       }
-//       customerRecord.walletBalance += transactionRecord.amount;
-//       await customerRecord.save();
+      // Add money to the wallet
+      const partnerRecord = await Partner.findOne({
+        _id: partnertransactionRecord.partnerId,
+        isDeleted: false,
+        isActive: true,
+      });
+      if (!partnerRecord) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Partner not found,may be deleted or deactivated temporarily",
+        });
+      }
+      partnerRecord.walletBalance += partnertransactionRecord.amount;
+      await partnerRecord.save();
 
-//       return res.status(200).json({
-//         success: true,
-//         message: `Transaction updated successfully. ₹${transactionRecord.amount} added to wallet.`,
-//         data: { Transaction: transactionRecord },
-//       });
-//     } else if (status === "failed") {
-//       // Update the transaction status to "failed"
-//       transactionRecord.status = "failed";
-//       await transactionRecord.save();
+      return res.status(200).json({
+        success: true,
+        message: `Transaction updated successfully. ₹${partnertransactionRecord.amount} added to wallet.`,
+        data: { Transaction: partnertransactionRecord },
+      });
+    } else if (status === "failed") {
+      // Update the transaction status to "failed"
+      partnertransactionRecord.status = "failed";
+      await partnertransactionRecord.save();
 
-//       return res.status(200).json({
-//         success: true,
-//         message: "Transaction marked as failed. No money added to wallet.",
-//         data: { Transaction: transactionRecord },
-//       });
-//     } else {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid status value",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error updating transaction status:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error updating transaction status",
-//       errorMessage: error.message,
-//     });
-//   }
-// };
+      return res.status(200).json({
+        success: true,
+        message: "Transaction marked as failed. No money added to wallet.",
+        data: { Transaction: partnertransactionRecord },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value",
+      });
+    }
+  } catch (error) {
+    console.error("Error updating transaction status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating transaction status",
+      errorMessage: error.message,
+    });
+  }
+};
 
 // exports.fetchWalletTransactions = async (req, res) => {
 //   const { id } = req.body;
