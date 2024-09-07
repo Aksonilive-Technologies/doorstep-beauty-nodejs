@@ -1,4 +1,4 @@
-const Partner = require("../models/PartnerModel.js");
+const Partner = require("../models/partnerModel.js");
 const jwt = require("jsonwebtoken");
 const generateCode = require("../helper/generateCode.js");
 const generateRandomCode = require("../helper/generateCode.js");
