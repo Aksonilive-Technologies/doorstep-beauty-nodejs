@@ -4,16 +4,13 @@ const router = express.Router();
 const {
   partnerById,
   checkExistance,
-  addMoneyToWallet,
-  debitMoneyFromWallet,
-  getWalletBalance,
-  updateTransactionStatus,
-  fetchWalletTransactions,
+  updatePartner,
 } = require("../controller/partnerController.js");
 const verifyToken = require("../middleware/verifyToken.js");
 
 router.get("/profile/fetch", partnerById);
 router.get("/check-existence", checkExistance);
+router.post("/update", uploadSingleImage, updatePartner);
 // router.post("/add", addMoneyToWallet);
 // router.post("/debit", debitMoneyFromWallet);
 // router.post("/fetch", getWalletBalance);
