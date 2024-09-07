@@ -30,6 +30,7 @@ db.once("open", () => {
 
 const authorizationRoute = require("./authorizationRoute");
 const bookingRoute = require("./bookingRoute.js");
+const partnerBookingRoute = require("./partnerBookingRoute.js");
 const bookingAdminRoute = require("./bookingAdminRoute.js");
 const productRoute = require("./productRoute");
 const partnerRoute = require("./partnerRoute");
@@ -81,6 +82,7 @@ app.use("/api/v1/customer", customerRoute);
 //**************Partner Route API************************ */
 app.use("/api/v1/partner", partnerRoute);
 app.use("/api/v1/partner/wallet", partnerWalletRoute);
+app.use("/api/v1/partner/booking", partnerBookingRoute);
 
 
 //**************Admin Route API**************************** */
