@@ -1,49 +1,7 @@
 const Booking = require("../models/bookingModel");
 const Partner = require("../models/partnerModel.js");
 const ServicablePincode = require("../models/servicablePincodeModel.js");
-
-
-exports.fetchBookings = async (req, res) => {
-    const { page = 1, limit = 10 } = req.query;
-
-  try {
-
-    // Fetch bookings with populated fields
-    const bookings = await Booking.find()
-      .populate("product.product")
-      .populate("partner.partner")
-      .populate("customer")
-      .sort({ "scheduleFor.date": 1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .lean();
-
-    const totalBookings = await Booking.countDocuments();
-
-    if (bookings.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No bookings found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Bookings fetched successfully",
-      data: bookings,
-      totalBookings,
-        currentPage: page,
-        totalPages: Math.ceil(totalBookings / limit),
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching bookings",
-      errorMessage: error.message,
-    });
-  }
-};
+const mongoose = require("mongoose");
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
   const { id } = req.body;
@@ -109,6 +67,71 @@ const filteredBookings = bookings.filter(booking => {
   res.status(500).json({
     success: false,
     message: "Error fetching unconfirmed bookings",
+    errorMessage: error.message,
+  });
+}
+};
+
+exports.acceptBooking = async (req, res) => {
+  const { partnerId, bookingId } = req.body;
+
+try {
+
+  if (!partnerId || !bookingId) {
+    return res.status(400).json({
+      success: false,
+      message: "Partner ID and Booking ID is required",
+    });
+  }
+
+  const partner = await Partner.findOne({_id:partnerId, isDeleted: false, isActive: true});
+
+  if (!partner) {
+    return res.status(404).json({
+      success: false,
+      message: "Partner not found",
+    });
+  }
+
+const booking = await Booking.findOne({_id:bookingId, serviceStatus: "pending",isDeleted: false, isActive: true});
+if(!booking){
+  return res.status(404).json({
+    success: false,
+    message: "Booking not found",
+  });
+}
+
+const newPartner = {
+  partner: new mongoose.Types.ObjectId(partnerId),
+  rating: 0,
+};
+
+// Check if the partner already exists in the array
+const partnerIndex = booking.partner.findIndex(p => p.partner.toString() === partnerId);
+
+if (partnerIndex > -1) {
+  return res.status(400).json({
+    success: false,
+    message: "Partner already exists in the booking",
+  });
+} else {
+  // If partner does not exist, add it to the array
+  booking.partner.push(newPartner);
+}
+
+// Save the updated booking
+await booking.save();
+
+
+  res.status(200).json({
+    success: true,
+    message: "Booking accepted successfully",
+  });
+
+} catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error accepting booking",
     errorMessage: error.message,
   });
 }
