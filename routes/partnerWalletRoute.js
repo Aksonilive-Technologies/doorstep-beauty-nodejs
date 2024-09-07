@@ -14,7 +14,7 @@ router.post("/recharge", addMoneyToWallet);
 // router.post("/debit", debitMoneyFromWallet);
 router.post("/fetch", getWalletBalance);
 router.post("/update-transaction-status", updateTransactionStatus);
-// router.post("/fetch-transactions", fetchWalletTransactions);
+router.post("/fetch-transactions", fetchWalletTransactions);
 
 
 module.exports = router;
