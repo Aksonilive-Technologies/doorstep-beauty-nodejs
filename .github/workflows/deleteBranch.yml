@@ -2,7 +2,10 @@ name: Delete Incoming Branch After Merge To Main
 
 on:
   pull_request:
-    types: [closed]
+    branches:
+      - main
+    types:
+      [closed]
 
 jobs:
   delete-branch:
