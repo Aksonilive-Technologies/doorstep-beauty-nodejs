@@ -1,8 +1,11 @@
-name: Delete Incoming Branch After Merge To Main
+name: Delete Incoming Branch After Merge To Beta
 
 on:
   pull_request:
-    types: [closed]
+    branches:
+      - beta
+    types:
+      [closed]
 
 jobs:
   delete-branch:
