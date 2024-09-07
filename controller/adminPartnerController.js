@@ -1,5 +1,5 @@
 const { cloudinary } = require("../config/cloudinary.js");
-const Partner = require("../models/PartnerModel.js");
+const Partner = require("../models/partnerModel.js");
 const ServiceablePincode = require("../models/servicablePincodeModel.js");
 
 //register the partner
