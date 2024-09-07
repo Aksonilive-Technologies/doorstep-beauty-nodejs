@@ -67,33 +67,33 @@ exports.addMoneyToWallet = async (req, res) => {
 //   if (!id || !amount) {
 //     return res.status(400).json({
 //       success: false,
-//       message: "Customer ID and amount are required",
+//       message: "Partner ID and amount are required",
 //     });
 //   }
 
 //   try {
-//     const customer = await Customer.findOne({
+//     const partner = await partner.findOne({
 //       _id: id,
 //       isActive: true,
 //       isDeleted: false,
 //     });
 
-//     if (!customerRecord || customer.length === 0 || customer === null) {
+//     if (!partnerRecord || partner.length === 0 || partner === null) {
 //       return res.status(404).json({
 //         success: false,
-//         message: "Customer not found,may be deleted or deactivated temporarily",
+//         message: "Partner not found,may be deleted or deactivated temporarily",
 //       });
 //     }
 
-//     if (customer.walletBalance < amount) {
+//     if (partner.walletBalance < amount) {
 //       return res.status(400).json({
 //         success: false,
 //         message: "Insufficient balance in the wallet",
 //       });
 //     }
 
-//     customer.walletBalance -= amount;
-//     await customer.save();
+//     partner.walletBalance -= amount;
+//     await partner.save();
 
 //     res.status(200).json({
 //       success: true,
@@ -225,45 +225,45 @@ exports.updateTransactionStatus = async (req, res) => {
   }
 };
 
-// exports.fetchWalletTransactions = async (req, res) => {
-//   const { id } = req.body;
+exports.fetchWalletTransactions = async (req, res) => {
+  const { id } = req.body;
 
-//   if (!id) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Customer ID is required",
-//     });
-//   }
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Partner ID is required",
+    });
+  }
 
-//   try {
-//     const transactions = await Transaction.find({
-//       customerId: id,
-//       transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
-//       status: "completed",
+  try {
+    const transactions = await PartnerTransaction.find({
+      partnerId: id,
+      transactionType: { $in: ["recharge_wallet", "booking_confirmation"] },
+      status: "completed",
 
-//       isDeleted: false,
-//     }).sort({ createdAt: -1 });
+      isDeleted: false,
+    }).sort({ createdAt: -1 });
 
-//     if (!transactions || transactions.length === 0) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "No wallet transactions found for this customer",
-//       });
-//     }
+    if (!transactions || transactions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No wallet transactions found for this partner",
+      });
+    }
 
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Wallet transactions fetched successfully",
+    res.status(200).json({
+      success: true,
+      message: "Wallet transactions fetched successfully",
 
-//       data: transactions,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching wallet transactions:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error fetching wallet transactions",
-//       errorMessage: error.message,
-//     });
-//   }
-// };
+      data: transactions,
+    });
+  } catch (error) {
+    console.error("Error fetching wallet transactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching wallet transactions",
+      errorMessage: error.message,
+    });
+  }
+};
