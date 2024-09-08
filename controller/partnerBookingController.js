@@ -30,7 +30,7 @@ const servicablePincode = await ServicablePincode.find({partner: id, isDeleted: 
 
 console.log("Serviceable pincodes:", servicablePincode);
 
-const bookings = await Booking.find({ serviceStatus: "pending", isDeleted: false, isActive: true })
+const bookings = await Booking.find({ serviceStatus: "pending", status:"pending", isDeleted: false, isActive: true })
   .populate("product.product")
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
@@ -72,6 +72,75 @@ const filteredBookings = bookings.filter(booking => {
 }
 };
 
+exports.fetchAllBookings = async (req, res) => {
+  const { id } = req.body;
+
+try {
+
+  if (!id) {
+    console.log("Partner ID is missing");
+    return res.status(400).json({
+      success: false,
+      message: "Partner ID is required",
+    });
+  }
+
+  const partner = await Partner.findOne({_id:id, isDeleted: false, isActive: true});
+
+  if (!partner) {
+    return res.status(404).json({
+      success: false,
+      message: "Partner not found",
+    });
+  }
+
+const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {                               // Use $elemMatch to find the partner by ID
+  $elemMatch: {
+    partner: id
+  }
+}, isDeleted: false, isActive: true })
+  .populate("product.product")
+  .populate("customer")
+  .sort({ "scheduleFor.date": 1 })
+  .lean();
+
+  if (bookings.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No bookings found",
+    });
+  }
+
+  const groupedBookings = bookings.reduce((acc, booking) => {
+    // Get the current service status
+    const status = booking.serviceStatus;
+  
+    // If the group doesn't exist yet, initialize it as an array
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+  
+    // Add the booking to the corresponding group
+    acc[status].push(booking);
+  
+    return acc;
+  }, {});
+
+  res.status(200).json({
+    success: true,
+    message: "Bookings fetched successfully",
+    data: groupedBookings,
+  });
+
+} catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error fetching bookings",
+    errorMessage: error.message,
+  });
+}
+};
+
 exports.acceptBooking = async (req, res) => {
   const { partnerId, bookingId } = req.body;
 
@@ -93,7 +162,7 @@ try {
     });
   }
 
-const booking = await Booking.findOne({_id:bookingId, serviceStatus: "pending",isDeleted: false, isActive: true});
+const booking = await Booking.findOne({_id:bookingId, isDeleted: false, isActive: true});
 if(!booking){
   return res.status(404).json({
     success: false,
@@ -120,6 +189,7 @@ if (partnerIndex > -1) {
 }
 
 // Save the updated booking
+booking.status = "processing";
 await booking.save();
 
 
@@ -135,4 +205,73 @@ await booking.save();
     errorMessage: error.message,
   });
 }
+};
+
+exports.startBooking = async (req, res) => {
+  const {  bookingId } = req.body;
+
+try {
+  
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+    const booking = await Booking.findById(bookingId);
+    if(!booking){
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+    booking.serviceStatus = "ongoing";
+    await booking.save();
+    res.status(200).json({
+      success: true,
+      message: "Booking started successfully",
+    });
+}catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error starting booking",
+    errorMessage: error.message,
+  });}
+
+};
+
+exports.completeBooking = async (req, res) => {
+  const { bookingId } = req.body;
+
+try {
+  
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+    const booking = await Booking.findById(bookingId);
+    if(!booking){
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+    booking.status = "completed";
+    booking.serviceStatus = "completed";
+    await booking.save();
+    res.status(200).json({
+      success: true,
+      message: "Booking completed successfully",
+    });
+}
+catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error completing booking",
+    errorMessage: error.message,
+  });
+}
+
 };

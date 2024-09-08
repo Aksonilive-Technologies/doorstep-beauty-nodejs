@@ -1,4 +1,7 @@
 const Cart = require("../models/cartModel");
+const CustomerAddress = require("../models/customerAddressModel");
+const Booking = require("../models/bookingModel");
+const MostBookedProduct = require("../models/mostBookedProductModel");
 
 // Add item to cart
 exports.addItemToCart = async (req, res) => {
@@ -33,6 +36,134 @@ exports.addItemToCart = async (req, res) => {
     });
   }
 };
+
+exports.bookCart = async (req, res) => {
+  const {
+    customerId,
+    discountType,
+    discountValue,
+    offerType,
+    offerRefId,
+    customerAddressId,
+    scheduleFor,
+  } = req.body;
+
+  try {
+    // Check for required fields in one place
+    const missingFields = [];
+    if (!customerId) missingFields.push("customerId");
+    if (!customerAddressId) missingFields.push("customerAddressId");
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Missing fields: ${missingFields.join(", ")}`,
+      });
+    }
+
+    // Fetch customer address and concatenate it
+    const customerAddressData = await CustomerAddress.findOne({
+      _id: customerAddressId,
+      isActive: true,
+      isDeleted: false,
+    });
+
+    if (!customerAddressData) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer address not found",
+      });
+    }
+
+    const customerAddress = `${customerAddressData.address.houseNo}, ${customerAddressData.address.buildingName}, ${customerAddressData.address.street}, ${customerAddressData.address.city}, ${customerAddressData.address.state}, ${customerAddressData.address.pincode}, ${customerAddressData.address.country}`;
+
+    // Fetch cart items for the customer
+    const cart = await Cart.find({ customer: customerId }).populate('product').select('-__v');
+
+    if (!cart || cart.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "There is no item in the cart",
+      });
+    }
+
+    // Process cart and calculate total price
+    const products = cart.map(item => ({
+      product: item.product._id,
+      quantity: item.quantity,
+      price: item.product.price,
+    }));
+
+    const totalPrice = products.reduce(
+      (sum, item) => sum + item.price * item.quantity, 0
+    );
+
+    // Calculate discount
+    let discount = 0;
+    if (discountType === "percentage") {
+      discount = totalPrice * (discountValue / 100);
+    } else if (["flat_amount", "product"].includes(discountType)) {
+      discount = discountValue;
+    }
+
+    const finalPrice = totalPrice - discount;
+
+    // Create a new booking
+    const newBooking = new Booking({
+      customer: customerId,
+      product: products,
+      totalPrice,
+      discountType,
+      discountValue,
+      discount,
+      finalPrice,
+      offerType,
+      offerRefId,
+      customerAddress,
+      scheduleFor,
+      isActive: true,
+      isDeleted: false,
+    });
+
+    await newBooking.save();
+
+    // Update MostBookedProduct in parallel using Promise.all
+    await Promise.all(
+      products.map(async (item) => {
+        const existingRecord = await MostBookedProduct.findOne({
+          product: item.product,
+          isActive: true,
+          isDeleted: false,
+        });
+
+        if (existingRecord) {
+          existingRecord.count += 1;
+          await existingRecord.save();
+        } else {
+          await MostBookedProduct.create({
+            product: item.product,
+            count: 1,
+          });
+        }
+      })
+    );
+
+    // Delete cart items for the customer
+    await Cart.deleteMany({ customer: customerId });
+
+    res.status(200).json({
+      success: true,
+      message: "Cart booked successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error booking cart",
+      errorMessage: error.message,
+    });
+  }
+};
+
 
 // Fetch cart by customer ID
 exports.getCartByCustomerId = async (req, res) => {
