@@ -399,10 +399,11 @@ exports.updateTransaction = async (req, res) => {
         // Update booking fields based on the transaction status
         if (transactionStatus === 'completed') {
             booking.paymentStatus = 'completed';
-            booking.status = 'completed';
+            booking.serviceStatus = 'scheduled';
         } else if (transactionStatus === 'failed') {
             booking.paymentStatus = 'failed';
             booking.status = 'failed';
+            booking.serviceStatus = 'cancelled';
         }
 
         await booking.save();
