@@ -136,3 +136,73 @@ await booking.save();
   });
 }
 };
+
+exports.startBooking = async (req, res) => {
+  const {  bookingId } = req.body;
+
+try {
+  
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+    const booking = await Booking.findById(bookingId);
+    if(!booking){
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+    booking.status = "processing";
+    booking.serviceStatus = "ongoing";
+    await booking.save();
+    res.status(200).json({
+      success: true,
+      message: "Booking started successfully",
+    });
+}catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error starting booking",
+    errorMessage: error.message,
+  });}
+
+};
+
+exports.completeBooking = async (req, res) => {
+  const { bookingId } = req.body;
+
+try {
+  
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+    const booking = await Booking.findById(bookingId);
+    if(!booking){
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+    booking.status = "completed";
+    booking.serviceStatus = "completed";
+    await booking.save();
+    res.status(200).json({
+      success: true,
+      message: "Booking completed successfully",
+    });
+}
+catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error completing booking",
+    errorMessage: error.message,
+  });
+}
+
+};
