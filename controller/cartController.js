@@ -183,6 +183,7 @@ exports.getCartByCustomerId = async (req, res) => {
         message: "Cart for customerId "+customerId+" not found",
       });
     }
+    cart.sort((a, b) => b.product.price - a.product.price);
 
     res.status(200).json({
       success: true,
