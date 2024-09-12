@@ -1,6 +1,7 @@
 const StockAssignment = require("../models/stockAssignmentModel.js");
 const Stock = require("../models/stockModel.js");
 const Partner = require("../models/partnerModel.js");
+const Admin = require("../models/adminModel.js");
 
 exports.assignStocks = async (req, res) => {
   const { partnerId, stockItems } = req.body;
@@ -12,8 +13,19 @@ exports.assignStocks = async (req, res) => {
       message: "Superadmin ID is required",
     });
   }
-  
+
   try {
+    // Validate that the user is a superadmin
+    const loggedInUser = await Admin.findById(superadminId);
+    if (!loggedInUser || loggedInUser.role !== "all") {
+      return res.status(loggedInUser ? 401 : 404).json({
+        success: false,
+        message: loggedInUser
+          ? "You are not authorized"
+          : "Superadmin not found",
+      });
+    }
+
     // Check if all required fields are present
     if (
       !partnerId ||
