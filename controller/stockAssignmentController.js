@@ -102,7 +102,7 @@ exports.fetchAllStockAssignments = async (req, res) => {
 
     // Fetch the stock assignments with pagination
     const stockAssignments = await StockAssignment.find()
-      .populate("partner", "name email image mobile") // Optionally populate partner details
+      .populate("partner", "name email image phone") // Optionally populate partner details
       .populate("stockItems.stock", "name brand size") // Optionally populate stock details
       .skip(skip)
       .limit(limit)
