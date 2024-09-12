@@ -94,14 +94,19 @@ exports.assignStocks = async (req, res) => {
     });
   }
 };
-
 exports.fetchAllStockAssignments = async (req, res) => {
   try {
-    // Fetch all stock assignments
+    const { page = 1 } = req.query; // Get the page number from the query, default to 1
+    const limit = 10; // Limit to 10 stock assignments per page
+    const skip = (page - 1) * limit; // Calculate how many documents to skip
+
+    // Fetch the stock assignments with pagination
     const stockAssignments = await StockAssignment.find()
-      .populate("partner", "name email image") // Optionally populate partner details
+      .populate("partner", "name email image mobile") // Optionally populate partner details
       .populate("stockItems.stock", "name brand size") // Optionally populate stock details
-      .exec();
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     // Check if there are no assignments
     if (stockAssignments.length === 0) {
@@ -112,11 +117,16 @@ exports.fetchAllStockAssignments = async (req, res) => {
       });
     }
 
-    // Respond with success
+    const totalStockAssignments = await StockAssignment.countDocuments(); // Get the total number of stock assignments
+    const totalPages = Math.ceil(totalStockAssignments / limit); // Calculate total pages
+
+    // Respond with paginated data
     res.status(200).json({
       success: true,
       message: "Successfully fetched all stock assignments",
       data: stockAssignments,
+      currentPage: page,
+      totalPages: totalPages,
     });
   } catch (error) {
     // Handle errors
