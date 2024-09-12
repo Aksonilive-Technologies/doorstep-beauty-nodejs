@@ -3,9 +3,17 @@ const Stock = require("../models/stockModel.js");
 const Partner = require("../models/partnerModel.js");
 
 exports.assignStocks = async (req, res) => {
-  try {
-    const { partnerId, stockItems } = req.body;
+  const { partnerId, stockItems } = req.body;
+  const { superadminId } = req.query;
 
+  if (!superadminId) {
+    return res.status(400).json({
+      success: false,
+      message: "Superadmin ID is required",
+    });
+  }
+  
+  try {
     // Check if all required fields are present
     if (
       !partnerId ||
