@@ -1,0 +1,109 @@
+const StockAssignment = require("../models/stockAssignmentModel.js");
+const Stock = require("../models/stockModel.js");
+const Partner = require("../models/partnerModel.js");
+
+exports.assignStocks = async (req, res) => {
+  try {
+    const { partnerId, stockItems } = req.body;
+
+    // Check if all required fields are present
+    if (
+      !partnerId ||
+      !stockItems ||
+      !Array.isArray(stockItems) ||
+      stockItems.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner ID and stock items are required",
+      });
+    }
+
+    // Validate partner existence
+    const partner = await Partner.findById(partnerId);
+    if (!partner) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Partner not found" });
+    }
+
+    // Check and update stock quantities
+    const stockUpdates = stockItems.map(async (item) => {
+      const stock = await Stock.findById(item.stockId);
+
+      if (!stock) {
+        throw new Error(`Stock item with ID ${item.stockId} not found`);
+      }
+
+      if (stock.currentStock < item.quantity) {
+        throw new Error(`Insufficient stock for item: ${stock.name}`);
+      }
+
+      // Deduct the stock from currentStock
+      stock.currentStock -= item.quantity;
+      return stock.save();
+    });
+
+    // Await all stock updates to ensure transactions are processed
+    await Promise.all(stockUpdates);
+
+    // Create the stock assignment
+    const stockAssignment = new StockAssignment({
+      partner: partnerId,
+      stockItems: stockItems.map(({ stockId, quantity }) => ({
+        stock: stockId,
+        quantity,
+      })),
+    });
+
+    // Save the stock assignment
+    await stockAssignment.save();
+
+    // Respond with success
+    res.status(201).json({
+      success: true,
+      message: "Successfully assigned stocks to the partner",
+      data: stockAssignment,
+    });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
+      success: false,
+      message: "Error while assigning stocks",
+      error: error.message,
+    });
+  }
+};
+
+exports.fetchAllStockAssignments = async (req, res) => {
+  try {
+    // Fetch all stock assignments
+    const stockAssignments = await StockAssignment.find()
+      .populate("partner", "name email image") // Optionally populate partner details
+      .populate("stockItems.stock", "name brand size") // Optionally populate stock details
+      .exec();
+
+    // Check if there are no assignments
+    if (stockAssignments.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: "No data available",
+        message: "No stock assignments found",
+      });
+    }
+
+    // Respond with success
+    res.status(200).json({
+      success: true,
+      message: "Successfully fetched all stock assignments",
+      data: stockAssignments,
+    });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
+      success: false,
+      message: "Error while fetching stock assignments",
+      error: error.message,
+    });
+  }
+};
