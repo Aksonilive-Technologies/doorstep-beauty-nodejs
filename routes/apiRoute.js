@@ -61,6 +61,7 @@ const customerComplaintRoute = require("./customerComplaintRoute");
 const membershipCustomerRoute = require("./membershipCustomerRoute");
 const firebaseTokenRoute = require("./firebaseTokenRoute");
 const partnerWalletRoute = require("./partnerWalletRoute");
+const stockAssignmentRoute = require("./stockAssignmentRoute");
 
 //***************Customer Route API************************ */
 
@@ -78,12 +79,10 @@ app.use("/api/v1/customer/wallet", customerRoute);
 app.use("/api/v1/customer/slot", slotCustomerRoute);
 app.use("/api/v1/customer", customerRoute);
 
-
 //**************Partner Route API************************ */
 app.use("/api/v1/partner", partnerRoute);
 app.use("/api/v1/partner/wallet", partnerWalletRoute);
 app.use("/api/v1/partner/booking", partnerBookingRoute);
-
 
 //**************Admin Route API**************************** */
 app.use("/api/v1/admin", adminRoute);
@@ -101,6 +100,7 @@ app.use("/api/v1/admin/slot", slotRoute);
 app.use("/api/v1/admin/category", categoryAdminRoutes);
 app.use("/api/v1/admin/stock", stockRoute);
 app.use("/api/v1/admin/booking", bookingAdminRoute);
+app.use("/api/v1/admin/stock-assignment", stockAssignmentRoute);
 
 //**************Testing Route API************************ */
 app.use("/api/v1/testing/admin", require("./testingRoute.js"));
@@ -110,7 +110,6 @@ app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/user/auth/otp", authorizationRoute);
 app.use("/api/v1/user/fcm/token", firebaseTokenRoute);
 app.use("/api/v1/user/app/version", appVersionRoute);
-
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
