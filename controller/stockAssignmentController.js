@@ -94,6 +94,7 @@ exports.assignStocks = async (req, res) => {
     });
   }
 };
+
 exports.fetchAllStockAssignments = async (req, res) => {
   try {
     const { page = 1 } = req.query; // Get the page number from the query, default to 1
