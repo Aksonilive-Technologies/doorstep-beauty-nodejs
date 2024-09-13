@@ -30,9 +30,11 @@ db.once("open", () => {
 
 const authorizationRoute = require("./authorizationRoute");
 const bookingRoute = require("./bookingRoute.js");
+const partnerBookingRoute = require("./partnerBookingRoute");
 const bookingAdminRoute = require("./bookingAdminRoute.js");
 const productRoute = require("./productRoute");
 const partnerRoute = require("./partnerRoute");
+const adminPartnerRoute = require("./adminPartnerRoute");
 const slotCustomerRoute = require("./slotCustomerRoute");
 const slotRoute = require("./slotRoutes");
 const appVersionRoute = require("./appVersionRoute");
@@ -57,10 +59,11 @@ const categoryAppRoute = require("./categoryAppRoute");
 const feedbackCustomerRoute = require("./feedbackCustomerRoute");
 const customerComplaintRoute = require("./customerComplaintRoute");
 const membershipCustomerRoute = require("./membershipCustomerRoute");
+const firebaseTokenRoute = require("./firebaseTokenRoute");
+const partnerWalletRoute = require("./partnerWalletRoute");
 
 //***************Customer Route API************************ */
 
-app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/customer/category", categoryAppRoute);
 app.use("/api/v1/customer/product", productRoute);
 app.use("/api/v1/customer/booking", bookingRoute);
@@ -75,10 +78,14 @@ app.use("/api/v1/customer/wallet", customerRoute);
 app.use("/api/v1/customer/slot", slotCustomerRoute);
 app.use("/api/v1/customer", customerRoute);
 
+//**************Partner Route API************************ */
+app.use("/api/v1/partner", partnerRoute);
+app.use("/api/v1/partner/wallet", partnerWalletRoute);
+app.use("/api/v1/partner/booking", partnerBookingRoute);
 
 //**************Admin Route API**************************** */
 app.use("/api/v1/admin", adminRoute);
-app.use("/api/v1/admin/partner", partnerRoute);
+app.use("/api/v1/admin/partner", adminPartnerRoute);
 app.use("/api/v1/admin/banner", bannerRoute);
 app.use("/api/v1/admin/category", categoryRoute);
 app.use("/api/v1/admin/product", productAdminRoute);
@@ -97,10 +104,11 @@ app.use("/api/v1/admin/booking", bookingAdminRoute);
 app.use("/api/v1/testing/admin", require("./testingRoute.js"));
 
 //**************User Route API************************ */
-app.use("/api/v1/user/fcm/token", require("./firebaseTokenRoute.js"));
+app.use("/api/v1/customer/auth/otp", authorizationRoute);
+app.use("/api/v1/user/auth/otp", authorizationRoute);
+app.use("/api/v1/user/fcm/token", firebaseTokenRoute);
 app.use("/api/v1/user/app/version", appVersionRoute);
  // comment
-
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({

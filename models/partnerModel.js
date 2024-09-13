@@ -5,7 +5,6 @@ const PartnersSchema = new mongoose.Schema(
     image: {
       type: String,
       default: "it has been not decided yet where to keep our images",
-      // required: true,
     },
     name: {
       type: String,
