@@ -1,6 +1,9 @@
 const Stock = require("../models/stockModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
+const Partner = require("../models/partnerModel.js");
+const StockAssignnment = require("../models/stockAssignmentModel.js");
+const StockAssignment = require("../models/stockAssignmentModel.js");
 
 exports.createStock = async (req, res) => {
   const requiredFields = [
@@ -213,6 +216,115 @@ exports.changeStatus = async (req, res) => {
       success: false,
       message: "An error occurred while updating stock status",
       errorMessage: err.message,
+    });
+  }
+};
+
+exports.fetchAssignedStocks = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
+
+  try {
+    // Fetch the list of partners with pagination
+    const partners = await Partner.find()
+      .limit(parseInt(limit)) // Ensure limit is a number
+      .skip((page - 1) * limit)
+      .select("_id image name") // Only select required fields
+      .lean(); // Lean for better performance
+
+    const totalPartners = await Partner.countDocuments();
+
+    if (partners.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No partners found",
+      });
+    }
+
+    // Fetch stock assignments for all partners in a single query
+    const partnerIds = partners.map(partner => partner._id);
+    const stockAssignments = await StockAssignment.find({ partner: { $in: partnerIds } })
+      .populate("stock") // Populate the stock field
+      .lean(); // Return plain JavaScript objects
+
+    // Map stock assignments to the respective partners
+    const partnerStockMap = partners.map(partner => {
+      const assignedStocks = stockAssignments.filter(sa => sa.partner.toString() === partner._id.toString())
+      .map(sa => {
+        // Create a new object excluding the 'partner' field
+        const { partner,_id, ...rest } = sa;
+        return rest;
+      });
+      return {
+        ...partner,
+        stockAssignments: assignedStocks
+      };
+    });
+
+    // Return successful response
+    return res.status(200).json({
+      success: true,
+      message: "Successfully retrieved all the assigned stocks",
+      data: partnerStockMap,
+      currentPage: parseInt(page),
+      totalPartners,
+      totalPages: Math.ceil(totalPartners / limit),
+    });
+  } catch (error) {
+    // Handle potential errors
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the assigned stocks",
+      details: error.message,
+    });
+  }
+};
+
+
+
+exports.assignStock = async (req, res) => {
+  const { partnerId, assignStock } = req.body;
+
+  try {
+    // Check if all required fields are present
+    if (!partnerId || !assignStock || !Array.isArray(assignStock) || assignStock.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner ID and valid assignStock array are required",
+      });
+    }
+
+    // Validate partner existence
+    const partner = await Partner.findById(partnerId);
+    if (!partner) {
+      return res.status(404).json({ success: false, message: "Partner not found" });
+    }
+
+    // Assign stocks
+    const stockAssignments = assignStock.map(({ stock, quantity }) => {
+      if (!stock || !quantity) {
+        throw new Error("Each stock assignment must have a valid stock ID and quantity");
+      }
+      return new StockAssignment({
+        partner: partnerId,
+        stock: stock,
+        quantity: quantity,
+      });
+    });
+
+    // Save all stock assignments in parallel
+    await Promise.all(stockAssignments.map(stockAssignment => stockAssignment.save()));
+
+    // Respond with success
+    res.status(201).json({
+      success: true,
+      message: "Successfully assigned stocks to the partner",
+    });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
+      success: false,
+      message: "Error while assigning stocks",
+      error: error.message,
     });
   }
 };
