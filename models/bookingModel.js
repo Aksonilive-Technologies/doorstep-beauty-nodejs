@@ -122,6 +122,10 @@ const BookingSchema = new mongoose.Schema(
      duration : {
        type: String
      },
+     cancelledBy : {
+        type: String,
+        enum : ["customer","partner"]
+      },
     isActive: {
       type: Boolean,
       default: true,

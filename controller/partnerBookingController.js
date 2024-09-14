@@ -162,7 +162,7 @@ try {
     });
   }
 
-const booking = await Booking.findOne({_id:bookingId, isDeleted: false, isActive: true});
+const booking = await Booking.findOne({_id:bookingId, serviceStatus:"pending", isDeleted: false, isActive: true});
 if(!booking){
   return res.status(404).json({
     success: false,
@@ -188,8 +188,6 @@ if (partnerIndex > -1) {
   booking.partner.push(newPartner);
 }
 
-// Save the updated booking
-booking.status = "processing";
 await booking.save();
 
 
@@ -218,7 +216,7 @@ try {
         message: "Booking ID is required",
       });
     }
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findOne({_id:bookingId, serviceStatus:"scheduled", isDeleted: false, isActive: true});
     if(!booking){
       return res.status(404).json({
         success: false,
@@ -251,7 +249,7 @@ try {
         message: "Booking ID is required",
       });
     }
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findOne({_id:bookingId, serviceStatus:"ongoing", isDeleted: false, isActive: true});
     if(!booking){
       return res.status(404).json({
         success: false,
@@ -260,6 +258,43 @@ try {
     }
     booking.status = "completed";
     booking.serviceStatus = "completed";
+    await booking.save();
+    res.status(200).json({
+      success: true,
+      message: "Booking completed successfully",
+    });
+}
+catch (error) {
+  res.status(500).json({
+    success: false,
+    message: "Error completing booking",
+    errorMessage: error.message,
+  });
+}
+
+};
+
+exports.cancelBooking = async (req, res) => {
+  const { bookingId } = req.body;
+
+try {
+  
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+    const booking = await Booking.findOne({_id:bookingId, serviceStatus:{$in: ["pending", "scheduled"]}, isDeleted: false, isActive: true});
+    if(!booking){
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+    booking.status = "cancelled";
+    booking.serviceStatus = "cancelled";
+    booking.cancelledBy = "partner";
     await booking.save();
     res.status(200).json({
       success: true,

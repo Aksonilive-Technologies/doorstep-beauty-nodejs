@@ -199,7 +199,7 @@ exports.cancelBooking = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    const booking = await Booking.findOne({ _id: bookingId, serviceStatus:{$in: ["pending", "scheduled"]}, isDeleted: false });
 
     // Check if the booking exists
     if (!booking) {
@@ -212,6 +212,7 @@ exports.cancelBooking = async (req, res) => {
     // Update the booking status and service status to cancelled
     booking.serviceStatus = "cancelled";
     booking.status = "cancelled";
+    booking.cancelledBy = "customer";
 
     await booking.save();
 
@@ -376,11 +377,6 @@ exports.updateTransaction = async (req, res) => {
     try {
         const { bookingId, transactionStatus } = req.body;
 
-        const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
-        if (!booking) {
-            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
-        }
-
         // Step 1: Find and update the transaction
         const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
         if (!transaction) {
@@ -394,12 +390,18 @@ exports.updateTransaction = async (req, res) => {
         transaction.status = transactionStatus;
         await transaction.save();
 
+        const booking = await Booking.findOne({ _id: bookingId, serviceStatus:"pending", isDeleted: false });
+        if (!booking) {
+            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
+        }
+
         // Step 2: Find and update the booking
         
         // Update booking fields based on the transaction status
         if (transactionStatus === 'completed') {
             booking.paymentStatus = 'completed';
             booking.serviceStatus = 'scheduled';
+            booking.status = 'processing';
         } else if (transactionStatus === 'failed') {
             booking.paymentStatus = 'failed';
             booking.status = 'failed';
