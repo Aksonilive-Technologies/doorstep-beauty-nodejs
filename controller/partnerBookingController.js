@@ -30,11 +30,17 @@ const servicablePincode = await ServicablePincode.find({partner: id, isDeleted: 
 
 console.log("Serviceable pincodes:", servicablePincode);
 
-const bookings = await Booking.find({ serviceStatus: "pending", status:"pending", isDeleted: false, isActive: true })
+const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pending", "processing"]}, isDeleted: false, isActive: true })
   .populate("product.product")
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
+  if (bookings.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No unconfirmed bookings found",
+    });
+  }
 
   const pincodeArray = new Set(servicablePincode.map(pincodeObj => pincodeObj.pincode.toString()));
   console.log(pincodeArray);
@@ -49,6 +55,15 @@ const filteredBookings = bookings.filter(booking => {
   return customerPincode && pincodeArray.has(customerPincode);
 });
 
+const groupedBookings = filteredBookings.reduce((groups, booking) => {
+  const status = booking.status;
+  if (!Array.isArray(groups[status])) {
+    groups[status] = []; // Initialize as an empty array if not already initialized
+  }
+  groups[status].push(booking); 
+  return groups;
+}, {});
+
 
   if (filteredBookings.length === 0) {
     return res.status(404).json({
@@ -60,7 +75,7 @@ const filteredBookings = bookings.filter(booking => {
   res.status(200).json({
     success: true,
     message: "Unconfirmed bookings fetched successfully",
-    data: filteredBookings,
+    data: groupedBookings,
   });
 
 } catch (error) {
