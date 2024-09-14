@@ -26,7 +26,7 @@ exports.updateAppVersion = async (req, res) => {
         });
       }
     } else {
-      const partner = await Partner.findById({ userId });
+      const partner = await Partner.findById( userId );
         if (!partner) {
         return res.status(400).json({
           success: false,
