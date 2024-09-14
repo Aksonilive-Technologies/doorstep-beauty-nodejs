@@ -390,7 +390,7 @@ exports.updateTransaction = async (req, res) => {
         transaction.status = transactionStatus;
         await transaction.save();
 
-        const booking = await Booking.findOne({ _id: bookingId, serviceStatus:"pending", isDeleted: false });
+        const booking = await Booking.findOne({ _id: bookingId, status:"processing",serviceStatus:"pending", isDeleted: false });
         if (!booking) {
             return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
         }
@@ -401,7 +401,6 @@ exports.updateTransaction = async (req, res) => {
         if (transactionStatus === 'completed') {
             booking.paymentStatus = 'completed';
             booking.serviceStatus = 'scheduled';
-            booking.status = 'processing';
         } else if (transactionStatus === 'failed') {
             booking.paymentStatus = 'failed';
             booking.status = 'failed';
