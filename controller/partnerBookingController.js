@@ -187,6 +187,7 @@ if (partnerIndex > -1) {
   // If partner does not exist, add it to the array
   booking.partner.push(newPartner);
 }
+booking.status = "processing";
 
 await booking.save();
 
