@@ -395,6 +395,7 @@ try {
         transactionType: "booking_refund",
         amount: remainingAmount,
         paymentGateway: null,
+        status: "completed"
       });
       
       // Save the transaction record
