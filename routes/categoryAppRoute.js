@@ -1,26 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const categoryController = require("../controller/categoryController");
-const { uploadSingleImage } = require("../middleware/uploadMiddleware");
+const categoryAppController = require("../controller/categoryAppController");
 
-// Create a new category
-// router.post("/create", uploadSingleImage, categoryController.createCategory);
-
-// // Get all categories
-// router.get("/fetch/all", categoryController.getAllCategories);
-
-//
-router.get("/fetch/all", categoryController.getAllCategoriesCustomer);
-
-// Get a single category by ID
-router.get("/fetch/single", categoryController.getCategoryById);
-
-// Update a category by ID
-// router.put("/update/single", uploadSingleImage, categoryController.updateCategory);
-
-// Soft delete a category by ID
-// router.delete("/delete/single", categoryController.deleteCategory);
-
-// router.get("/change-status", categoryController.changeStatus);
+router.get("/fetch/all", categoryAppController.getAllCategories);
 
 module.exports = router;
