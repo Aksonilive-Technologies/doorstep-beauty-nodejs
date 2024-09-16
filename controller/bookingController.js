@@ -542,7 +542,7 @@ exports.initiatePayment = async (req, res) => {
       await transaction.save();
 
       booking.paymentStatus = 'completed';
-      booking.status = 'completed';
+      booking.serviceStatus = 'scheduled';
       booking.transaction = transaction._id;
       await booking.save();
 
