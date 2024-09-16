@@ -261,15 +261,14 @@ exports.cancelBooking = async (req, res) => {
 
         // Create a transaction record with status "Pending"
     new Transaction({
-      customerId: id,
+      customerId: booking.customer,
       transactionType: "booking_refund",
       amount: remainingAmount,
-      paymentGateway: null,
+      paymentGateway: "wallet",
       status: "completed",
-    });
+    }).save();
 
-    // Save the transaction record
-    await transaction.save();
+
 
 
         await customer.save();
@@ -536,7 +535,6 @@ exports.initiatePayment = async (req, res) => {
 
       transactionData.transactionType = 'wallet_booking';
       transactionData.status = 'completed';
-      transactionData.paymentMode = null;
 
       const transaction = new Transaction(transactionData);
       await transaction.save();

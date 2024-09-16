@@ -391,16 +391,12 @@ try {
       
       // Create a transaction record with status "Pending"
       new Transaction({
-        customerId: id,
+        customerId: customer._id,
         transactionType: "booking_refund",
         amount: remainingAmount,
-        paymentGateway: null,
+        paymentGateway: "wallet",
         status: "completed"
-      });
-      
-      // Save the transaction record
-      await transaction.save();
-      
+      }).save();
       
       await customer.save();
       
