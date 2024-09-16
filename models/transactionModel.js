@@ -14,6 +14,7 @@ const transactionSchema = new mongoose.Schema(
         "wallet_booking",
         "gateway_booking",
         "membership_plan_purchase",
+        "booking_refund"
       ],
       required: true,
     },
@@ -23,7 +24,7 @@ const transactionSchema = new mongoose.Schema(
     },
     paymentGateway: {
       type: String,
-      enum: ["cashfree", "razorpay", "wallet","cash"],
+      enum: ["cashfree", "razorpay", "wallet","cash", null],
       required: true,
     },
     transactionRefId: {

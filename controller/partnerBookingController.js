@@ -2,6 +2,9 @@ const Booking = require("../models/bookingModel");
 const Partner = require("../models/partnerModel.js");
 const ServicablePincode = require("../models/servicablePincodeModel.js");
 const StockAssignment = require("../models/stockAssignmentModel.js");
+const Transaction = require("../models/transactionModel.js");
+const Customer = require("../models/customerModel.js");
+const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
 const mongoose = require("mongoose");
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
@@ -338,19 +341,101 @@ try {
         message: "Booking not found",
       });
     }
+
+    if(booking.serviceStatus === "scheduled"){
+    // Combine date, time, and format into a single Date object
+    const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
+    let [hours, minutes] = booking.scheduleFor.time.split(":").map(Number); // Time part (e.g., 10:00)
+
+    // Adjust hours based on AM/PM format
+    if (booking.scheduleFor.format === "PM" && hours < 12) {
+      hours += 12;
+    } else if (booking.scheduleFor.format === "AM" && hours === 12) {
+      hours = 0; // Handle 12 AM edge case
+    }
+
+    // Set the hours and minutes to the scheduledDate object
+    scheduledDate.setHours(hours);
+    scheduledDate.setMinutes(minutes);
+
+    // Get the current time
+    const currentTime = new Date();
+
+    // Calculate the time difference in milliseconds
+    const timeDifference = scheduledDate - currentTime;
+
+    // Convert time difference to hours
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+
+    let cancellationCharges = 0;
+    let cancellationFeeStatus = "pending";
+
+    // Apply cancellation logic
+    if (hoursDifference > 1) {
+      // If the cancellation is before 1 hour of the scheduled time, flat ₹100 charge
+      cancellationCharges = 100;
+    } else if (hoursDifference <= 1 && hoursDifference >= 0) {
+      // If the cancellation is within 1 hour of the scheduled time, 20% of the final price
+      cancellationCharges = booking.finalPrice * 0.2;
+    }
+    
+    const transaction = await Transaction.findById(booking.transaction);
+    
+    
+    // If payment method is wallet
+    if (transaction.transactionType === "wallet_booking") {
+      const customer = await Customer.findById(booking.customer);
+      
+      const remainingAmount = booking.finalPrice - cancellationCharges;
+      customer.walletBalance += remainingAmount;
+      
+      // Create a transaction record with status "Pending"
+      new Transaction({
+        customerId: id,
+        transactionType: "booking_refund",
+        amount: remainingAmount,
+        paymentGateway: null,
+      });
+      
+      // Save the transaction record
+      await transaction.save();
+      
+      
+      await customer.save();
+      
+      // Since the refund is done, mark the cancellation fee as paid
+      cancellationFeeStatus = "paid";
+    }else{
+      cancellationFeeStatus = "pending";
+    }
+    
+    
+    
+    // Create a new record in BookingCancellationFees
+    const cancellationFeeRecord = new BookingCancellationFees({
+      booking: booking._id,
+      customer: booking.customer,
+      charges: cancellationCharges,
+      status: cancellationFeeStatus,
+    });
+    
+    await cancellationFeeRecord.save();
+  }
     booking.status = "cancelled";
     booking.serviceStatus = "cancelled";
     booking.cancelledBy = "partner";
     await booking.save();
+    
+    
     res.status(200).json({
       success: true,
-      message: "Booking completed successfully",
+      message: "Booking cancelled successfully",
     });
 }
 catch (error) {
   res.status(500).json({
     success: false,
-    message: "Error completing booking",
+    message: "Error cancelling booking",
     errorMessage: error.message,
   });
 }
