@@ -1,6 +1,7 @@
 const Booking = require("../models/bookingModel");
 const Partner = require("../models/partnerModel.js");
 const ServicablePincode = require("../models/servicablePincodeModel.js");
+const StockAssignment = require("../models/stockAssignmentModel.js");
 const mongoose = require("mongoose");
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
@@ -222,14 +223,22 @@ await booking.save();
 };
 
 exports.startBooking = async (req, res) => {
-  const {  bookingId } = req.body;
+  const {  partnerId, bookingId, stockItems } = req.body;
 
 try {
   
-    if (!bookingId) {
+    if (!bookingId || !partnerId) {
       return res.status(400).json({
         success: false,
-        message: "Booking ID is required",
+        message: "Booking ID and Partner ID is required",
+      });
+    }
+
+    // Check if stockItems is an array and has at least one item
+    if (!Array.isArray(stockItems) || stockItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "stock Items are required and should be an array",
       });
     }
     const booking = await Booking.findOne({_id:bookingId, serviceStatus:"scheduled", isDeleted: false, isActive: true});
@@ -239,7 +248,28 @@ try {
         message: "Booking not found",
       });
     }
+
+    // Prepare stock assignments update
+    const stockAssignments = await StockAssignment.find({
+      stock: { $in: stockItems },
+      partner: partnerId,
+    });
+
+    // Decrease quantity for each stock item and accumulate updates
+    const bulkUpdates = stockAssignments.map((assignment) => ({
+      updateOne: {
+        filter: { _id: assignment._id },
+        update: { $inc: { quantity: -1 } },
+      },
+    }));
+
+    // Push product tools into booking and perform bulk updates
+    booking.productTool.push(...stockItems.map((item) => ({ productTool: new mongoose.Types.ObjectId(item) })));
     booking.serviceStatus = "ongoing";
+
+    // Execute both save operations in parallel
+    await Promise.all([booking.save(), StockAssignment.bulkWrite(bulkUpdates)]);
+
     await booking.save();
     res.status(200).json({
       success: true,
