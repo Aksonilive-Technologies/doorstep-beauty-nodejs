@@ -6,6 +6,9 @@ const Product = require("../models/productModel");
 const MostBookedProduct = require("../models/mostBookedProductModel");
 const Customer = require("../models/customerModel");
 const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
+const CustomerFCMService = require("../helper/customerFcmService.js");
+const PartnerFCMService = require("../helper/partnerFcmService.js");
+const FirebaseTokens = require("../models/firebaseTokenModel.js");
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -101,6 +104,14 @@ exports.bookProduct = async (req, res) => {
           });
         }
       }
+
+    // Send FCM to partner
+    const partnerToken = await FirebaseTokens.find({ userType: "partner" });
+    if (partnerToken) {
+      for (let i = 0; i < partnerToken.length; i++) {
+      PartnerFCMService.sendNewBookingMessage(partnerToken[i].token);
+    }}
+
 
     res.status(201).json({
       success: true,
@@ -210,6 +221,8 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
+    let cancellationCharges = 0;
+    let cancellationFeeStatus = "pending";
 
     if(booking.serviceStatus === "scheduled"){
 
@@ -237,8 +250,6 @@ exports.cancelBooking = async (req, res) => {
     // Convert time difference to hours
     const hoursDifference = timeDifference / (1000 * 60 * 60);
 
-    let cancellationCharges = 0;
-    let cancellationFeeStatus = "pending";
 
     // Apply cancellation logic
     if (hoursDifference > 1) {
@@ -297,6 +308,26 @@ exports.cancelBooking = async (req, res) => {
     booking.cancelledBy = "customer";
 
     await booking.save();
+
+    const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+    const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerTokens) {
+        for (let i = 0; i < customerTokens.length; i++) {
+          const sendMessages = [
+            CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+          ];
+      
+          // Check if the cancellation fee status is paid and add refund message if so
+          if (cancellationFeeStatus === "paid") {
+            sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+          }
+
+          await Promise.all(sendMessages);
+        }}
+      if (partnerTokens) {
+        for (let i = 0; i < partnerTokens.length; i++) {
+        PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+      }}
 
     res.status(200).json({
       success: true,
@@ -483,6 +514,17 @@ exports.updateTransaction = async (req, res) => {
         if (transactionStatus === 'completed') {
             booking.paymentStatus = 'completed';
             booking.serviceStatus = 'scheduled';
+
+      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerToken) {
+        for (let i = 0; i < customerToken.length; i++) {
+        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
+      }}
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
+      }}
         } else if (transactionStatus === 'failed') {
             booking.paymentStatus = 'failed';
             booking.status = 'failed';
@@ -543,6 +585,17 @@ exports.initiatePayment = async (req, res) => {
       booking.serviceStatus = 'scheduled';
       booking.transaction = transaction._id;
       await booking.save();
+
+      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerToken) {
+        for (let i = 0; i < customerToken.length; i++) {
+        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
+      }}
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
+      }}
 
       return res.status(200).json({
         success: true,

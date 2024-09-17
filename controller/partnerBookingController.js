@@ -6,6 +6,9 @@ const Transaction = require("../models/transactionModel.js");
 const Customer = require("../models/customerModel.js");
 const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
 const mongoose = require("mongoose");
+const CustomerFCMService = require("../helper/customerFcmService.js");
+const PartnerFCMService = require("../helper/partnerFcmService.js");
+const FirebaseTokens = require("../models/firebaseTokenModel.js");
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
   const { id } = req.body;
@@ -210,6 +213,12 @@ booking.status = "processing";
 
 await booking.save();
 
+const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+if (customerToken) {
+  for (let i = 0; i < customerToken.length; i++) {
+  CustomerFCMService.sendPartnerAllocationConfirmationMessage(customerToken[i].token);
+}}
+
 
   res.status(200).json({
     success: true,
@@ -341,7 +350,9 @@ try {
         message: "Booking not found",
       });
     }
-
+    let cancellationCharges = 0;
+    let cancellationFeeStatus = "pending";
+    
     if(booking.serviceStatus === "scheduled"){
     // Combine date, time, and format into a single Date object
     const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
@@ -367,8 +378,6 @@ try {
     // Convert time difference to hours
     const hoursDifference = timeDifference / (1000 * 60 * 60);
 
-    let cancellationCharges = 0;
-    let cancellationFeeStatus = "pending";
 
     // Apply cancellation logic
     if (hoursDifference > 1) {
@@ -422,7 +431,30 @@ try {
     booking.serviceStatus = "cancelled";
     booking.cancelledBy = "partner";
     await booking.save();
-    
+
+    const customerTokens = await FirebaseTokens.find({ userId: booking.customer, userType: "customer" });
+const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner, userType: "partner" });
+
+if (customerTokens) {
+  // Handle customer tokens
+  for (let i = 0; i < customerTokens.length; i++) {
+    const sendMessages = [
+      CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+    ];
+
+    // Check if the cancellation fee status is paid and add refund message if so
+    if (cancellationFeeStatus === "paid") {
+      sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+    }
+    await Promise.all(sendMessages);
+  }}
+  if (partnerTokens) {
+
+  for (let i = 0; i < partnerTokens.length; i++) {
+      PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+  }
+}
+
     
     res.status(200).json({
       success: true,
