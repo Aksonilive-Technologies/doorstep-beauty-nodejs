@@ -17,7 +17,7 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa_deploy
-        chmod 600 ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa_deploy
         ssh-keyscan -H ${SERVER_HOST} >> ~/.ssh/known_hosts
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
