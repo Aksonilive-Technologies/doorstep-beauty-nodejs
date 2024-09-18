@@ -16,16 +16,9 @@ jobs:
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa_deploy
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa_deploy
         chmod 600 ~/.ssh/id_rsa_deploy
         ssh-keyscan -H ${SERVER_HOST} >> ~/.ssh/known_hosts
-        ls -la ~/.ssh
-        echo "First 100 characters of id_rsa_deploy:"
-        head -c 100 ~/.ssh/id_rsa_deploy
-        echo "Last 100 characters of id_rsa_deploy:"
-        tail -c 100 ~/.ssh/id_rsa_deploy
-        echo "Complete SSH key content (truncated):"
-        cat ~/.ssh/id_rsa_deploy | head -c 400
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_HOST: ${{ secrets.SERVER_HOST }}
