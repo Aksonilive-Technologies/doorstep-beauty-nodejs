@@ -19,7 +19,8 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa_deploy
         chmod 600 ~/.ssh/id_rsa_deploy
         ssh-keyscan -H ${SERVER_HOST} >> ~/.ssh/known_hosts
-        echo "SSH Private Key (id_rsa):" cat ~/.ssh/id_rsa_deploy
+        echo "SSH Private Key (id_rsa):" 
+        cat ~/.ssh/id_rsa_deploy
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SERVER_HOST: ${{ secrets.SERVER_HOST }}
