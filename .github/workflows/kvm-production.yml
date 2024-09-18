@@ -16,7 +16,7 @@ jobs:
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
-        echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa_deploy
+        echo "${SSH_PRIVATE_KEY}" | tr -d '\r' > ~/.ssh/id_rsa_deploy
         chmod 600 ~/.ssh/id_rsa_deploy
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -35,7 +35,6 @@ jobs:
         SERVER_USER: ${{ secrets.SERVER_USER }}
         SERVER_HOST: ${{ secrets.SERVER_HOST }}
         SERVER_DIR: ${{ secrets.SERVER_DIR }}
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Install dependencies and restart the app on the server
       run: |
@@ -48,4 +47,3 @@ jobs:
         SERVER_USER: ${{ secrets.SERVER_USER }}
         SERVER_HOST: ${{ secrets.SERVER_HOST }}
         SERVER_DIR: ${{ secrets.SERVER_DIR }}
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
