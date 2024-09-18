@@ -6,29 +6,39 @@ on:
       - production
 
 jobs:
-  deploy:
+  Deploy-KVM-Prod:
     runs-on: ubuntu-latest
-    if: ${{ github.event.head_commit.message == 'Merge pull request' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'  # Use the appropriate Node.js version
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Build
-      run: npm run build
-
-    - name: Deploy
+    - name: Setup SSH key
       run: |
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa_deploy
+        mkdir -p ~/.ssh
+        echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa_deploy
         chmod 600 ~/.ssh/id_rsa_deploy
-        ssh -i ~/.ssh/id_rsa_deploy -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} 'cd /var/www/node-api && git pull origin production && npm install && pm2 restart all'
       env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Sync files to server using SSH
+      run: |
+        rsync -avz --delete ./ ${SERVER_USER}@${SERVER_HOST}:${SERVER_DIR}
+      env:
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_DIR: ${{ secrets.SERVER_DIR }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Install dependencies and restart the app on the server
+      run: |
+        ssh -i ~/.ssh/id_rsa_deploy -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+          cd ${SERVER_DIR}
+          npm install
+          pm2 restart node-api
+        EOF
+      env:
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_DIR: ${{ secrets.SERVER_DIR }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
