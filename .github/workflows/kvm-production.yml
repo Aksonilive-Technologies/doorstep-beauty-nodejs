@@ -21,6 +21,13 @@ jobs:
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    - name: Add server to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${SERVER_HOST} >> ~/.ssh/known_hosts
+      env:
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+
     - name: Sync files to server using SSH
       run: |
         rsync -avz --delete ./ ${SERVER_USER}@${SERVER_HOST}:${SERVER_DIR}
