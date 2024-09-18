@@ -17,14 +17,14 @@ const upload = multer({
     fileSize: 2 * 1024 * 1024, // 2MB file size limit
   },
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png/;
+    const filetypes = /jpeg|jpg|png|webp/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error("Only .jpeg, .jpg and .png files are allowed!"));
+      cb(new Error("Only .jpeg, .jpg, .webp and .png files are allowed!"));
     }
   },
 });

@@ -4,6 +4,9 @@ const generateCode = require("../helper/generateCode.js");
 const generateRandomCode = require("../helper/generateCode.js");
 const { cloudinary } = require("../config/cloudinary");
 const Transaction = require("../models/transactionModel.js");
+const Plan = require("../models/customerMembershipPlan.js");
+const Membership = require("../models/membershipModel.js");
+const CustomerAddress = require('../models/customerAddressModel'); 
 //Create Register
 const validateUserInput = (name, email, mobile) => {
   if (!name) return "Please fill the name field";
@@ -16,7 +19,6 @@ const validateUserInput = (name, email, mobile) => {
 
   return null;
 };
-
 
 exports.register = async (req, res) => {
   const { name, email, mobile } = req.body;
@@ -110,7 +112,19 @@ exports.getAllCustomers = async (req, res) => {
     const customers = await Customer.find()
       .select("-__v")
       .skip(skip)
-      .limit(limit);
+      .limit(limit).lean();
+
+      for(let i = 0; i < customers.length; i++) {
+        const address = await CustomerAddress.findOne({
+          customer: customers[i]._id,
+          isDeleted: false,
+          isActive: true,
+          isPrimary: true,
+        });
+        if(address) {
+          customers[i].address = address.address;
+        }
+      }
 
     const totalCustomers = await Customer.countDocuments(); // Get the total number of customers
     const totalPages = Math.ceil(totalCustomers / limit); // Calculate total pages
@@ -659,8 +673,9 @@ exports.fetchWalletTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       customerId: id,
-      transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
+      transactionType: { $in: ["recharge_wallet", "wallet_booking", "booking_refund"] },
       status: "completed",
+
       isDeleted: false,
     }).sort({ createdAt: -1 });
 
@@ -671,21 +686,11 @@ exports.fetchWalletTransactions = async (req, res) => {
       });
     }
 
-    // const creditTransactions = transactions.filter(
-    //   (transaction) => transaction.transactionType === "recharge_wallet"
-    // );
-
-    // const debitTransactions = transactions.filter(
-    //   (transaction) => transaction.transactionType === "wallet_booking"
-    // );
 
     res.status(200).json({
       success: true,
       message: "Wallet transactions fetched successfully",
-      // data: {
-      //   credit: creditTransactions,
-      //   debit: debitTransactions,
-      // },
+
       data: transactions,
     });
   } catch (error) {
@@ -697,3 +702,5 @@ exports.fetchWalletTransactions = async (req, res) => {
     });
   }
 };
+
+

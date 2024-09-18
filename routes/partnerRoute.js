@@ -1,19 +1,17 @@
+// partnerRoute.js
 const express = require("express");
-router = express.Router();
-
+const router = express.Router();
 const {
-  register,
-  getPartners,
+  partnerById,
+  checkExistance,
   updatePartner,
-  deletePartner,
-  changeStatus,
-} = require("../controller/partnerController");
-const verifyToken = require("../middleware/verifyToken");
+} = require("../controller/partnerController.js");
+const { uploadSingleImage } = require("../middleware/uploadMiddleware");
+const verifyToken = require("../middleware/verifyToken.js");
 
-router.post("/register", register);
-router.get("/all", getPartners);
-router.put("/update", updatePartner);
-router.delete("/delete", deletePartner);
-router.put("/change-status", changeStatus);
+router.get("/profile/fetch", partnerById);
+router.get("/check-existence", checkExistance);
+router.post("/profile/update", uploadSingleImage, updatePartner);
 
 module.exports = router;
+

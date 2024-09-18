@@ -16,6 +16,15 @@ const adminSchema = new mongoose.Schema(
       required: true,
       maxlength: 128,
     },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    role: {
+      type: String,
+      required: true,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -24,19 +33,7 @@ const adminSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    level: {
-      type: Number,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    role: {
-      type: String,
-      default: "admin",
-      // required: true,
-    },
+    
   },
   {
     timestamps: true,
