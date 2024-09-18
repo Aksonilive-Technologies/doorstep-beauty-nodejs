@@ -673,7 +673,7 @@ exports.fetchWalletTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       customerId: id,
-      transactionType: { $in: ["recharge_wallet", "wallet_booking"] },
+      transactionType: { $in: ["recharge_wallet", "wallet_booking", "booking_refund"] },
       status: "completed",
 
       isDeleted: false,

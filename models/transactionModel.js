@@ -14,6 +14,7 @@ const transactionSchema = new mongoose.Schema(
         "wallet_booking",
         "gateway_booking",
         "membership_plan_purchase",
+        "booking_refund"
       ],
       required: true,
     },

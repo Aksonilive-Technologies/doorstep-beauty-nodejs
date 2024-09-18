@@ -1,5 +1,6 @@
 const AppVersion = require("../models/appVersionModel.js");
 const Customer = require("../models/customerModel.js");
+const Partner = require("../models/partnerModel.js");
 
 exports.updateAppVersion = async (req, res) => {
   const { userId, appVersion, userType, deviceType } = req.body;
@@ -25,18 +26,17 @@ exports.updateAppVersion = async (req, res) => {
         });
       }
     } else {
-      // const partner = await Partner.findById({ userId });
-      //   // if (!partner) {
-      //   return res.status(400).json({
-      //     success: false,
-      //     message: "Partner not found",
-      //     errorMessage: error.message,
-      //   });
-      //   // }
+      const partner = await Partner.findById( userId );
+        if (!partner) {
+        return res.status(400).json({
+          success: false,
+          message: "Partner not found",
+          errorMessage: error.message,
+        });}
     }
 
     // Find an existing app version record for the given user and device type
-    let appVersion = await AppVersion.findOne({
+    let app_version = await AppVersion.findOne({
       userId,
       deviceType,
       isActive: true,
@@ -44,32 +44,32 @@ exports.updateAppVersion = async (req, res) => {
     });
 
     // If no app version record exists, create a new one
-    if (!appVersion) {
-      appVersion = await AppVersion.create({
+    if (!app_version) {
+      app_version = await AppVersion.create({
         userId,
         appVersion,
         userType,
         deviceType,
       });
-      await appVersion.save(); // Save the new app version record
+      await app_version.save(); // Save the new app version record
 
       // Respond with success
       return res.status(200).json({
         success: true,
         message: "App version added successfully.",
-        data: appVersion,
+        data: app_version,
       });
     } else {
       // If appVersion exists but is different from the provided appVersion, update it
-      if (appVersion.appVersion !== appVersion) {
-        appVersion.appVersion = appVersion; // Update the appVersion
-        await appVersion.save(); // Save the updated app version record
+      if (app_version.appVersion !== appVersion) {
+        app_version.appVersion = appVersion; // Update the appVersion
+        await app_version.save(); // Save the updated app version record
 
         // Respond with success
         return res.status(200).json({
           success: true,
           message: "App version updated successfully.",
-          data: appVersion,
+          data: app_version,
         });
       } else {
         // If the appVersion is the same as the provided appVersion, no update is required

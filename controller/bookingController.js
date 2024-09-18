@@ -5,6 +5,11 @@ const moment = require("moment");
 const Product = require("../models/productModel");
 const MostBookedProduct = require("../models/mostBookedProductModel");
 const Customer = require("../models/customerModel");
+const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
+const CustomerFCMService = require("../helper/customerFcmService.js");
+const PartnerFCMService = require("../helper/partnerFcmService.js");
+const FirebaseTokens = require("../models/firebaseTokenModel.js");
+
 exports.bookProduct = async (req, res) => {
   const {
     customerId,
@@ -99,6 +104,14 @@ exports.bookProduct = async (req, res) => {
           });
         }
       }
+
+    // Send FCM to partner
+    const partnerToken = await FirebaseTokens.find({ userType: "partner" });
+    if (partnerToken) {
+      for (let i = 0; i < partnerToken.length; i++) {
+      PartnerFCMService.sendNewBookingMessage(partnerToken[i].token);
+    }}
+
 
     res.status(201).json({
       success: true,
@@ -199,7 +212,7 @@ exports.cancelBooking = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    const booking = await Booking.findOne({ _id: bookingId, serviceStatus:{$in: ["pending", "scheduled"]}, isDeleted: false });
 
     // Check if the booking exists
     if (!booking) {
@@ -208,12 +221,113 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
+    let cancellationCharges = 0;
+    let cancellationFeeStatus = "pending";
 
+    if(booking.serviceStatus === "scheduled"){
+
+    // Combine date, time, and format into a single Date object
+    const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
+    let [hours, minutes] = booking.scheduleFor.time.split(":").map(Number); // Time part (e.g., 10:00)
+
+    // Adjust hours based on AM/PM format
+    if (booking.scheduleFor.format === "PM" && hours < 12) {
+      hours += 12;
+    } else if (booking.scheduleFor.format === "AM" && hours === 12) {
+      hours = 0; // Handle 12 AM edge case
+    }
+
+    // Set the hours and minutes to the scheduledDate object
+    scheduledDate.setHours(hours);
+    scheduledDate.setMinutes(minutes);
+
+    // Get the current time
+    const currentTime = new Date();
+
+    // Calculate the time difference in milliseconds
+    const timeDifference = scheduledDate - currentTime;
+
+    // Convert time difference to hours
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+
+
+    // Apply cancellation logic
+    if (hoursDifference > 1) {
+      // If the cancellation is before 1 hour of the scheduled time, flat ₹100 charge
+      cancellationCharges = 100;
+    } else if (hoursDifference <= 1 && hoursDifference >= 0) {
+      // If the cancellation is within 1 hour of the scheduled time, 20% of the final price
+      cancellationCharges = booking.finalPrice * 0.2;
+    }
+
+    const transaction = await Transaction.findById(booking.transaction);
+    
+    
+    // If payment method is wallet
+    if (transaction.transactionType === "wallet_booking") {
+      const customer = await Customer.findById(booking.customer);
+
+        const remainingAmount = booking.finalPrice - cancellationCharges;
+        customer.walletBalance += remainingAmount;
+
+        // Create a transaction record with status "Pending"
+    new Transaction({
+      customerId: booking.customer,
+      transactionType: "booking_refund",
+      amount: remainingAmount,
+      paymentGateway: "wallet",
+      status: "completed",
+    }).save();
+
+
+
+
+        await customer.save();
+
+        // Since the refund is done, mark the cancellation fee as paid
+        cancellationFeeStatus = "paid";
+    }else{
+      cancellationFeeStatus = "pending";
+    }
+
+
+
+    // Create a new record in BookingCancellationFees
+    const cancellationFeeRecord = new BookingCancellationFees({
+      booking: booking._id,
+      customer: booking.customer,
+      charges: cancellationCharges,
+      status: cancellationFeeStatus,
+    });
+
+    await cancellationFeeRecord.save();
+  }
     // Update the booking status and service status to cancelled
     booking.serviceStatus = "cancelled";
     booking.status = "cancelled";
+    booking.cancelledBy = "customer";
 
     await booking.save();
+
+    const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+    const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerTokens) {
+        for (let i = 0; i < customerTokens.length; i++) {
+          const sendMessages = [
+            CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+          ];
+      
+          // Check if the cancellation fee status is paid and add refund message if so
+          if (cancellationFeeStatus === "paid") {
+            sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+          }
+
+          await Promise.all(sendMessages);
+        }}
+      if (partnerTokens) {
+        for (let i = 0; i < partnerTokens.length; i++) {
+        PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+      }}
 
     res.status(200).json({
       success: true,
@@ -376,11 +490,6 @@ exports.updateTransaction = async (req, res) => {
     try {
         const { bookingId, transactionStatus } = req.body;
 
-        const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
-        if (!booking) {
-            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
-        }
-
         // Step 1: Find and update the transaction
         const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
         if (!transaction) {
@@ -394,12 +503,28 @@ exports.updateTransaction = async (req, res) => {
         transaction.status = transactionStatus;
         await transaction.save();
 
+        const booking = await Booking.findOne({ _id: bookingId, status:"processing",serviceStatus:"pending", isDeleted: false });
+        if (!booking) {
+            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
+        }
+
         // Step 2: Find and update the booking
         
         // Update booking fields based on the transaction status
         if (transactionStatus === 'completed') {
             booking.paymentStatus = 'completed';
             booking.serviceStatus = 'scheduled';
+
+      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerToken) {
+        for (let i = 0; i < customerToken.length; i++) {
+        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
+      }}
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
+      }}
         } else if (transactionStatus === 'failed') {
             booking.paymentStatus = 'failed';
             booking.status = 'failed';
@@ -457,9 +582,20 @@ exports.initiatePayment = async (req, res) => {
       await transaction.save();
 
       booking.paymentStatus = 'completed';
-      booking.status = 'completed';
+      booking.serviceStatus = 'scheduled';
       booking.transaction = transaction._id;
       await booking.save();
+
+      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      if (customerToken) {
+        for (let i = 0; i < customerToken.length; i++) {
+        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
+      }}
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
+      }}
 
       return res.status(200).json({
         success: true,

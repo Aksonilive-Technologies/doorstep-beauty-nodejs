@@ -44,7 +44,6 @@ const bannerRoute = require("./bannerRoute");
 const membershipRoute = require("./membershipRoute");
 const feedbackRoute = require("./feedbackRoute");
 const customerAddressRoute = require("./customerAddressRoute");
-const categoryRoute = require("./categoryRoute");
 const offerRoute = require("./offerRoute");
 const stockRoute = require("./stockRoute");
 const adminRoute = require("./adminRoute");
@@ -52,15 +51,16 @@ const notificationRoute = require("./notificationRoutes");
 const productAdminRoute = require("./productAdminRoute");
 const packageAdminRoute = require("./packageAdminRoute");
 const adminComplainRoute = require("./adminComplainRoute");
-const categoryAdminRoutes = require("./categoryAdminRoutes");
 const packageAppRoute = require("./packageAppRoute");
 const bannerAppRoute = require("./bannerAppRoute");
 const categoryAppRoute = require("./categoryAppRoute");
+const categoryAdminRoute = require("./categoryAdminRoute");
 const feedbackCustomerRoute = require("./feedbackCustomerRoute");
 const customerComplaintRoute = require("./customerComplaintRoute");
 const membershipCustomerRoute = require("./membershipCustomerRoute");
 const firebaseTokenRoute = require("./firebaseTokenRoute");
 const partnerWalletRoute = require("./partnerWalletRoute");
+const partnerStockRoute = require("./partnerStockRoute");
 
 //***************Customer Route API************************ */
 
@@ -82,12 +82,13 @@ app.use("/api/v1/customer", customerRoute);
 app.use("/api/v1/partner", partnerRoute);
 app.use("/api/v1/partner/wallet", partnerWalletRoute);
 app.use("/api/v1/partner/booking", partnerBookingRoute);
+app.use("/api/v1/partner/stock", partnerStockRoute);
 
 //**************Admin Route API**************************** */
 app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/admin/partner", adminPartnerRoute);
 app.use("/api/v1/admin/banner", bannerRoute);
-app.use("/api/v1/admin/category", categoryRoute);
+app.use("/api/v1/admin/category", categoryAdminRoute);
 app.use("/api/v1/admin/product", productAdminRoute);
 app.use("/api/v1/admin/package", packageAdminRoute);
 app.use("/api/v1/admin/membership", membershipRoute);
@@ -96,7 +97,6 @@ app.use("/api/v1/admin/feedback", feedbackRoute);
 app.use("/api/v1/admin/notification", notificationRoute);
 app.use("/api/v1/admin/offers", offerRoute);
 app.use("/api/v1/admin/slot", slotRoute);
-app.use("/api/v1/admin/category", categoryAdminRoutes);
 app.use("/api/v1/admin/stock", stockRoute);
 app.use("/api/v1/admin/booking", bookingAdminRoute);
 
