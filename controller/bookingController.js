@@ -310,8 +310,14 @@ exports.cancelBooking = async (req, res) => {
     await booking.save();
 
     const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+    if(booking.partner.length > 0){
     const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
-      if (customerTokens) {
+    if (partnerTokens) {
+      for (let i = 0; i < partnerTokens.length; i++) {
+      PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+    }}
+    }
+    if (customerTokens) {
         for (let i = 0; i < customerTokens.length; i++) {
           const sendMessages = [
             CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
@@ -324,10 +330,6 @@ exports.cancelBooking = async (req, res) => {
 
           await Promise.all(sendMessages);
         }}
-      if (partnerTokens) {
-        for (let i = 0; i < partnerTokens.length; i++) {
-        PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
-      }}
 
     res.status(200).json({
       success: true,
