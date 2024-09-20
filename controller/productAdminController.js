@@ -19,10 +19,10 @@ const validateProductInput = (productData, file) => {
 
 exports.createProduct = async (req, res) => {
   const productData = req.body;
-  const { file } = req;
+  const { files } = req;
 
   console.log("Received product data:", productData);
-  console.log("Received file:", file);
+  console.log("Received files:", files);
 
   // Validate product input
   const validationError = validateProductInput(productData);
@@ -45,27 +45,52 @@ exports.createProduct = async (req, res) => {
 
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
-    if (file) {
-      console.log("Uploading file to Cloudinary:", file.path);
-      try {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: "product",
-          public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
-          overwrite: true,
-        });
-        imageUrl = result.secure_url;
-        console.log("Image uploaded successfully:", imageUrl);
-      } catch (error) {
-        console.error("Error uploading image to Cloudinary:", error.message);
-        return res.status(500).json({
-          success: false,
-          message: "Error uploading image",
-          errorMessage: error.message,
-        });
+    let optionsImages = [];
+
+    if (files && files.length > 0) {
+      // Upload the first image to 'product' folder and the rest to 'options' folder
+      console.log("Uploading files to Cloudinary");
+      for (let i = 0; i < files.length; i++) {
+        try {
+          const result = await cloudinary.uploader.upload(files[i].path, {
+            folder: i === 0 ? "product" : "options", // First image goes to 'product' folder, others to 'options'
+            public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
+            overwrite: true,
+          });
+
+          if (i === 0) {
+            imageUrl = result.secure_url; // First image is for the product
+            console.log("Product image uploaded successfully:", imageUrl);
+          } else {
+            optionsImages.push(result.secure_url); // Other images are for the options
+            console.log(`Option image ${i} uploaded successfully:`, result.secure_url);
+          }
+        } catch (error) {
+          console.error(`Error uploading image ${i} to Cloudinary:`, error.message);
+          return res.status(500).json({
+            success: false,
+            message: "Error uploading images",
+            errorMessage: error.message,
+          });
+        }
       }
     } else {
-      console.log("No file provided, skipping image upload.");
+      console.log("No files provided, skipping image upload.");
     }
+
+    // Assign images to the respective options
+    if (productData.options && optionsImages.length > 0) {
+      productData.options = productData.options.map((option, index) => {
+        if (optionsImages[index]) {
+          return {
+            ...option,
+            image: optionsImages[index], // Assign the uploaded image to the option's image field
+          };
+        }
+        return option; // If no image, return the option as is
+      });
+    }
+
 
     // Create a new product with the image URL if available
     const product = new Product({ ...productData, image: imageUrl });
