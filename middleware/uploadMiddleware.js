@@ -31,3 +31,6 @@ const upload = multer({
 
 // Export the middleware to handle single image upload
 exports.uploadSingleImage = upload.single("image");
+
+// Export the middleware to handle multiple image upload
+exports.uploadMultipleImages = upload.array("images", 10);
