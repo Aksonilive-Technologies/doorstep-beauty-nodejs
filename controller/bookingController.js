@@ -151,6 +151,31 @@ exports.fetchBookings = async (req, res) => {
       });
     }
 
+    bookings.forEach(booking => {
+      booking.product.forEach(productItem => {
+        // Check if there is an option selected for this product
+        if (productItem.option && productItem.product.options) {
+          const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+    
+          if (selectedOption) {
+            // Update product image with option's image
+            productItem.product.image = selectedOption.image;
+    
+            // Concatenate option's name with product's name
+            productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
+    
+            // Update product details with option's details
+            productItem.product.details = selectedOption.details;
+          }
+        }
+    
+        // Remove options key from product after using it
+        delete productItem.product.options;
+        // Optionally, remove the productItem.option if no longer needed
+        delete productItem.option;
+      });
+    });
+
     // Current date for comparison
     const now = moment();
 
@@ -363,12 +388,38 @@ exports.fetchRecentBookedProducts = async (req, res) => {
       .populate("product.product")
       .sort({ createdAt: -1 }); // Sort by most recent bookings
 
-    if (bookings.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No bookings found",
+      
+      if (bookings.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No bookings found",
+        });
+      }
+      
+      bookings.forEach(booking => {
+        booking.product.forEach(productItem => {
+          // Check if there is an option selected for this product
+          if (productItem.option && productItem.product.options) {
+            const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+      
+            if (selectedOption) {
+              // Update product image with option's image
+              productItem.product.image = selectedOption.image;
+      
+              // Concatenate option's name with product's name
+              productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
+      
+              // Update product details with option's details
+              productItem.product.details = selectedOption.details;
+            }
+          }
+      
+          // Remove options key from product after using it
+          delete productItem.product.options;
+          // Optionally, remove the productItem.option if no longer needed
+          delete productItem.option;
+        });
       });
-    }
 
     // Extract recent booked products from the bookings
     const recentProducts = bookings.flatMap(booking => booking.product.map(p => p.product));
