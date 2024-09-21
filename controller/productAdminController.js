@@ -19,10 +19,22 @@ const validateProductInput = (productData, file) => {
 
 exports.createProduct = async (req, res) => {
   const productData = req.body;
-  const { files } = req;
+  const files = req.files;
 
   console.log("Received product data:", productData);
   console.log("Received files:", files);
+
+  if (productData.options) {
+    try {
+      productData.options = JSON.parse(productData.options);
+    } catch (error) {
+      console.log("Error parsing options:", error.message);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid options format. It should be a valid JSON array."
+      });
+    }
+  }
 
   // Validate product input
   const validationError = validateProductInput(productData);
