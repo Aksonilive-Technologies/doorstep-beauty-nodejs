@@ -5,19 +5,19 @@ const MostBookedProduct = require("../models/mostBookedProductModel");
 
 // Add item to cart
 exports.addItemToCart = async (req, res) => {
-  const { customerId, itemId} = req.body;
+  const { customerId, itemId, optionId, price} = req.body;
 
   try {
-    if (!customerId || !itemId) {
+    if (!customerId || !itemId || !optionId || !price) {
       return res.status(400).json({
         success: false,
-        message: "feilds like customerId, itemId are required",
+        message: "feilds like customerId, itemId, price and option ID are required",
       });
     }
-    let cart = await Cart.findOne({ customer:customerId, product: itemId});
+    let cart = await Cart.findOne({ customer:customerId, product: itemId, productOption: optionId });
 
     if (!cart) {
-      cart = new Cart({ customer:customerId, product: itemId});
+      cart = new Cart({ customer:customerId, product: itemId, price, productOption: optionId});
     }else{
       cart.quantity += 1;
     }
@@ -78,7 +78,9 @@ exports.bookCart = async (req, res) => {
     const customerAddress = `${customerAddressData.address.houseNo}, ${customerAddressData.address.buildingName}, ${customerAddressData.address.street}, ${customerAddressData.address.city}, ${customerAddressData.address.state}, ${customerAddressData.address.pincode}, ${customerAddressData.address.country}`;
 
     // Fetch cart items for the customer
-    const cart = await Cart.find({ customer: customerId }).populate('product').select('-__v');
+    const cart = await Cart.find({ customer: customerId })
+    .populate('product')
+    .select('-__v');
 
     if (!cart || cart.length === 0) {
       return res.status(404).json({
@@ -91,7 +93,8 @@ exports.bookCart = async (req, res) => {
     const products = cart.map(item => ({
       product: item.product._id,
       quantity: item.quantity,
-      price: item.product.price,
+      price: item.price,
+      option: item.productOption,
     }));
 
     const totalPrice = products.reduce(
