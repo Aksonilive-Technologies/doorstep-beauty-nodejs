@@ -49,6 +49,31 @@ const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pe
     });
   }
 
+  bookings.forEach(booking => {
+    booking.product.forEach(productItem => {
+      // Check if there is an option selected for this product
+      if (productItem.option && productItem.product.options) {
+        const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+  
+        if (selectedOption) {
+          // Update product image with option's image
+          productItem.product.image = selectedOption.image;
+  
+          // Concatenate option's name with product's name
+          productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
+  
+          // Update product details with option's details
+          productItem.product.details = selectedOption.details;
+        }
+      }
+  
+      // Remove options key from product after using it
+      delete productItem.product.options;
+      // Optionally, remove the productItem.option if no longer needed
+      delete productItem.option;
+    });
+  });
+
   const pincodeArray = new Set(servicablePincode.map(pincodeObj => pincodeObj.pincode.toString()));
   console.log(pincodeArray);
 
@@ -132,6 +157,31 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
       message: "No bookings found",
     });
   }
+
+  bookings.forEach(booking => {
+    booking.product.forEach(productItem => {
+      // Check if there is an option selected for this product
+      if (productItem.option && productItem.product.options) {
+        const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+  
+        if (selectedOption) {
+          // Update product image with option's image
+          productItem.product.image = selectedOption.image;
+  
+          // Concatenate option's name with product's name
+          productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
+  
+          // Update product details with option's details
+          productItem.product.details = selectedOption.details;
+        }
+      }
+  
+      // Remove options key from product after using it
+      delete productItem.product.options;
+      // Optionally, remove the productItem.option if no longer needed
+      delete productItem.option;
+    });
+  });
 
   const groupedBookings = bookings.reduce((acc, booking) => {
     // Get the current service status

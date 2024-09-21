@@ -22,6 +22,9 @@ const BookingSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        option: {
+          type: mongoose.Schema.Types.ObjectId,
+        },
       },
     ],
     productTool: [

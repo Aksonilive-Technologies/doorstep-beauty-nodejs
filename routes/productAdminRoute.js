@@ -9,7 +9,7 @@ const { uploadMultipleImages, uploadSingleImage } = require("../middleware/uploa
 router.post("/create", uploadMultipleImages, Product.createProduct);
 
 // Other routes remain unchanged
-router.put("/update", uploadSingleImage, Product.updateProduct);
+router.put("/update", uploadMultipleImages, Product.updateProduct);
 // router.get("/fetch/single", Product.getProductById);
 router.delete("/delete", Product.deleteProduct);
 router.get("/fetch/all", Product.getAllProducts);
