@@ -8,17 +8,36 @@ exports.addItemToCart = async (req, res) => {
   const { customerId, itemId, optionId, price} = req.body;
 
   try {
-    if (!customerId || !itemId || !optionId || !price) {
+    if (!customerId || !itemId || !price) {
       return res.status(400).json({
         success: false,
-        message: "feilds like customerId, itemId, price and option ID are required",
+        message: "feilds like customerId, itemId, price are required",
       });
     }
-    let cart = await Cart.findOne({ customer:customerId, product: itemId, productOption: optionId });
+    let cart;
+    const query = { customer: customerId, product: itemId };
 
+    if (optionId) {
+      query.productOption = optionId;  // Add productOption only if optionId is provided
+    }
+
+    cart = await Cart.findOne(query);
+
+    // If cart item doesn't exist, create a new one
     if (!cart) {
-      cart = new Cart({ customer:customerId, product: itemId, price, productOption: optionId});
-    }else{
+      const newCartItem = {
+        customer: customerId,
+        product: itemId,
+        price,
+      };
+
+      if (optionId) {
+        newCartItem.productOption = optionId;  // Add productOption if provided
+      }
+
+      cart = new Cart(newCartItem);
+    } else {
+      // If the cart item exists, increment the quantity
       cart.quantity += 1;
     }
 
@@ -89,13 +108,20 @@ exports.bookCart = async (req, res) => {
       });
     }
 
-    // Process cart and calculate total price
-    const products = cart.map(item => ({
-      product: item.product._id,
-      quantity: item.quantity,
-      price: item.price,
-      option: item.productOption,
-    }));
+    const products = cart.map(item => {
+      const productData = {
+        product: item.product._id,
+        quantity: item.quantity,
+        price: item.price,
+      };
+    
+      // Include productOption only if it's present
+      if (item.productOption) {
+        productData.option = item.productOption;
+      }
+    
+      return productData;
+    });
 
     const totalPrice = products.reduce(
       (sum, item) => sum + item.price * item.quantity, 0
