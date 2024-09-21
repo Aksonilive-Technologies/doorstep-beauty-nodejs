@@ -31,7 +31,7 @@ exports.createProduct = async (req, res) => {
       console.log("Error parsing options:", error.message);
       return res.status(400).json({
         success: false,
-        message: "Invalid options format. It should be a valid JSON array."
+        message: "Invalid options format. It should be a valid JSON array.",
       });
     }
   }
@@ -75,10 +75,16 @@ exports.createProduct = async (req, res) => {
             console.log("Product image uploaded successfully:", imageUrl);
           } else {
             optionsImages.push(result.secure_url); // Other images are for the options
-            console.log(`Option image ${i} uploaded successfully:`, result.secure_url);
+            console.log(
+              `Option image ${i} uploaded successfully:`,
+              result.secure_url
+            );
           }
         } catch (error) {
-          console.error(`Error uploading image ${i} to Cloudinary:`, error.message);
+          console.error(
+            `Error uploading image ${i} to Cloudinary:`,
+            error.message
+          );
           return res.status(500).json({
             success: false,
             message: "Error uploading images",
@@ -102,7 +108,6 @@ exports.createProduct = async (req, res) => {
         return option; // If no image, return the option as is
       });
     }
-
 
     // Create a new product with the image URL if available
     const product = new Product({ ...productData, image: imageUrl });
@@ -136,7 +141,7 @@ exports.createProduct = async (req, res) => {
 // Update product
 exports.updateProduct = async (req, res) => {
   const { id } = req.query;
-  const { options, image, ...productData } = req.body;
+  const productData = req.body;
   const files = req.files;
 
   try {
@@ -148,27 +153,27 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    if (options) {
+    if (productData.options) {
       try {
-        productData.options = JSON.parse(options);
+        productData.options = JSON.parse(productData.options);
       } catch (error) {
         console.log("Error parsing options:", error.message);
         return res.status(400).json({
           success: false,
-          message: "Invalid options format. It should be a valid JSON array."
+          message: "Invalid options format. It should be a valid JSON array.",
         });
       }
     }
 
     const product = await Product.findById(id);
-    
+
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
-    
+
     // Update only the fields that are provided
     const updatedFields = {};
     for (let key in productData) {
@@ -176,6 +181,8 @@ exports.updateProduct = async (req, res) => {
         updatedFields[key] = productData[key];
       }
     }
+
+    console.log("updatedFields :", updatedFields);
 
     // Upload the image to Cloudinary if a file is present
     let optionsImages = [];
@@ -186,13 +193,13 @@ exports.updateProduct = async (req, res) => {
       for (let i = 0; i < files.length; i++) {
         try {
           const result = await cloudinary.uploader.upload(files[i].path, {
-            folder: (i === 0 && image === "") ? "product" : "options", // First image goes to 'product' folder, others to 'options'
+            folder: i === 0 && productData.image === "" ? "product" : "options", // First image goes to 'product' folder, others to 'options'
             public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
             overwrite: true,
           });
 
-          if (i === 0 && image === "") {
-            updatedFields['image'] = result.secure_url; // First image is for the product
+          if (i === 0 && productData.image === "") {
+            updatedFields["image"] = result.secure_url; // First image is for the product
           } else {
             optionsImages.push(result.secure_url); // Other images are for the options
           }
@@ -208,15 +215,19 @@ exports.updateProduct = async (req, res) => {
       console.log("No files provided, skipping image upload.");
     }
 
+    console.log(updatedFields);
+
     if (updatedFields.options && optionsImages.length > 0) {
       let imageIndex = 0;
-      updatedFields.options = updatedFields.options.map((option) => {
-        if (option.isActive === true && optionsImages[imageIndex]) {
+      updatedFields.options.forEach((option) => {
+        if (optionsImages[imageIndex] && !option._id) {
           option.image = optionsImages[imageIndex];
           imageIndex++;
         }
         if (!option._id) {
-          product.options.push(option);  // This will add a new option to the product
+          console.log(option);
+
+          product.options.push(option); // This will add a new option to the product
         } else {
           // Existing option will be updated (handled above)
           return option;
@@ -254,7 +265,6 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
-
 
 // Delete product
 exports.deleteProduct = async (req, res) => {
