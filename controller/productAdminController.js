@@ -133,86 +133,11 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-
-// Fetch all products
-exports.getAllProducts = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-
-    // Calculate the number of products to skip based on the current page and limit
-    const skip = (page - 1) * limit;
-
-    // Fetch products with pagination and sorting
-    const products = await Product.find()
-      .select("-__v")
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get the total count of products for pagination calculation
-    const totalProducts = await Product.countDocuments();
-
-    res.status(200).json({
-      success: true,
-      message: "All products fetched successfully",
-      data: products,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalProducts / limit),
-        totalProducts,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching products",
-      errorMessage: error.message,
-    });
-  }
-};
-
-exports.getAllNewProducts = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-
-    // Calculate the number of products to skip based on the current page and limit
-    const skip = (page - 1) * limit;
-
-    // Fetch products with pagination and sorting
-    const products = await Product.find({
-      isnew: true,
-    })
-      .select("-__v")
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get the total count of new products for pagination calculation
-    const totalNewProducts = await Product.countDocuments({
-      isnew: true,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "All new products fetched successfully",
-      data: products,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalNewProducts / limit),
-        totalNewProducts,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching products",
-      errorMessage: error.message,
-    });
-  }
-};
-
 // Update product
 exports.updateProduct = async (req, res) => {
   const { id } = req.query;
-  const productData = req.body;
+  const { options, image, ...productData } = req.body;
+  const files = req.files;
 
   try {
     // Validate product input
@@ -223,15 +148,27 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    const product = await Product.findById(id);
+    if (options) {
+      try {
+        productData.options = JSON.parse(options);
+      } catch (error) {
+        console.log("Error parsing options:", error.message);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid options format. It should be a valid JSON array."
+        });
+      }
+    }
 
+    const product = await Product.findById(id);
+    
     if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
-
+    
     // Update only the fields that are provided
     const updatedFields = {};
     for (let key in productData) {
@@ -240,23 +177,53 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // Handle image upload if a file is provided
-    if (req.file) {
-      try {
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: "product",
-          public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
-          overwrite: true,
-        });
-        updatedFields.image = result.secure_url;  // Add the image URL to the updated fields
-      } catch (error) {
-        return res.status(500).json({
-          success: false,
-          message: "Error uploading image",
-          errorMessage: error.message,
-        });
+    // Upload the image to Cloudinary if a file is present
+    let optionsImages = [];
+
+    if (files && files.length > 0) {
+      // Upload the first image to 'product' folder and the rest to 'options' folder
+      console.log("Uploading files to Cloudinary");
+      for (let i = 0; i < files.length; i++) {
+        try {
+          const result = await cloudinary.uploader.upload(files[i].path, {
+            folder: (i === 0 && image === "") ? "product" : "options", // First image goes to 'product' folder, others to 'options'
+            public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
+            overwrite: true,
+          });
+
+          if (i === 0 && image === "") {
+            updatedFields['image'] = result.secure_url; // First image is for the product
+          } else {
+            optionsImages.push(result.secure_url); // Other images are for the options
+          }
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: "Error uploading images",
+            errorMessage: error.message,
+          });
+        }
       }
+    } else {
+      console.log("No files provided, skipping image upload.");
     }
+
+    if (updatedFields.options && optionsImages.length > 0) {
+      let imageIndex = 0;
+      updatedFields.options = updatedFields.options.map((option) => {
+        if (option.isActive === true && optionsImages[imageIndex]) {
+          option.image = optionsImages[imageIndex];
+          imageIndex++;
+        }
+        if (!option._id) {
+          product.options.push(option);  // This will add a new option to the product
+        } else {
+          // Existing option will be updated (handled above)
+          return option;
+        }
+      });
+    }
+
 
     // Update the product in the database
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -264,6 +231,8 @@ exports.updateProduct = async (req, res) => {
       { $set: updatedFields },
       { new: true }
     );
+
+    updatedProduct.save();
 
     if (!updatedProduct) {
       return res.status(500).json({
@@ -340,55 +309,6 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// Get product by ID
-exports.getProductById = async (req, res) => {
-  const { id } = req.query;
-
-  if (!id) {
-    return res.status(400).json({
-      success: false,
-      message: "Product ID is required",
-    });
-  }
-
-  try {
-    const product = await Product.findById(id).select("-__v");
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    // if (product.isDeleted) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     message: "Product not found",
-    //   });
-    // }
-
-    // if (!product.isActive) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     message: "Product not found",
-    //   });
-    // }
-
-    res.status(200).json({
-      success: true,
-      message: "Product fetched successfully",
-      data: product,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching product",
-      errorMessage: error.message,
-    });
-  }
-};
-
 //change status by ID
 exports.changeStatusById = async (req, res) => {
   const { id } = req.query;
@@ -415,6 +335,80 @@ exports.changeStatusById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error changing status",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Calculate the number of products to skip based on the current page and limit
+    const skip = (page - 1) * limit;
+
+    // Fetch products with pagination and sorting
+    const products = await Product.find()
+      .select("-__v")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get the total count of products for pagination calculation
+    const totalProducts = await Product.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      message: "All products fetched successfully",
+      data: products,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalProducts / limit),
+        totalProducts,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.getAllNewProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Calculate the number of products to skip based on the current page and limit
+    const skip = (page - 1) * limit;
+
+    // Fetch products with pagination and sorting
+    const products = await Product.find({
+      isnew: true,
+    })
+      .select("-__v")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get the total count of new products for pagination calculation
+    const totalNewProducts = await Product.countDocuments({
+      isnew: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "All new products fetched successfully",
+      data: products,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalNewProducts / limit),
+        totalNewProducts,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products",
       errorMessage: error.message,
     });
   }
