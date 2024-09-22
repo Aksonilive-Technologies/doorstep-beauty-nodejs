@@ -212,6 +212,25 @@ exports.getCartByCustomerId = async (req, res) => {
         message: "Cart for customerId "+customerId+" not found",
       });
     }
+
+      cart.product.forEach(productItem => {
+        // Check if there is an option selected for this product
+        if (productItem.option && productItem.product.options) {
+          const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+    
+          if (selectedOption) {
+            // Update product image with option's image
+            productItem.product.image = selectedOption.image;
+    
+            // Concatenate option's name with product's name
+            productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
+    
+            // Update product details with option's details
+            productItem.product.details = selectedOption.details;
+          }
+        }
+      });
+    
     cart.sort((a, b) => b.product.price - a.product.price);
 
     res.status(200).json({
