@@ -56,17 +56,26 @@ const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pe
         const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
   
         if (selectedOption) {
+          // Store the original product name in a temporary variable
+          const originalProductName = productItem.product.name;
+
           // Update product image with option's image
           productItem.product.image = selectedOption.image;
-  
-          // Concatenate option's name with product's name
-          productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
-  
+
+          // Update product name by concatenating the option name with the original product name
+          productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+
+          // Update product price with option price
+          productItem.product.price = selectedOption.price;
+
           // Update product details with option's details
           productItem.product.details = selectedOption.details;
         }
       }
-  
+
+      // Remove the options field from the product to clean up the response
+      delete productItem.product.options;
+      delete productItem.option;
     });
   });
 
@@ -161,17 +170,26 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
         const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
   
         if (selectedOption) {
+          // Store the original product name in a temporary variable
+          const originalProductName = productItem.product.name;
+
           // Update product image with option's image
           productItem.product.image = selectedOption.image;
-  
-          // Concatenate option's name with product's name
-          productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
-  
+
+          // Update product name by concatenating the option name with the original product name
+          productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+
+          // Update product price with option price
+          productItem.product.price = selectedOption.price;
+
           // Update product details with option's details
           productItem.product.details = selectedOption.details;
         }
       }
-  
+
+      // Remove the options field from the product to clean up the response
+      delete productItem.product.options;
+      delete productItem.option;
     });
   });
 

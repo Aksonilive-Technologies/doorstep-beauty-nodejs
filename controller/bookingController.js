@@ -142,7 +142,7 @@ exports.fetchBookings = async (req, res) => {
     // Fetch bookings with populated fields
     const bookings = await Booking.find({ customer: customerId, isDeleted: false })
       .populate("product.product")
-      .populate("partner.partner");
+      .populate("partner.partner").lean();
 
     if (bookings.length === 0) {
       return res.status(404).json({
@@ -158,19 +158,29 @@ exports.fetchBookings = async (req, res) => {
           const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
     
           if (selectedOption) {
+            // Store the original product name in a temporary variable
+            const originalProductName = productItem.product.name;
+
             // Update product image with option's image
             productItem.product.image = selectedOption.image;
-    
-            // Concatenate option's name with product's name
-            productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
-    
+
+            // Update product name by concatenating the option name with the original product name
+            productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+
+            // Update product price with option price
+            productItem.product.price = selectedOption.price;
+
             // Update product details with option's details
             productItem.product.details = selectedOption.details;
           }
         }
-    
+
+        // Remove the options field from the product to clean up the response
+        delete productItem.product.options;
+        delete productItem.option;
       });
     });
+      
 
     // Current date for comparison
     const now = moment();
@@ -382,7 +392,7 @@ exports.fetchRecentBookedProducts = async (req, res) => {
     // Fetch bookings for the customer and populate products
     const bookings = await Booking.find({ customer: customerId, isDeleted: false })
       .populate("product.product")
-      .sort({ createdAt: -1 }); // Sort by most recent bookings
+      .sort({ createdAt: -1 }).lean(); // Sort by most recent bookings
 
       
       if (bookings.length === 0) {
@@ -399,17 +409,26 @@ exports.fetchRecentBookedProducts = async (req, res) => {
             const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
       
             if (selectedOption) {
+              // Store the original product name in a temporary variable
+              const originalProductName = productItem.product.name;
+  
               // Update product image with option's image
               productItem.product.image = selectedOption.image;
-      
-              // Concatenate option's name with product's name
-              productItem.product.name = `${selectedOption.option} ${productItem.product.name}`;
-      
+  
+              // Update product name by concatenating the option name with the original product name
+              productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+  
+              // Update product price with option price
+              productItem.product.price = selectedOption.price;
+  
               // Update product details with option's details
               productItem.product.details = selectedOption.details;
             }
           }
-      
+  
+          // Remove the options field from the product to clean up the response
+          delete productItem.product.options;
+          delete productItem.option;
         });
       });
 

@@ -221,11 +221,14 @@ exports.getCartByCustomerId = async (req, res) => {
         const selectedOption = productItem.options.find(opt => opt._id.equals(cartItem.productOption));
 
         if (selectedOption) {
+
+          // Store the original product name in a temporary variable
+          const originalProductName = productItem.product.name;
           // Update product image with option's image
           productItem.image = selectedOption.image;
 
           // Concatenate option's name with product's name
-          productItem.name = `${selectedOption.option} ${productItem.name}`;
+          productItem.name = `${selectedOption.option} ${originalProductName}`;
 
           //update product price with option's price
           productItem.price = selectedOption.price;
