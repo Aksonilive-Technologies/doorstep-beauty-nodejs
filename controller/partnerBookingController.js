@@ -60,7 +60,7 @@ const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pe
           const originalProductName = productItem.product.name;
 
           // Update product image with option's image
-          // productItem.product.image = selectedOption.image;
+          productItem.product.image = selectedOption.image;
 
           // Update product name by concatenating the option name with the original product name
           productItem.product.name = `${selectedOption.option} ${originalProductName}`;
