@@ -223,7 +223,7 @@ exports.getCartByCustomerId = async (req, res) => {
         if (selectedOption) {
 
           // Store the original product name in a temporary variable
-          const originalProductName = productItem.product.name;
+          const originalProductName = productItem.name;
           // Update product image with option's image
           productItem.image = selectedOption.image;
 
