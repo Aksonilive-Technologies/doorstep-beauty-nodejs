@@ -67,10 +67,6 @@ const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pe
         }
       }
   
-      // Remove options key from product after using it
-      delete productItem.product.options;
-      // Optionally, remove the productItem.option if no longer needed
-      delete productItem.option;
     });
   });
 
@@ -176,10 +172,6 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
         }
       }
   
-      // Remove options key from product after using it
-      delete productItem.product.options;
-      // Optionally, remove the productItem.option if no longer needed
-      delete productItem.option;
     });
   });
 

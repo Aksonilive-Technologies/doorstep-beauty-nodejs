@@ -169,10 +169,6 @@ exports.fetchBookings = async (req, res) => {
           }
         }
     
-        // Remove options key from product after using it
-        delete productItem.product.options;
-        // Optionally, remove the productItem.option if no longer needed
-        delete productItem.option;
       });
     });
 
@@ -395,7 +391,7 @@ exports.fetchRecentBookedProducts = async (req, res) => {
           message: "No bookings found",
         });
       }
-      
+
       bookings.forEach(booking => {
         booking.product.forEach(productItem => {
           // Check if there is an option selected for this product
@@ -414,10 +410,6 @@ exports.fetchRecentBookedProducts = async (req, res) => {
             }
           }
       
-          // Remove options key from product after using it
-          delete productItem.product.options;
-          // Optionally, remove the productItem.option if no longer needed
-          delete productItem.option;
         });
       });
 
