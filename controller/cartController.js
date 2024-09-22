@@ -204,7 +204,7 @@ exports.getCartByCustomerId = async (req, res) => {
         success: false,
         message: "customerId is required",
       });}
-    const cart = await Cart.find({ customer:id}).populate('product').select('-__v');
+    const cart = await Cart.find({ customer:id}).populate('product').select('-__v').lean();
 
     if (!cart) {
       return res.status(404).json({
@@ -227,10 +227,17 @@ exports.getCartByCustomerId = async (req, res) => {
           // Concatenate option's name with product's name
           productItem.name = `${selectedOption.option} ${productItem.name}`;
 
+          //update product price with option's price
+          productItem.price = selectedOption.price;
+
           // Update product details with option's details
           productItem.details = selectedOption.details;
         }
       }
+
+      delete cartItem.productOption;
+      delete cartItem.price;
+      delete cartItem.product.options;
     });
     
     cart.sort((a, b) => b.product.price - a.product.price);
