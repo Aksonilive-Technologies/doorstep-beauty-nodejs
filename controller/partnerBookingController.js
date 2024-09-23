@@ -37,11 +37,29 @@ const servicablePincode = await ServicablePincode.find({partner: id, isDeleted: 
 
 console.log("Serviceable pincodes:", servicablePincode);
 
-const bookings = await Booking.find({ serviceStatus: "pending", status:{$in:["pending", "processing"]}, isDeleted: false, isActive: true })
+// Set the 15-minute threshold
+const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+// Booking query with conditional logic based on partner's rating
+const bookingQuery = {
+  serviceStatus: "pending",
+  status: { $in: ["pending", "processing"] },
+  isDeleted: false,
+  isActive: true,
+};
+
+// If partner's rating is less than 4, add the condition to the query
+if (partner.rating < 4) {
+  bookingQuery.createdAt = { $lt: fifteenMinutesAgo };
+}
+
+// Fetch bookings with the modified query
+const bookings = await Booking.find(bookingQuery)
   .populate("product.product")
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
+
   if (bookings.length === 0) {
     return res.status(404).json({
       success: false,
@@ -338,6 +356,7 @@ try {
     // Push product tools into booking and perform bulk updates
     booking.productTool.push(...stockItems.map((item) => ({ productTool: new mongoose.Types.ObjectId(item) })));
     booking.serviceStatus = "ongoing";
+    booking.serviceStartedAt = new Date();
 
     // Execute both save operations in parallel
     await Promise.all([booking.save(), StockAssignment.bulkWrite(bulkUpdates)]);
@@ -376,6 +395,7 @@ try {
     }
     booking.status = "completed";
     booking.serviceStatus = "completed";
+    booking.serviceEndedAt = new Date();
     await booking.save();
     res.status(200).json({
       success: true,
