@@ -404,35 +404,35 @@ exports.fetchRecentBookedProducts = async (req, res) => {
         });
       }
 
-      bookings.forEach(booking => {
-        booking.product.forEach(productItem => {
-          // Check if there is an option selected for this product
-          if (productItem.option && productItem.product.options) {
-            const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+      // bookings.forEach(booking => {
+      //   booking.product.forEach(productItem => {
+      //     // Check if there is an option selected for this product
+      //     if (productItem.option && productItem.product.options) {
+      //       const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
       
-            if (selectedOption) {
-              // Store the original product name in a temporary variable
-              const originalProductName = productItem.product.name;
+      //       if (selectedOption) {
+      //         // Store the original product name in a temporary variable
+      //         const originalProductName = productItem.product.name;
   
-              // Update product image with option's image
-              productItem.product.image = selectedOption.image;
+      //         // Update product image with option's image
+      //         productItem.product.image = selectedOption.image;
   
-              // Update product name by concatenating the option name with the original product name
-              productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+      //         // Update product name by concatenating the option name with the original product name
+      //         productItem.product.name = `${selectedOption.option} ${originalProductName}`;
   
-              // Update product price with option price
-              productItem.product.price = selectedOption.price;
+      //         // Update product price with option price
+      //         productItem.product.price = selectedOption.price;
   
-              // Update product details with option's details
-              productItem.product.details = selectedOption.details;
-            }
-          }
+      //         // Update product details with option's details
+      //         productItem.product.details = selectedOption.details;
+      //       }
+      //     }
   
-          // Remove the options field from the product to clean up the response
-          delete productItem.product.options;
-          delete productItem.option;
-        });
-      });
+      //     // Remove the options field from the product to clean up the response
+      //     delete productItem.product.options;
+      //     delete productItem.option;
+      //   });
+      // });
 
     // Extract recent booked products from the bookings
     const recentProducts = bookings.flatMap(booking => booking.product.map(p => p.product));
