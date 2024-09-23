@@ -338,6 +338,7 @@ try {
     // Push product tools into booking and perform bulk updates
     booking.productTool.push(...stockItems.map((item) => ({ productTool: new mongoose.Types.ObjectId(item) })));
     booking.serviceStatus = "ongoing";
+    booking.serviceStartedAt = new Date();
 
     // Execute both save operations in parallel
     await Promise.all([booking.save(), StockAssignment.bulkWrite(bulkUpdates)]);
@@ -376,6 +377,7 @@ try {
     }
     booking.status = "completed";
     booking.serviceStatus = "completed";
+    booking.serviceEndedAt = new Date();
     await booking.save();
     res.status(200).json({
       success: true,

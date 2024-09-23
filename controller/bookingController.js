@@ -152,37 +152,13 @@ exports.fetchBookings = async (req, res) => {
       });
     }
 
-    console.log('Bookings:', bookings.product);
-
     bookings.forEach(booking => {
-      console.log('Booking:', booking._id);
       booking.product.forEach(productItem => {
         // Check if there is an option selected for this product
-        console.log('ProductItem:', productItem.product.option);
         if (productItem.option && productItem.product.options) {
 
-      let selectedOption;
+        const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
 
-      for (let i = 0; i < productItem.product.options.length; i++) {
-        const option = productItem.product.options[i];
-        console.log('Option:', option._id.toString());
-
-        if (option._id.toString() ===productItem.option.toString()) {
-          selectedOption = option;
-          console.log('Selected option:', selectedOption);
-          break;
-        }
-      }
-
-      // Ensure comparison is made between ObjectId as strings
-      // const selectedOption = productItem.product.options.find(opt => {
-      //   const optionIdString = productItem.option.toString();
-      //   const optionInListString = opt._id.toString();
-
-      //   console.log('Comparing optionId:', optionIdString, 'with', optionInListString);
-        
-      //   return optionIdString === optionInListString;
-      // });
           if (selectedOption) {
             // Store the original product name in a temporary variable
             const originalProductName = productItem.product.name;

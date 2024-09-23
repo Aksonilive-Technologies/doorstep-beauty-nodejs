@@ -129,6 +129,12 @@ const BookingSchema = new mongoose.Schema(
         type: String,
         enum : ["customer","partner"]
       },
+      serviceStartedAt : {
+        type: Date
+      },
+      serviceEndedAt : {
+        type: Date
+      },
     isActive: {
       type: Boolean,
       default: true,
