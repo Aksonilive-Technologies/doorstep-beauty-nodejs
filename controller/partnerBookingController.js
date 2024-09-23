@@ -59,7 +59,7 @@ const bookings = await Booking.find(bookingQuery)
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
-  
+
   if (bookings.length === 0) {
     return res.status(404).json({
       success: false,
