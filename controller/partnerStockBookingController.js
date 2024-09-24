@@ -1,6 +1,7 @@
 const Stock = require("../models/stockModel");
 const Partner = require("../models/partnerModel");
 const StockBooking = require("../models/stockBookingModel");
+const PartnerTransaction = require("../models/partnerTransactionModel");
 
 exports.createStockBooking = async (req, res) => {
   const {
@@ -51,12 +52,79 @@ exports.createStockBooking = async (req, res) => {
     // Save the stock booking to the database
     const savedBooking = await newStockBooking.save();
 
-    // Return a success response with the newly created stock booking
-    return res.status(201).json({
-      success: true,
-      message: "Stock booking created successfully",
-      data: savedBooking,
-    });
+    // Now handle payment initiation based on paymentMode
+    const finalPrice = stockItem.price * (quantity || 1); // Assuming stockItem has a price field
+
+    const transactionData = {
+      partnerId: partnerId,
+      amount: finalPrice,
+      paymentGateway: paymentMode,
+      transactionType: "stock_item_booking",
+    };
+
+    if (paymentMode === "wallet") {
+      // Deduct from wallet and create a debit transaction
+      if (partner.walletBalance < finalPrice) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Insufficient wallet balance" });
+      }
+
+      partner.walletBalance -= finalPrice; // Make sure this value is valid
+      await partner.save();
+
+      transactionData.status = "completed"; // Wallet payments complete immediately
+
+      // Create a completed transaction for wallet payments
+      const transaction = new PartnerTransaction(transactionData);
+      await transaction.save();
+
+      // Update stock booking with payment status
+      savedBooking.paymentStatus = "completed";
+      savedBooking.transaction = transaction._id;
+      await savedBooking.save();
+
+      // Notify via FCM (if needed)
+      const partnerToken = await FirebaseTokens.find({
+        userId: partnerId,
+        userType: "partner",
+      });
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+          PartnerFCMService.sendStockBookingConfirmationMessage(
+            partnerToken[i].token
+          );
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Payment processed successfully via wallet and stock booking updated",
+        data: savedBooking,
+      });
+    } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
+      // Create a pending transaction for gateway payments or cash
+      transactionData.status = "pending";
+
+      const transaction = new PartnerTransaction(transactionData);
+      await transaction.save();
+
+      // Update stock booking with transaction reference
+      savedBooking.transaction = transaction._id;
+      await savedBooking.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Transaction initiated successfully via " + paymentMode,
+        data: savedBooking,
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment gateway",
+      });
+    }
   } catch (error) {
     console.error("Error creating stock booking:", error.message);
     return res.status(500).json({
