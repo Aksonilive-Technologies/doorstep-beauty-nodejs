@@ -42,40 +42,26 @@ exports.fetchAssignedStocks = async (req, res) => {
 };
 exports.fetchAllStocks = async (req, res) => {
   try {
-    // Set default pagination values if not provided
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
 
     // Fetch stocks with pagination, filtering by isActive and isDeleted
-    const stocks = await Stock.find({ isActive: true, isDeleted: false })
-      .select("-currentStock -__v")
-      .skip(skip)
-      .limit(limit);
-
-    // Count the total number of documents for pagination calculation
-    const totalStocks = await Stock.countDocuments({
-      isActive: true,
-      isDeleted: false,
-    });
-    const totalPages = Math.ceil(totalStocks / limit);
+    const stocks = await Stock.find({currentStock:{
+      $gt:0
+    }, isActive: true, isDeleted: false })
+      .select("-currentStock -__v");
 
     // If no stocks found
     if (stocks.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No active stocks found",
+        message: "No item found",
       });
     }
 
     // Return successful response
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all the active stocks",
+      message: "Successfully retrieved all the items",
       data: stocks,
-      currentPage: page,
-      totalPages,
-      totalStocks,
     });
   } catch (error) {
     // Handle potential errors
