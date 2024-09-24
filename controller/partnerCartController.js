@@ -45,7 +45,7 @@ exports.addItemToCart = async (req, res) => {
 };
 
 exports.bookCart = async (req, res) => {
-    const { partnerId, paymentMode, transactionStatus, paymentGatewayId } = req.body;
+    let { partnerId, paymentMode, transactionStatus, paymentGatewayId } = req.body;
   
     try {
       // Validate required fields
@@ -94,15 +94,21 @@ exports.bookCart = async (req, res) => {
         // Deduct amount from wallet and update partner's balance
         await Partner.findByIdAndUpdate(partnerId, { $inc: { wallet: -totalAmount } });
         transactionType = "stock_wallet_booking";
+        transactionStatus = "completed";
       }
+      else if (paymentMode === "cash") {
+        transactionStatus = "pending";
+      }
+
+      console.log(partnerId, transactionType, totalAmount, transactionStatus, paymentMode, paymentGatewayId);
   
       // Create new transaction
       let newTransaction = new PartnerTransaction({
-        partner: partnerId,
+        partnerId: partnerId,
         transactionType: transactionType,
         amount: totalAmount,
         status: transactionStatus,
-        paymentGateway: paymentGatewayId ? paymentMode : undefined,
+        paymentGateway: paymentMode,
         transactionRefId: paymentGatewayId || undefined,
       });
   
