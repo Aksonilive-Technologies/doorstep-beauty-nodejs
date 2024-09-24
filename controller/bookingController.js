@@ -554,7 +554,7 @@ exports.rateBooking = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const { bookingId, transactionStatus } = req.body;
+        const { bookingId, transactionStatus, paymentGatewayId } = req.body;
 
         // Step 1: Find and update the transaction
         const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
@@ -567,6 +567,10 @@ exports.updateTransaction = async (req, res) => {
 
         // Update transaction status
         transaction.status = transactionStatus;
+        if(transactionStatus === 'completed'){
+          transaction.transactionRefId = paymentGatewayId;
+        }
+
         await transaction.save();
 
         const booking = await Booking.findOne({ _id: bookingId, status:"processing",serviceStatus:"pending", isDeleted: false });

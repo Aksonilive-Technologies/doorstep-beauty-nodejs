@@ -7,34 +7,43 @@ const StockBookingSchema = new mongoose.Schema(
       ref: "Partner",
       required: true
     },
-    stockItem: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Stock",
-      required: true
+    product: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Stock",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
+    totalPrice: {
+      type: Number,
+      required: true,
     },
     deliveryAddress: {
       type: String,
       default: "NA",
     },
-    quantity: {
-      type: Number,
-      default: 1,
-    },
     status: {
       type: String,
       enum: [
-        "pending",
+        "booked",
         "processing",
-        "completed",
+        "delivered",
         "failed",
+        "returned",
         "refunded",
         "cancelled",
       ],
-      default: "pending",
+      default: "booked",
     },
-    paymentMode: {
-      type: String,
-      // required: true
+    transaction: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PartnerTransaction",
     },
     isActive: {
       type: Boolean,
