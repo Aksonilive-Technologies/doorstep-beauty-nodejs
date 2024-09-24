@@ -8,6 +8,6 @@ router.post("/fetch", Cart.getCartByPartnerId);
 router.post("/remove-item", Cart.removeItemFromCart);
 router.post("/item/increment", Cart.incrementItemQuantity);
 router.post("/item/decrement", Cart.decrementItemQuantity);
-// router.post("/book", Cart.bookCart);
+router.post("/book", Cart.bookCart);
 
 module.exports = router;
