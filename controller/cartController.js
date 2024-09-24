@@ -209,7 +209,7 @@ exports.getCartByCustomerId = async (req, res) => {
     if (!cart) {
       return res.status(404).json({
         success: false,
-        message: "Cart for customerId "+customerId+" not found",
+        message: "Cart for customerId "+id+" not found",
       });
     }
 
