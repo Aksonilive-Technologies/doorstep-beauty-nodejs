@@ -47,8 +47,12 @@ exports.fetchAllStocks = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Fetch stocks with pagination, filtering by isActive and isDeleted
-    const stocks = await Stock.find({ isActive: true, isDeleted: false })
+    // Fetch stocks with pagination, filtering by isActive, isDeleted, and currentStock > 0
+    const stocks = await Stock.find({
+      isActive: true,
+      isDeleted: false,
+      currentStock: { $gt: 0 }, // Only stocks with currentStock greater than 0
+    })
       .select("-currentStock -__v")
       .skip(skip)
       .limit(limit);
@@ -57,6 +61,7 @@ exports.fetchAllStocks = async (req, res) => {
     const totalStocks = await Stock.countDocuments({
       isActive: true,
       isDeleted: false,
+      currentStock: { $gt: 0 }, // Count only stocks with currentStock > 0
     });
     const totalPages = Math.ceil(totalStocks / limit);
 
@@ -64,14 +69,15 @@ exports.fetchAllStocks = async (req, res) => {
     if (stocks.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No active stocks found",
+        message: "No active stocks found with positive stock",
       });
     }
 
     // Return successful response
     return res.status(200).json({
       success: true,
-      message: "Successfully retrieved all the active stocks",
+      message:
+        "Successfully retrieved all the active stocks with positive stock",
       data: stocks,
       currentPage: page,
       totalPages,
