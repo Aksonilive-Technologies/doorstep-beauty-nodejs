@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema(
         },
         image: {
             type: String,
+            required: true,
         },
         price: {
             type: Number,
@@ -44,6 +45,7 @@ const productSchema = new mongoose.Schema(
     ],
         details: {
             type: String,
+            required: true,
         },
         isnew: {
             type: Boolean,
