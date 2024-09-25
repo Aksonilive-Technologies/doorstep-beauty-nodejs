@@ -11,6 +11,10 @@ const CustomerFCMService = require("../helper/customerFcmService.js");
 const PartnerFCMService = require("../helper/partnerFcmService.js");
 const FirebaseTokens = require("../models/firebaseTokenModel.js");
 const {calculatePartnerCommission} = require("../helper/calculatePartnerCommission.js");
+const { calculateCancellationCharge } = require('../helper/refundCalculator');
+const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
+const { processWalletRefund } = require("../helper/processWalletRefund");
+
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
   const { id } = req.body;
@@ -445,83 +449,31 @@ try {
         message: "Booking not found",
       });
     }
-    let cancellationCharges = 0;
-    let cancellationFeeStatus = "pending";
+    //step1: calculate cancellation charges
+    const cancellationCharges = calculateCancellationCharge(booking, "partner");
     
-    if(booking.serviceStatus === "scheduled"){
-    // Combine date, time, and format into a single Date object
-    const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
-    let [hours, minutes] = booking.scheduleFor.time.split(":").map(Number); // Time part (e.g., 10:00)
-
-    // Adjust hours based on AM/PM format
-    if (booking.scheduleFor.format === "PM" && hours < 12) {
-      hours += 12;
-    } else if (booking.scheduleFor.format === "AM" && hours === 12) {
-      hours = 0; // Handle 12 AM edge case
-    }
-
-    // Set the hours and minutes to the scheduledDate object
-    scheduledDate.setHours(hours);
-    scheduledDate.setMinutes(minutes);
-
-    // Get the current time
-    const currentTime = new Date();
-
-    // Calculate the time difference in milliseconds
-    const timeDifference = scheduledDate - currentTime;
-
-    // Convert time difference to hours
-    const hoursDifference = timeDifference / (1000 * 60 * 60);
-
-
-    // Apply cancellation logic
-    if (hoursDifference > 1) {
-      // If the cancellation is before 1 hour of the scheduled time, flat ₹100 charge
-      cancellationCharges = 100;
-    } else if (hoursDifference <= 1 && hoursDifference >= 0) {
-      // If the cancellation is within 1 hour of the scheduled time, 20% of the final price
-      cancellationCharges = booking.finalPrice * 0.2;
-    }
-    
+    //step2: refund back to customer using the same payment mode and also to partner
+    //step3: create a transaction record for refund in both customer and partner
+  
+    // Fetch the associated transaction
     const transaction = await Transaction.findById(booking.transaction);
-    
-    
-    // If payment method is wallet
+
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    } 
+    // If the payment method is "wallet_booking"
     if (transaction.transactionType === "wallet_booking") {
-      const customer = await Customer.findById(booking.customer);
-      
-      const remainingAmount = booking.finalPrice - cancellationCharges;
-      customer.walletBalance += remainingAmount;
-      
-      // Create a transaction record with status "Pending"
-      new Transaction({
-        customerId: customer._id,
-        transactionType: "booking_refund",
-        amount: remainingAmount,
-        paymentGateway: "wallet",
-        status: "completed"
-      }).save();
-      
-      await customer.save();
-      
-      // Since the refund is done, mark the cancellation fee as paid
-      cancellationFeeStatus = "paid";
+      processWalletRefund(booking, 0, cancellationCharges);
+    }else if(transaction.transactionType === "cash"){
     }else{
-      cancellationFeeStatus = "pending";
+      // If the payment method is "online"
+      }
+
+    //step4: add cancellation charges to partner and customer transaction
+    if (cancellationCharges > 0) {
+      addCancellationChargesRecord(booking, "partner", cancellationCharges, 'paid');
     }
-    
-    
-    
-    // Create a new record in BookingCancellationFees
-    const cancellationFeeRecord = new BookingCancellationFees({
-      booking: booking._id,
-      customer: booking.customer,
-      charges: cancellationCharges,
-      status: cancellationFeeStatus,
-    });
-    
-    await cancellationFeeRecord.save();
-  }
+
     booking.status = "cancelled";
     booking.serviceStatus = "cancelled";
     booking.cancelledBy = "partner";

@@ -11,17 +11,11 @@ const PartnerTransaction = require("../models/partnerTransactionModel.js");
  */
 const processWalletRefund = async (booking, customerCancellationCharges, partnerCancellationCharges) => {
   try {
-    // Fetch the associated transaction
-    const transaction = await Transaction.findById(booking.transaction);
-
-    if (!transaction) {
-      throw new Error('Transaction not found');
-    } 
+    
     const customerRefundAmount = booking.finalPrice - customerCancellationCharges + partnerCancellationCharges;
     const partnerRefundAmount = calculatePartnerCommission(booking.finalPrice) - partnerCancellationCharges + customerCancellationCharges;
 
-    // If the payment method is "wallet_booking"
-    if (transaction.transactionType === "wallet_booking") {
+    
       const customer = await Customer.findById(booking.customer);
       const partner = await Partner.findOne({ _id: booking.partner[0].partner });
       
@@ -57,13 +51,6 @@ const processWalletRefund = async (booking, customerCancellationCharges, partner
         status: "completed",
       }).save();
     }
-
-      // Since the refund is processed, mark the cancellation fee as paid
-      return "paid";
-    }
-
-    // If the transaction type is not wallet-based, return "pending" for cancellation fee status
-    return "pending";
     
   } catch (error) {
     console.error('Error processing wallet refund:', error);

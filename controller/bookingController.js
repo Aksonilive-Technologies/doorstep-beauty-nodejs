@@ -15,6 +15,7 @@ const PartnerTransaction = require("../models/partnerTransactionModel.js");
 const { calculateCancellationCharge } = require('../helper/refundCalculator');
 const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
 const { processWalletRefund } = require("../helper/processWalletRefund");
+const { processPartnerRefund } = require("../helper/processPartnerrefund.js");
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -262,11 +263,27 @@ exports.cancelBooking = async (req, res) => {
     }
     //step1: calculate cancellation charges
     const cancellationCharges = calculateCancellationCharge(booking, "customer");
-    let cancellationFeeStatus = "pending";
+    let cancellationFeeStatus = "";
     
     //step2: refund back to customer using the same payment mode and also to partner
     //step3: create a transaction record for refund in both customer and partner
-    cancellationFeeStatus = processWalletRefund(booking, cancellationCharges, 0);
+  
+    // Fetch the associated transaction
+    const transaction = await Transaction.findById(booking.transaction);
+
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    } 
+    // If the payment method is "wallet_booking"
+    if (transaction.transactionType === "wallet_booking") {
+      processWalletRefund(booking, 0, cancellationCharges);
+      cancellationFeeStatus = 'paid';
+    }else if(transaction.transactionType === "cash"){
+      cancellationFeeStatus = 'pending';
+      processPartnerRefund(booking, cancellationCharges);
+    }else{
+      // If the payment method is "online"
+      }
 
     //step4: add cancellation charges to partner and customer transaction
     if (cancellationCharges > 0) {
