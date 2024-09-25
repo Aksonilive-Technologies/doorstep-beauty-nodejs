@@ -3,6 +3,7 @@ const Partner = require("../models/partnerModel.js");
 const ServicablePincode = require("../models/servicablePincodeModel.js");
 const StockAssignment = require("../models/stockAssignmentModel.js");
 const Transaction = require("../models/transactionModel.js");
+const PartnerTransaction = require("../models/partnerTransactionModel.js");
 const Customer = require("../models/customerModel.js");
 const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
 const mongoose = require("mongoose");
@@ -244,73 +245,111 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
 exports.acceptBooking = async (req, res) => {
   const { partnerId, bookingId } = req.body;
 
-try {
+  try {
+    // Validate required fields
+    if (!partnerId || !bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Partner ID and Booking ID are required",
+      });
+    }
 
-  if (!partnerId || !bookingId) {
-    return res.status(400).json({
+    // Fetch partner and check status
+    let partner = await Partner.findOne({ _id: partnerId, isDeleted: false, isActive: true });
+    if (!partner) {
+      return res.status(404).json({ success: false, message: "Partner not found" });
+    }
+
+    // Fetch booking and check status
+    const booking = await Booking.findOne({ _id: bookingId, serviceStatus: "pending", isDeleted: false, isActive: true });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    // Get the commission percentage based on the booking price
+    const commission = calculateCommission(booking.finalPrice);
+    const minimumWalletBalance = 500 + (booking.finalPrice * (commission / 100));
+
+    // Check if partner's wallet balance is sufficient
+    if (partner.walletBalance < minimumWalletBalance) {
+      return res.status(400).json({
+        success: false,
+        message: "Insufficient wallet balance",
+      });
+    }
+
+    // Check if partner is already assigned to the booking
+    const partnerExists = booking.partner.some(p => p.partner.toString() === partnerId);
+    if (partnerExists) {
+      return res.status(400).json({ success: false, message: "Partner already exists in the booking" });
+    }
+
+    // Assign partner to booking and deduct wallet balance
+    const newPartner = { partner: new mongoose.Types.ObjectId(partnerId), rating: 0 };
+    booking.partner.push(newPartner);
+    partner.walletBalance -= booking.finalPrice * (commission / 100);
+    partner.save();
+
+    // Create a transaction log for the wallet deduction
+    const transaction = new PartnerTransaction({
+      partnerId: partnerId,
+      transactionType: "booking_confirmation",
+      amount: booking.finalPrice * (commission / 100),
+      paymentGateway: "wallet",
+      status: "completed",
+    });
+    await transaction.save();
+
+    // Update booking status to processing
+    booking.status = "processing";
+    await booking.save();
+
+    // Notify customer via FCM
+    const customerTokens = await FirebaseTokens.find({ userId: booking.customer, userType: "customer" });
+    if (customerTokens) {
+      customerTokens.forEach(token => {
+        CustomerFCMService.sendPartnerAllocationConfirmationMessage(token.token);
+      });
+    }
+
+    // Respond with success
+    res.status(200).json({ success: true, message: "Booking accepted successfully" });
+
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
       success: false,
-      message: "Partner ID and Booking ID is required",
+      message: "Error accepting booking",
+      errorMessage: error.message,
     });
   }
-
-  const partner = await Partner.findOne({_id:partnerId, isDeleted: false, isActive: true});
-
-  if (!partner) {
-    return res.status(404).json({
-      success: false,
-      message: "Partner not found",
-    });
-  }
-
-const booking = await Booking.findOne({_id:bookingId, serviceStatus:"pending", isDeleted: false, isActive: true});
-if(!booking){
-  return res.status(404).json({
-    success: false,
-    message: "Booking not found",
-  });
-}
-
-const newPartner = {
-  partner: new mongoose.Types.ObjectId(partnerId),
-  rating: 0,
 };
 
-// Check if the partner already exists in the array
-const partnerIndex = booking.partner.findIndex(p => p.partner.toString() === partnerId);
+// Helper function to calculate commission based on booking price
+const calculateCommission = (finalPrice) => {
+  const commissionTiers = [
+    { min: 0, max: 800, commission: 9 },
+    { min: 800, max: 900, commission: 10 },
+    { min: 900, max: 1000, commission: 12 },
+    { min: 1000, max: 1200, commission: 15 },
+    { min: 1200, max: 1400, commission: 17 },
+    { min: 1400, max: 1600, commission: 18 },
+    { min: 1600, max: 1800, commission: 19 },
+    { min: 1800, max: 2000, commission: 20 },
+    { min: 2000, max: 2200, commission: 21 },
+    { min: 2200, max: 2400, commission: 22 },
+    { min: 2400, max: 2600, commission: 23 },
+    { min: 2600, max: 2800, commission: 24 },
+    { min: 2800, max: 3000, commission: 25 },
+    { min: 3000, max: 3500, commission: 28 },
+    { min: 3500, max: Infinity, commission: 30 }
+  ];
 
-if (partnerIndex > -1) {
-  return res.status(400).json({
-    success: false,
-    message: "Partner already exists in the booking",
-  });
-} else {
-  // If partner does not exist, add it to the array
-  booking.partner.push(newPartner);
-}
-booking.status = "processing";
-
-await booking.save();
-
-const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
-if (customerToken) {
-  for (let i = 0; i < customerToken.length; i++) {
-  CustomerFCMService.sendPartnerAllocationConfirmationMessage(customerToken[i].token);
-}}
-
-
-  res.status(200).json({
-    success: true,
-    message: "Booking accepted successfully",
-  });
-
-} catch (error) {
-  res.status(500).json({
-    success: false,
-    message: "Error accepting booking",
-    errorMessage: error.message,
-  });
-}
+  // Find the appropriate commission tier
+  const tier = commissionTiers.find(t => finalPrice >= t.min && finalPrice < t.max);
+  return tier ? tier.commission : 0;
 };
+
 
 exports.startBooking = async (req, res) => {
   const {  partnerId, bookingId, stockItems } = req.body;
