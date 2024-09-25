@@ -215,3 +215,45 @@ exports.fetchAllStockBookings = async (req, res) => {
     });
   }
 };
+
+exports.cancelBooking = async (req, res) => {
+  const { bookingId } = req.body;
+
+  try {
+    // Validate the bookingId
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+
+    // Find the booking by bookingId
+    const booking = await StockBooking.findOne({ _id: bookingId, status:"booked", isActive: true, isDeleted: false });
+
+    // Check if the booking exists
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    booking.status = "cancelled";
+    booking.statusUpdatedAt = new Date();
+
+    await booking.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully",
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error cancelling booking",
+      errorMessage: error.message,
+    });
+  }
+};

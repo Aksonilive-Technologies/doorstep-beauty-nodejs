@@ -41,6 +41,10 @@ const StockBookingSchema = new mongoose.Schema(
       ],
       default: "booked",
     },
+    statusUpdatedAt: {
+      type: Date,
+      default: Date.now,
+    },
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "PartnerTransaction",
