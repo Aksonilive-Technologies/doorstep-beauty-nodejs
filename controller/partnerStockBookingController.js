@@ -168,8 +168,7 @@ exports.fetchAllStockBookings = async (req, res) => {
       isDeleted: false,
       isActive: true,
     })
-      .populate("stockItem", "name") // Assuming 'name' is a field in the Stock model
-      .populate("partner", "name") // Populate partner details (assuming 'name' is relevant)
+      .populate("product.product") // Assuming 'name' is a field in the Stock model
       .sort({ createdAt: -1 }) // Sort by the creation date, latest first
       .lean(); // Convert to plain JavaScript object
 
@@ -182,7 +181,7 @@ exports.fetchAllStockBookings = async (req, res) => {
     }
 
     // Group bookings by their status (pending, processing, etc.)
-    const groupedBookings = stockBookings.reduce((acc, booking) => {
+    let groupedBookings = stockBookings.reduce((acc, booking) => {
       const status = booking.status;
 
       if (!acc[status]) {
@@ -190,6 +189,14 @@ exports.fetchAllStockBookings = async (req, res) => {
       }
 
       acc[status].push(booking);
+      return acc;
+    }, {});
+
+    // other than booked, delivered and cancelled, remove others
+    groupedBookings = Object.keys(groupedBookings).reduce((acc, key) => {
+      if (["booked", "delivered", "cancelled"].includes(key)) {
+        acc[key] = groupedBookings[key];
+      }
       return acc;
     }, {});
 
