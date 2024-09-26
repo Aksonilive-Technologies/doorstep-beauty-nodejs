@@ -275,15 +275,15 @@ exports.cancelBooking = async (req, res) => {
     if (transaction.paymentGateway === "wallet") {
       // processWalletRefund(booking, cancellationCharges, 0);
       processCustomerRefund(booking, cancellationCharges, 0, "wallet");
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, cancellationCharges, 0);
       customerCancellationFeeStatus = 'paid';
     }else if(transaction.paymentGateway === "cash"){
       processCustomerRefund(booking, cancellationCharges, 0, "cash");
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, cancellationCharges, 0);
       customerCancellationFeeStatus = 'pending';
     }else{
       processCustomerRefund(booking, cancellationCharges, 0, transaction.paymentGateway);
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, cancellationCharges, 0);
       customerCancellationFeeStatus = 'paid';
       }
 

@@ -467,13 +467,13 @@ try {
     if (transaction.paymentGateway === "wallet") {
       // processWalletRefund(booking, cancellationCharges, 0);
       processCustomerRefund(booking, 0, cancellationCharges, "wallet");
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, 0, cancellationCharges);
     }else if(transaction.paymentGateway === "cash"){
       processCustomerRefund(booking, 0, cancellationCharges, "cash");
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, 0, cancellationCharges);
     }else{
       processCustomerRefund(booking, 0, cancellationCharges, transaction.paymentGateway);
-      processPartnerRefund(booking, cancellationCharges);
+      processPartnerRefund(booking, 0, cancellationCharges);
       }
 
     //step4: add cancellation charges to partner and customer transaction

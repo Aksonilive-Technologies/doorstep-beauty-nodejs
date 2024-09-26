@@ -7,10 +7,10 @@ const PartnerTransaction = require("../models/partnerTransactionModel.js");
  * @param {Number} cancellationCharges - The cancellation charges to be deducted.
  * @returns {String} - The updated status of the cancellation fee (either 'paid' or 'pending').
  */
-const processPartnerRefund = async (booking, customerCancellationCharges) => {
+const processPartnerRefund = async (booking, customerCancellationCharges, partnerCancellationCharges) => {
   try {
-    
-    const partnerRefundAmount = calculatePartnerCommission(booking.finalPrice) + customerCancellationCharges;
+    const partnerCommission = calculatePartnerCommission(booking.finalPrice);
+    const partnerRefundAmount = partnerCommission + customerCancellationCharges - partnerCancellationCharges;
     const partner = await Partner.findOne({ _id: booking.partner[0].partner });
       
     if (!partner) {
@@ -18,8 +18,12 @@ const processPartnerRefund = async (booking, customerCancellationCharges) => {
     }
 
     // Update the customer's wallet balance
-    partner.walletBalance += partnerRefundAmount;
-    partner.save();
+    if(partnerCancellationCharges > partnerCommission){
+      partner.walletBalance -= partnerCancellationCharges - partnerCommission; 
+    }else{
+      partner.walletBalance += partnerRefundAmount;
+    }
+      partner.save();
 
     
     if(partnerRefundAmount > 0){
