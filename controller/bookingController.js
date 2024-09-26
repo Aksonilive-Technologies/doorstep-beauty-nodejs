@@ -8,14 +8,10 @@ const Customer = require("../models/customerModel");
 const CustomerFCMService = require("../helper/customerFcmService.js");
 const PartnerFCMService = require("../helper/partnerFcmService.js");
 const FirebaseTokens = require("../models/firebaseTokenModel.js");
-const mongoose = require("mongoose");
-const Partner = require("../models/partnerModel");
-const {calculatePartnerCommission} = require("../helper/calculatePartnerCommission.js");
-const PartnerTransaction = require("../models/partnerTransactionModel.js");
 const { calculateCancellationCharge } = require('../helper/refundCalculator');
 const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
-const { processWalletRefund } = require("../helper/processWalletRefund");
-const { processPartnerRefund } = require("../helper/processPartnerrefund.js");
+const { processPartnerRefund } = require("../helper/processPartnerRefund");
+const { processCustomerRefund } = require("../helper/processCustomerRefund");
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -261,9 +257,10 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
+    if(booking.serviceStatus === "scheduled"){
     //step1: calculate cancellation charges
     const cancellationCharges = calculateCancellationCharge(booking, "customer");
-    let cancellationFeeStatus = "";
+    let customerCancellationFeeStatus = "";
     
     //step2: refund back to customer using the same payment mode and also to partner
     //step3: create a transaction record for refund in both customer and partner
@@ -275,20 +272,26 @@ exports.cancelBooking = async (req, res) => {
       throw new Error('Transaction not found');
     } 
     // If the payment method is "wallet_booking"
-    if (transaction.transactionType === "wallet_booking") {
-      processWalletRefund(booking, 0, cancellationCharges);
-      cancellationFeeStatus = 'paid';
-    }else if(transaction.transactionType === "cash"){
-      cancellationFeeStatus = 'pending';
+    if (transaction.paymentGateway === "wallet") {
+      // processWalletRefund(booking, cancellationCharges, 0);
+      processCustomerRefund(booking, cancellationCharges, 0, "wallet");
       processPartnerRefund(booking, cancellationCharges);
+      customerCancellationFeeStatus = 'paid';
+    }else if(transaction.paymentGateway === "cash"){
+      processCustomerRefund(booking, cancellationCharges, 0, "cash");
+      processPartnerRefund(booking, cancellationCharges);
+      customerCancellationFeeStatus = 'pending';
     }else{
-      // If the payment method is "online"
+      processCustomerRefund(booking, cancellationCharges, 0, transaction.paymentGateway);
+      processPartnerRefund(booking, cancellationCharges);
+      customerCancellationFeeStatus = 'paid';
       }
 
     //step4: add cancellation charges to partner and customer transaction
     if (cancellationCharges > 0) {
-      addCancellationChargesRecord(booking, "customer", cancellationCharges, cancellationFeeStatus);
+      addCancellationChargesRecord(booking, "customer", cancellationCharges, customerCancellationFeeStatus);
     }
+  }
     
     //step5: update booking status to cancelled
     booking.serviceStatus = "cancelled";

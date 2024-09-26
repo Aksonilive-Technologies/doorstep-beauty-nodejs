@@ -13,7 +13,8 @@ const FirebaseTokens = require("../models/firebaseTokenModel.js");
 const {calculatePartnerCommission} = require("../helper/calculatePartnerCommission.js");
 const { calculateCancellationCharge } = require('../helper/refundCalculator');
 const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
-const { processWalletRefund } = require("../helper/processWalletRefund");
+const { processPartnerRefund } = require("../helper/processPartnerRefund");
+const { processCustomerRefund } = require("../helper/processCustomerRefund");
 
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
@@ -449,6 +450,7 @@ try {
         message: "Booking not found",
       });
     }
+    if(booking.serviceStatus === "scheduled"){
     //step1: calculate cancellation charges
     const cancellationCharges = calculateCancellationCharge(booking, "partner");
     
@@ -462,17 +464,23 @@ try {
       throw new Error('Transaction not found');
     } 
     // If the payment method is "wallet_booking"
-    if (transaction.transactionType === "wallet_booking") {
-      processWalletRefund(booking, 0, cancellationCharges);
-    }else if(transaction.transactionType === "cash"){
+    if (transaction.paymentGateway === "wallet") {
+      // processWalletRefund(booking, cancellationCharges, 0);
+      processCustomerRefund(booking, 0, cancellationCharges, "wallet");
+      processPartnerRefund(booking, cancellationCharges);
+    }else if(transaction.paymentGateway === "cash"){
+      processCustomerRefund(booking, 0, cancellationCharges, "cash");
+      processPartnerRefund(booking, cancellationCharges);
     }else{
-      // If the payment method is "online"
+      processCustomerRefund(booking, 0, cancellationCharges, transaction.paymentGateway);
+      processPartnerRefund(booking, cancellationCharges);
       }
 
     //step4: add cancellation charges to partner and customer transaction
     if (cancellationCharges > 0) {
       addCancellationChargesRecord(booking, "partner", cancellationCharges, 'paid');
     }
+  }
 
     booking.status = "cancelled";
     booking.serviceStatus = "cancelled";
