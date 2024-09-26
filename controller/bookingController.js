@@ -143,7 +143,7 @@ exports.fetchBookings = async (req, res) => {
     }
 
     // Fetch bookings with populated fields
-    const bookings = await Booking.find({ customer: customerId, isDeleted: false })
+    const bookings = await Booking.find({ customer: customerId, isDeleted: false, childBooking: { $exists: false }, })
       .populate("product.product")
       .populate("partner.partner").lean();
 
