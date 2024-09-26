@@ -1,49 +1,17 @@
 const { default: mongoose } = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Notification = require("../models/notificationModel.js");
-const admin = require("firebase-admin");
 const Partner = require("../models/partnerModel.js");
 const Customer = require("../models/customerModel.js");
 const FirebaseToken = require("../models/firebaseTokenModel.js");
 const nodeCron = require("node-cron");
-const partnerServiceAccount = JSON.parse(
-  process.env.PartnerFCMServiceAccountKey
-);
-const customerServiceAccount = JSON.parse(
-  process.env.CustomerFCMServiceAccountKey
-);
-
-// Initialize Firebase Apps only if they are not already initialized
-const partnerAppName = "partnerApp";
-const customerAppName = "customerApp";
-
-let partnerApp;
-let customerApp;
-
-if (!admin.apps.some((app) => app.name === partnerAppName)) {
-  partnerApp = admin.initializeApp(
-    {
-      credential: admin.credential.cert(partnerServiceAccount),
-    },
-    partnerAppName
-  );
-} else {
-  partnerApp = admin.app(partnerAppName);
-}
-
-if (!admin.apps.some((app) => app.name === customerAppName)) {
-  customerApp = admin.initializeApp(
-    {
-      credential: admin.credential.cert(customerServiceAccount),
-    },
-    customerAppName
-  );
-}
+const { sendPartnerNotification } = require("../helper/partnerFcmService.js");
+const { sendCustomerNotification } = require("../helper/customerFcmService.js");
 
 // Function to send notifications
 const sendNotification = async (notification) => {
   try {
-    const { title, body, image, targetAudience, audienceType } = notification;
+    const { title, body, targetAudience, audienceType } = notification;
 
     // Fetch FCM tokens for the specified userType and targetAudience
     const tokens = await FirebaseToken.find({
@@ -56,19 +24,10 @@ const sendNotification = async (notification) => {
     // Send notifications to each token using the appropriate app
     if (tokens && tokens.length > 0) {
       for (const token of tokens) {
-        const message = {
-          notification: {
-            title,
-            body,
-            image,
-          },
-          token: token.token,
-        };
-
         if (audienceType === "partner") {
-          await partnerApp.messaging().send(message);
+          await sendPartnerNotification(token.token, title, body);
         } else if (audienceType === "customer") {
-          await customerApp.messaging().send(message);
+          await sendCustomerNotification(token.token, title, body);
         }
       }
     }
@@ -77,18 +36,51 @@ const sendNotification = async (notification) => {
   }
 };
 
+const convertTimeTo24HourFormat = (time12h) => {
+  // Split the time string into components
+  const [time, modifier] = time12h.split(" ");
+
+  let [hours, minutes] = time.split(":");
+
+  // Convert the hours based on AM/PM
+  if (modifier === "PM" && hours !== "12") {
+    hours = parseInt(hours, 10) + 12;
+  }
+  if (modifier === "AM" && hours === "12") {
+    hours = "00";
+  }
+
+  return `${hours}:${minutes}`; // Return the time in HH:mm format
+};
+
+// Example Usage:
+let notificationTime = "12:47 AM"; // or "01:30 PM"
+let formattedTime = convertTimeTo24HourFormat(notificationTime);
+
+console.log(formattedTime); // "00:47" for 12:47 AM or "13:30" for 1:30 PM
+
 // Schedule a notification using cron
 const scheduleNotification = (notification) => {
-  const { notificationDate, notificationTime } = notification;
+  let { notificationDate, notificationTime } = notification;
 
-  // Combine the notification date and time into a single Date object
+  // Convert notificationTime from 12-hour to 24-hour format
+  notificationTime = convertTimeTo24HourFormat(notificationTime);
+
+  // Ensure notificationDate and notificationTime are valid before proceeding
   const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+
+  if (isNaN(scheduledTime.getTime())) {
+    console.error("Invalid scheduled time due to date or time format.");
+    return;
+  }
 
   const currentTime = new Date();
   const timeDiff = scheduledTime - currentTime;
 
+  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+
   if (timeDiff > 0) {
-    // Schedule the notification using cron
+    // Schedule the notification
     const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
       scheduledTime.getMonth() + 1
     } *`;
@@ -103,7 +95,7 @@ const scheduleNotification = (notification) => {
     console.log(
       "Scheduled time is in the past, sending notification immediately."
     );
-    sendNotification(notification); // Send immediately if the time has already passed
+    sendNotification(notification); // Send immediately if the time has passed
   }
 };
 
@@ -123,7 +115,7 @@ exports.createNotification = async (req, res) => {
     if (
       !title ||
       !body ||
-      !audienceType || // Ensures audience type is provided
+      !audienceType ||
       !notificationDate ||
       !notificationTime
     ) {
