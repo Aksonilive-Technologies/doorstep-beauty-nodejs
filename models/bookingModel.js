@@ -122,9 +122,6 @@ const BookingSchema = new mongoose.Schema(
      endTime : {
        type: Date
      },
-     duration : {
-       type: String
-     },
      cancelledBy : {
         type: String,
         enum : ["customer","partner"]
@@ -134,6 +131,10 @@ const BookingSchema = new mongoose.Schema(
       },
       serviceEndedAt : {
         type: Date
+      },
+      childBooking : {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Booking"
       },
     isActive: {
       type: Boolean,

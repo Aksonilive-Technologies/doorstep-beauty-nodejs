@@ -1,4 +1,5 @@
 const moment = require('moment');
+const {calculateTimeDifference} = require("../helper/calculateTimeDifference.js");
 
 /**
  * Function to calculate cancellation charges.
@@ -8,29 +9,8 @@ const moment = require('moment');
  */
 const calculateCancellationCharge = (booking, cancelledBy) => {
 
-  // Combine date, time, and format into a single Date object
-  const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
-  let [hours, minutes] = booking.scheduleFor.time.split(":").map(Number); // Time part (e.g., 10:00)
-
-  // Adjust hours based on AM/PM format
-  if (booking.scheduleFor.format === "PM" && hours < 12) {
-    hours += 12;
-  } else if (booking.scheduleFor.format === "AM" && hours === 12) {
-    hours = 0; // Handle 12 AM edge case
-  }
-
-  // Set the hours and minutes to the scheduledDate object
-  scheduledDate.setHours(hours);
-  scheduledDate.setMinutes(minutes);
-
-  // Get the current time
-  const currentTime = new Date();
-
-  // Calculate the time difference in milliseconds
-  const timeDifference = scheduledDate - currentTime;
-
   // Convert time difference to hours
-  const timeDifferenceInHours = timeDifference / (1000 * 60 * 60);
+  const timeDifferenceInHours = calculateTimeDifference(booking);
 
   let cancellationCharge = 0;
 

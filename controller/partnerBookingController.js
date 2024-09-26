@@ -15,6 +15,7 @@ const { calculateCancellationCharge } = require('../helper/refundCalculator');
 const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
 const { processPartnerRefund } = require("../helper/processPartnerRefund");
 const { processCustomerRefund } = require("../helper/processCustomerRefund");
+const { calculateTimeDifference } = require("../helper/calculateTimeDifference");
 
 
 exports.fetchUnconfirmedBookings = async (req, res) => {
@@ -50,7 +51,7 @@ const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 // Booking query with conditional logic based on partner's rating
 const bookingQuery = {
   serviceStatus: "pending",
-  status: { $in: ["pending", "processing"] },
+  status: "pending",
   isDeleted: false,
   isActive: true,
 };
@@ -308,6 +309,9 @@ exports.acceptBooking = async (req, res) => {
 
     // Update booking status to processing
     booking.status = "processing";
+    if(booking.paymentStatus === "completed"){
+      booking.serviceStatus = "scheduled";
+    }
     await booking.save();
 
     // Notify customer via FCM
@@ -463,16 +467,20 @@ try {
     if (!transaction) {
       throw new Error('Transaction not found');
     } 
+    const timeDifferenceInHours = calculateTimeDifference(booking);
     // If the payment method is "wallet_booking"
     if (transaction.paymentGateway === "wallet") {
       // processWalletRefund(booking, cancellationCharges, 0);
-      processCustomerRefund(booking, 0, cancellationCharges, "wallet");
+      if(timeDifferenceInHours <3)
+        processCustomerRefund(booking, 0, cancellationCharges, "wallet");
       processPartnerRefund(booking, 0, cancellationCharges);
     }else if(transaction.paymentGateway === "cash"){
-      processCustomerRefund(booking, 0, cancellationCharges, "cash");
+      if(timeDifferenceInHours <3)
+        processCustomerRefund(booking, 0, cancellationCharges, "cash");
       processPartnerRefund(booking, 0, cancellationCharges);
     }else{
-      processCustomerRefund(booking, 0, cancellationCharges, transaction.paymentGateway);
+      if(timeDifferenceInHours <3)
+        processCustomerRefund(booking, 0, cancellationCharges, transaction.paymentGateway);
       processPartnerRefund(booking, 0, cancellationCharges);
       }
 
@@ -485,29 +493,57 @@ try {
     booking.status = "cancelled";
     booking.serviceStatus = "cancelled";
     booking.cancelledBy = "partner";
+
+    if(timeDifferenceInHours > 3){
+
+      const newChildBooking = new Booking({
+        customer: booking.customer,
+        product: booking.product,
+        totalPrice: booking.totalPrice,
+        discount: booking.discount,
+        finalPrice: booking.finalPrice,
+        discountType: booking.discountType,
+        discountValue: booking.discountValue,
+        offerType: booking.offerType,
+        offerRefId: booking.offerRefId,
+        transaction: booking.transaction,
+        status: "pending", // Initial status for the new booking
+        serviceStatus: "pending", // Initial service status for the new booking
+        customerAddress: booking.customerAddress,
+        paymentStatus: booking.paymentStatus, // Reset payment status
+        scheduleFor: booking.scheduleFor, // You may reset or update this
+      });
+  
+      const savedChildBooking = await newChildBooking.save();
+  
+      // Step 6: Update the parent booking with the new child booking's ID
+      booking.childBooking = savedChildBooking._id;
+
+    }
+
     await booking.save();
 
     const customerTokens = await FirebaseTokens.find({ userId: booking.customer, userType: "customer" });
-const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner, userType: "partner" });
+    const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner, userType: "partner" });
 
-if (customerTokens) {
-  // Handle customer tokens
-  for (let i = 0; i < customerTokens.length; i++) {
-    const sendMessages = [
-      CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
-    ];
+  if (customerTokens) {
+    // Handle customer tokens
+    for (let i = 0; i < customerTokens.length; i++) {
+      const sendMessages = [
+        CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+      ];
 
-    // Check if the cancellation fee status is paid and add refund message if so
-    if (cancellationFeeStatus === "paid") {
-      sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+      // Check if the cancellation fee status is paid and add refund message if so
+      if (cancellationFeeStatus === "paid") {
+        sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+      }
+      await Promise.all(sendMessages);
+    }}
+    if (partnerTokens) {
+
+    for (let i = 0; i < partnerTokens.length; i++) {
+        PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
     }
-    await Promise.all(sendMessages);
-  }}
-  if (partnerTokens) {
-
-  for (let i = 0; i < partnerTokens.length; i++) {
-      PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
-  }
 }
 
     
