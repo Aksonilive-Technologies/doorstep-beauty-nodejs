@@ -97,11 +97,11 @@ const bookings = await Booking.find(bookingQuery)
           // Update product details with option's details
           productItem.product.details = selectedOption.details;
         }
+        delete productItem.product.options;
+        delete productItem.option;
       }
 
       // Remove the options field from the product to clean up the response
-      delete productItem.product.options;
-      delete productItem.option;
     });
   });
 
@@ -211,11 +211,11 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
             // Update product details with option's details
             productItem.product.details = selectedOption.details;
           }
+          delete productItem.product.options;
+          delete productItem.option;
         }
 
         // Remove the options field from the product to clean up the response
-        delete productItem.product.options;
-        delete productItem.option;
       });
     });
 

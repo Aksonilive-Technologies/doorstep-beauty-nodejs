@@ -53,12 +53,6 @@ const convertTimeTo24HourFormat = (time12h) => {
   return `${hours}:${minutes}`; // Return the time in HH:mm format
 };
 
-// Example Usage:
-let notificationTime = "12:47 AM"; // or "01:30 PM"
-let formattedTime = convertTimeTo24HourFormat(notificationTime);
-
-console.log(formattedTime); // "00:47" for 12:47 AM or "13:30" for 1:30 PM
-
 // Schedule a notification using cron
 const scheduleNotification = (notification) => {
   let { notificationDate, notificationTime } = notification;
@@ -318,6 +312,8 @@ exports.updateNotification = async (req, res) => {
     const notification = await Notification.findByIdAndUpdate(id, updateData, {
       new: true,
     });
+
+    scheduleNotification(notification);
 
     // If the notification is not found, return a 404 error
     if (!notification) {
