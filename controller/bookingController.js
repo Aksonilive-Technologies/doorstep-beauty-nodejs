@@ -5,10 +5,13 @@ const moment = require("moment");
 const Product = require("../models/productModel");
 const MostBookedProduct = require("../models/mostBookedProductModel");
 const Customer = require("../models/customerModel");
-const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
 const CustomerFCMService = require("../helper/customerFcmService.js");
 const PartnerFCMService = require("../helper/partnerFcmService.js");
 const FirebaseTokens = require("../models/firebaseTokenModel.js");
+const { calculateCancellationCharge } = require('../helper/refundCalculator');
+const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
+const { processPartnerRefund } = require("../helper/processPartnerRefund");
+const { processCustomerRefund } = require("../helper/processCustomerRefund");
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -140,9 +143,9 @@ exports.fetchBookings = async (req, res) => {
     }
 
     // Fetch bookings with populated fields
-    const bookings = await Booking.find({ customer: customerId, isDeleted: false })
+    const bookings = await Booking.find({ customer: customerId, isDeleted: false, childBooking: { $exists: false }, })
       .populate("product.product")
-      .populate("partner.partner");
+      .populate("partner.partner").lean();
 
     if (bookings.length === 0) {
       return res.status(404).json({
@@ -150,6 +153,38 @@ exports.fetchBookings = async (req, res) => {
         message: "No bookings found",
       });
     }
+
+    bookings.forEach(booking => {
+      booking.product.forEach(productItem => {
+        // Check if there is an option selected for this product
+        if (productItem.option && productItem.product.options) {
+
+        const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+
+          if (selectedOption) {
+            // Store the original product name in a temporary variable
+            const originalProductName = productItem.product.name;
+
+            // Update product image with option's image
+            productItem.product.image = selectedOption.image;
+
+            // Update product name by concatenating the option name with the original product name
+            productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+
+            // Update product price with option price
+            productItem.product.price = selectedOption.price;
+
+            // Update product details with option's details
+            productItem.product.details = selectedOption.details;
+          }
+          delete productItem.product.options;
+          delete productItem.option;
+        }
+
+        // Remove the options field from the product to clean up the response
+      });
+    });
+      
 
     // Current date for comparison
     const now = moment();
@@ -213,6 +248,7 @@ exports.cancelBooking = async (req, res) => {
 
     // Find the booking by bookingId
     const booking = await Booking.findOne({ _id: bookingId, serviceStatus:{$in: ["pending", "scheduled"]}, isDeleted: false });
+  
 
     // Check if the booking exists
     if (!booking) {
@@ -221,112 +257,69 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
-    let cancellationCharges = 0;
-    let cancellationFeeStatus = "pending";
-
     if(booking.serviceStatus === "scheduled"){
-
-    // Combine date, time, and format into a single Date object
-    const scheduledDate = new Date(booking.scheduleFor.date); // Date part (e.g., 2024-09-21)
-    let [hours, minutes] = booking.scheduleFor.time.split(":").map(Number); // Time part (e.g., 10:00)
-
-    // Adjust hours based on AM/PM format
-    if (booking.scheduleFor.format === "PM" && hours < 12) {
-      hours += 12;
-    } else if (booking.scheduleFor.format === "AM" && hours === 12) {
-      hours = 0; // Handle 12 AM edge case
-    }
-
-    // Set the hours and minutes to the scheduledDate object
-    scheduledDate.setHours(hours);
-    scheduledDate.setMinutes(minutes);
-
-    // Get the current time
-    const currentTime = new Date();
-
-    // Calculate the time difference in milliseconds
-    const timeDifference = scheduledDate - currentTime;
-
-    // Convert time difference to hours
-    const hoursDifference = timeDifference / (1000 * 60 * 60);
-
-
-    // Apply cancellation logic
-    if (hoursDifference > 1) {
-      // If the cancellation is before 1 hour of the scheduled time, flat ₹100 charge
-      cancellationCharges = 100;
-    } else if (hoursDifference <= 1 && hoursDifference >= 0) {
-      // If the cancellation is within 1 hour of the scheduled time, 20% of the final price
-      cancellationCharges = booking.finalPrice * 0.2;
-    }
-
+    //step1: calculate cancellation charges
+    const cancellationCharges = calculateCancellationCharge(booking, "customer");
+    let customerCancellationFeeStatus = "";
+    
+    //step2: refund back to customer using the same payment mode and also to partner
+    //step3: create a transaction record for refund in both customer and partner
+  
+    // Fetch the associated transaction
     const transaction = await Transaction.findById(booking.transaction);
-    
-    
-    // If payment method is wallet
-    if (transaction.transactionType === "wallet_booking") {
-      const customer = await Customer.findById(booking.customer);
 
-        const remainingAmount = booking.finalPrice - cancellationCharges;
-        customer.walletBalance += remainingAmount;
-
-        // Create a transaction record with status "Pending"
-    new Transaction({
-      customerId: booking.customer,
-      transactionType: "booking_refund",
-      amount: remainingAmount,
-      paymentGateway: "wallet",
-      status: "completed",
-    }).save();
-
-
-
-
-        await customer.save();
-
-        // Since the refund is done, mark the cancellation fee as paid
-        cancellationFeeStatus = "paid";
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    } 
+    // If the payment method is "wallet_booking"
+    if (transaction.paymentGateway === "wallet") {
+      // processWalletRefund(booking, cancellationCharges, 0);
+      processCustomerRefund(booking, cancellationCharges, 0, "wallet");
+      processPartnerRefund(booking, cancellationCharges, 0);
+      customerCancellationFeeStatus = 'paid';
+    }else if(transaction.paymentGateway === "cash"){
+      processCustomerRefund(booking, cancellationCharges, 0, "cash");
+      processPartnerRefund(booking, cancellationCharges, 0);
+      customerCancellationFeeStatus = 'pending';
     }else{
-      cancellationFeeStatus = "pending";
+      processCustomerRefund(booking, cancellationCharges, 0, transaction.paymentGateway);
+      processPartnerRefund(booking, cancellationCharges, 0);
+      customerCancellationFeeStatus = 'paid';
+      }
+
+    //step4: add cancellation charges to partner and customer transaction
+    if (cancellationCharges > 0) {
+      addCancellationChargesRecord(booking, "customer", cancellationCharges, customerCancellationFeeStatus);
     }
-
-
-
-    // Create a new record in BookingCancellationFees
-    const cancellationFeeRecord = new BookingCancellationFees({
-      booking: booking._id,
-      customer: booking.customer,
-      charges: cancellationCharges,
-      status: cancellationFeeStatus,
-    });
-
-    await cancellationFeeRecord.save();
   }
-    // Update the booking status and service status to cancelled
+    
+    //step5: update booking status to cancelled
     booking.serviceStatus = "cancelled";
     booking.status = "cancelled";
     booking.cancelledBy = "customer";
 
     await booking.save();
-
-    const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+  
+  const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
+  if(booking.partner.length > 0){
     const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
-      if (customerTokens) {
-        for (let i = 0; i < customerTokens.length; i++) {
-          const sendMessages = [
-            CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
-          ];
-      
-          // Check if the cancellation fee status is paid and add refund message if so
-          if (cancellationFeeStatus === "paid") {
-            sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
-          }
+    if (partnerTokens) {
+      for (let i = 0; i < partnerTokens.length; i++) {
+      PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+    }}
+    }
+    if (customerTokens) {
+      for (let i = 0; i < customerTokens.length; i++) {
+        const sendMessages = [
+          CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+        ];
+    
+        // Check if the cancellation fee status is paid and add refund message if so
+        if (cancellationFeeStatus === "paid") {
+          sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+        }
 
-          await Promise.all(sendMessages);
-        }}
-      if (partnerTokens) {
-        for (let i = 0; i < partnerTokens.length; i++) {
-        PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
+        await Promise.all(sendMessages);
       }}
 
     res.status(200).json({
@@ -359,14 +352,45 @@ exports.fetchRecentBookedProducts = async (req, res) => {
     // Fetch bookings for the customer and populate products
     const bookings = await Booking.find({ customer: customerId, isDeleted: false })
       .populate("product.product")
-      .sort({ createdAt: -1 }); // Sort by most recent bookings
+      .sort({ createdAt: -1 }).lean(); // Sort by most recent bookings
 
-    if (bookings.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No bookings found",
-      });
-    }
+      
+      if (bookings.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No bookings found",
+        });
+      }
+
+      // bookings.forEach(booking => {
+      //   booking.product.forEach(productItem => {
+      //     // Check if there is an option selected for this product
+      //     if (productItem.option && productItem.product.options) {
+      //       const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+      
+      //       if (selectedOption) {
+      //         // Store the original product name in a temporary variable
+      //         const originalProductName = productItem.product.name;
+  
+      //         // Update product image with option's image
+      //         productItem.product.image = selectedOption.image;
+  
+      //         // Update product name by concatenating the option name with the original product name
+      //         productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+  
+      //         // Update product price with option price
+      //         productItem.product.price = selectedOption.price;
+  
+      //         // Update product details with option's details
+      //         productItem.product.details = selectedOption.details;
+      //       }
+      //     }
+  
+      //     // Remove the options field from the product to clean up the response
+      //     delete productItem.product.options;
+      //     delete productItem.option;
+      //   });
+      // });
 
     // Extract recent booked products from the bookings
     const recentProducts = bookings.flatMap(booking => booking.product.map(p => p.product));
@@ -488,7 +512,7 @@ exports.rateBooking = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const { bookingId, transactionStatus } = req.body;
+        const { bookingId, transactionStatus, paymentGatewayId } = req.body;
 
         // Step 1: Find and update the transaction
         const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
@@ -501,6 +525,10 @@ exports.updateTransaction = async (req, res) => {
 
         // Update transaction status
         transaction.status = transactionStatus;
+        if(transactionStatus === 'completed'){
+          transaction.transactionRefId = paymentGatewayId;
+        }
+
         await transaction.save();
 
         const booking = await Booking.findOne({ _id: bookingId, status:"processing",serviceStatus:"pending", isDeleted: false });

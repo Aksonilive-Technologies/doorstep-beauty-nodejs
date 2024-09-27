@@ -65,6 +65,7 @@ const getAllFeedback = async (req, res) => {
 
   try {
     const feedback = await Feedback.find()
+    .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .lean();

@@ -7,10 +7,14 @@ const bookingCancellationFeesSchema = new mongoose.Schema(
         ref: "Booking",
         required: true,
       },
-        customer: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Customer",
-        required: true,
+    userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    },
+    userType: {
+      type: String,
+      enum: ["customer", "partner"],
+      required: true,
     },
     charges: {
       type: Number,

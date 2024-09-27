@@ -2,7 +2,6 @@ const Stock = require("../models/stockModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Partner = require("../models/partnerModel.js");
-const StockAssignnment = require("../models/stockAssignmentModel.js");
 const StockAssignment = require("../models/stockAssignmentModel.js");
 
 exports.createStock = async (req, res) => {

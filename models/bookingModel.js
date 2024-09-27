@@ -22,6 +22,9 @@ const BookingSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        option: {
+          type: mongoose.Schema.Types.ObjectId,
+        },
       },
     ],
     productTool: [
@@ -119,12 +122,19 @@ const BookingSchema = new mongoose.Schema(
      endTime : {
        type: Date
      },
-     duration : {
-       type: String
-     },
      cancelledBy : {
         type: String,
         enum : ["customer","partner"]
+      },
+      serviceStartedAt : {
+        type: Date
+      },
+      serviceEndedAt : {
+        type: Date
+      },
+      childBooking : {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Booking"
       },
     isActive: {
       type: Boolean,

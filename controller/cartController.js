@@ -5,20 +5,39 @@ const MostBookedProduct = require("../models/mostBookedProductModel");
 
 // Add item to cart
 exports.addItemToCart = async (req, res) => {
-  const { customerId, itemId} = req.body;
+  const { customerId, itemId, optionId, price} = req.body;
 
   try {
-    if (!customerId || !itemId) {
+    if (!customerId || !itemId || !price) {
       return res.status(400).json({
         success: false,
-        message: "feilds like customerId, itemId are required",
+        message: "feilds like customerId, itemId, price are required",
       });
     }
-    let cart = await Cart.findOne({ customer:customerId, product: itemId});
+    let cart;
+    const query = { customer: customerId, product: itemId };
 
+    if (optionId) {
+      query.productOption = optionId;  // Add productOption only if optionId is provided
+    }
+
+    cart = await Cart.findOne(query);
+
+    // If cart item doesn't exist, create a new one
     if (!cart) {
-      cart = new Cart({ customer:customerId, product: itemId});
-    }else{
+      const newCartItem = {
+        customer: customerId,
+        product: itemId,
+        price,
+      };
+
+      if (optionId) {
+        newCartItem.productOption = optionId;  // Add productOption if provided
+      }
+
+      cart = new Cart(newCartItem);
+    } else {
+      // If the cart item exists, increment the quantity
       cart.quantity += 1;
     }
 
@@ -78,7 +97,9 @@ exports.bookCart = async (req, res) => {
     const customerAddress = `${customerAddressData.address.houseNo}, ${customerAddressData.address.buildingName}, ${customerAddressData.address.street}, ${customerAddressData.address.city}, ${customerAddressData.address.state}, ${customerAddressData.address.pincode}, ${customerAddressData.address.country}`;
 
     // Fetch cart items for the customer
-    const cart = await Cart.find({ customer: customerId }).populate('product').select('-__v');
+    const cart = await Cart.find({ customer: customerId })
+    .populate('product')
+    .select('-__v');
 
     if (!cart || cart.length === 0) {
       return res.status(404).json({
@@ -87,12 +108,20 @@ exports.bookCart = async (req, res) => {
       });
     }
 
-    // Process cart and calculate total price
-    const products = cart.map(item => ({
-      product: item.product._id,
-      quantity: item.quantity,
-      price: item.product.price,
-    }));
+    const products = cart.map(item => {
+      const productData = {
+        product: item.product._id,
+        quantity: item.quantity,
+        price: item.price,
+      };
+    
+      // Include productOption only if it's present
+      if (item.productOption) {
+        productData.option = item.productOption;
+      }
+    
+      return productData;
+    });
 
     const totalPrice = products.reduce(
       (sum, item) => sum + item.price * item.quantity, 0
@@ -175,14 +204,45 @@ exports.getCartByCustomerId = async (req, res) => {
         success: false,
         message: "customerId is required",
       });}
-    const cart = await Cart.find({ customer:id}).populate('product').select('-__v');
+    const cart = await Cart.find({ customer:id}).populate('product').select('-__v').lean();
 
     if (!cart) {
       return res.status(404).json({
         success: false,
-        message: "Cart for customerId "+customerId+" not found",
+        message: "Cart for customerId "+id+" not found",
       });
     }
+
+    cart.forEach(cartItem => {
+      const productItem = cartItem.product;
+
+      // Check if there is an option selected for this product
+      if (cartItem.productOption && productItem.options) {
+        const selectedOption = productItem.options.find(opt => opt._id.equals(cartItem.productOption));
+
+        if (selectedOption) {
+
+          // Store the original product name in a temporary variable
+          const originalProductName = productItem.name;
+          // Update product image with option's image
+          productItem.image = selectedOption.image;
+
+          // Concatenate option's name with product's name
+          productItem.name = `${selectedOption.option} ${originalProductName}`;
+
+          //update product price with option's price
+          productItem.price = selectedOption.price;
+
+          // Update product details with option's details
+          productItem.details = selectedOption.details;
+        }
+      }
+
+      delete cartItem.productOption;
+      delete cartItem.price;
+      delete cartItem.product.options;
+    });
+    
     cart.sort((a, b) => b.product.price - a.product.price);
 
     res.status(200).json({

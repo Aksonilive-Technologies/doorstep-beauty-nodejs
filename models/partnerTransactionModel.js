@@ -12,6 +12,11 @@ const partnerTransactionSchema = new mongoose.Schema(
       enum: [
         "recharge_wallet",
         "booking_confirmation",
+        "booking_cancellation",
+        "booking_refund",
+        "stock_booking",
+        "stock_wallet_booking",
+        "stock_booking_refund",
       ],
       required: true,
     },

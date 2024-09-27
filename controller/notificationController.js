@@ -1,16 +1,107 @@
 const { default: mongoose } = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Notification = require("../models/notificationModel.js");
+const Partner = require("../models/partnerModel.js");
+const Customer = require("../models/customerModel.js");
+const FirebaseToken = require("../models/firebaseTokenModel.js");
+const nodeCron = require("node-cron");
+const { sendPartnerNotification } = require("../helper/partnerFcmService.js");
+const { sendCustomerNotification } = require("../helper/customerFcmService.js");
 
-// need to approve
+// Function to send notifications
+const sendNotification = async (notification) => {
+  try {
+    const { title, body, targetAudience, audienceType } = notification;
+
+    // Fetch FCM tokens for the specified userType and targetAudience
+    const tokens = await FirebaseToken.find({
+      userId: { $in: targetAudience }, // Match user IDs from targetAudience
+      userType: audienceType, // Match audience type: "customer" or "partner"
+      isActive: true,
+      isDeleted: false,
+    });
+
+    // Send notifications to each token using the appropriate app
+    if (tokens && tokens.length > 0) {
+      for (const token of tokens) {
+        if (audienceType === "partner") {
+          await sendPartnerNotification(token.token, title, body);
+        } else if (audienceType === "customer") {
+          await sendCustomerNotification(token.token, title, body);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification: ", error.message);
+  }
+};
+
+const convertTimeTo24HourFormat = (time12h) => {
+  // Split the time string into components
+  const [time, modifier] = time12h.split(" ");
+
+  let [hours, minutes] = time.split(":");
+
+  // Convert the hours based on AM/PM
+  if (modifier === "PM" && hours !== "12") {
+    hours = parseInt(hours, 10) + 12;
+  }
+  if (modifier === "AM" && hours === "12") {
+    hours = "00";
+  }
+
+  return `${hours}:${minutes}`; // Return the time in HH:mm format
+};
+
+// Schedule a notification using cron
+const scheduleNotification = (notification) => {
+  let { notificationDate, notificationTime } = notification;
+
+  // Convert notificationTime from 12-hour to 24-hour format
+  notificationTime = convertTimeTo24HourFormat(notificationTime);
+
+  // Ensure notificationDate and notificationTime are valid before proceeding
+  // const localTime = new Date(`${notificationDate}T${notificationTime}:00`);
+  const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+
+  if (isNaN(scheduledTime.getTime())) {
+    console.error("Invalid scheduled time due to date or time format.");
+    return;
+  }
+
+  const currentTime = new Date();
+  const timeDiff = scheduledTime - currentTime;
+
+  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+
+  if (timeDiff > 0) {
+    // Schedule the notification
+    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
+      scheduledTime.getMonth() + 1
+    } *`;
+
+    nodeCron.schedule(cronExpression, async () => {
+      console.log("Sending notification: ", notification.title);
+      await sendNotification(notification);
+    });
+
+    console.log("Notification scheduled for: ", scheduledTime);
+  } else {
+    console.log(
+      "Scheduled time is in the past, sending notification immediately."
+    );
+    sendNotification(notification); // Send immediately if the time has passed
+  }
+};
+
 // Create a new notification
 exports.createNotification = async (req, res) => {
   try {
     const {
       title,
       body,
-      targetAudience,
-      audienceType,
+      targetAudience, // Assume this is an array of user IDs
+      audienceType, // Enum: "customer" or "partner"
       notificationDate,
       notificationTime,
     } = req.body;
@@ -49,20 +140,23 @@ exports.createNotification = async (req, res) => {
       image: imageUrl || undefined, // Include the imageUrl if available
     });
 
-    // Save the notification
+    // Save the notification in the database
     await notification.save();
+
+    // Schedule the notification to be sent at the given date and time
+    scheduleNotification(notification);
 
     // Respond with success
     res.status(201).json({
       success: true,
+      message: "Notification created and scheduled",
       data: notification,
-      message: "Successfully created notification",
     });
   } catch (error) {
     // Handle errors
     res.status(500).json({
       success: false,
-      message: "Error while creating the message",
+      message: "Error while creating the notification",
       error: error.message,
     });
   }
@@ -72,7 +166,7 @@ exports.getNotifications = async (req, res) => {
   try {
     const { page = 1, limit = 10, showAll = false } = req.query;
 
-    // Parse pagination parameters outside the conditional block
+    // Parse pagination parameters
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
@@ -110,9 +204,59 @@ exports.getNotifications = async (req, res) => {
       totalPages = Math.ceil(totalCount / limitNumber);
     }
 
+    const populatedNotifications = await Promise.all(
+      notifications.map(async (notification) => {
+        const populatedAudience = await Promise.all(
+          notification.targetAudience.map(async (id) => {
+            // Check if id is a valid ObjectId
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+              console.log(`Invalid ObjectId: ${id}`); // Log invalid IDs
+              return null; // Skip invalid ObjectId
+            }
+
+            // Attempt to fetch audience based on audienceType
+            let audience;
+            if (notification.audienceType === "customer") {
+              audience = await Customer.findById(id);
+            } else if (notification.audienceType === "partner") {
+              audience = await Partner.findById(id);
+            }
+
+            // Log whether audience was found
+            if (!audience) {
+              console.log(
+                `No audience found for ID: ${id} (Type: ${notification.audienceType})`
+              );
+            } else {
+              console.log(`Audience found for ID ${id}:`, audience);
+            }
+
+            return audience
+              ? {
+                  _id: audience._id,
+                  name: audience.name,
+                  userType: notification.audienceType,
+                }
+              : null;
+          })
+        );
+
+        // Log populated audience before filtering
+        console.log(
+          `Populated audience for notification ${notification._id}:`,
+          populatedAudience
+        );
+
+        return {
+          ...notification.toObject(),
+          targetAudience: populatedAudience.filter(Boolean),
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: notifications,
+      data: populatedNotifications,
       pagination: {
         currentPage: showAll === "true" ? 1 : pageNumber,
         totalPages,
@@ -169,6 +313,8 @@ exports.updateNotification = async (req, res) => {
     const notification = await Notification.findByIdAndUpdate(id, updateData, {
       new: true,
     });
+
+    scheduleNotification(notification);
 
     // If the notification is not found, return a 404 error
     if (!notification) {
