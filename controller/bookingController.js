@@ -177,11 +177,11 @@ exports.fetchBookings = async (req, res) => {
             // Update product details with option's details
             productItem.product.details = selectedOption.details;
           }
+          delete productItem.product.options;
+          delete productItem.option;
         }
 
         // Remove the options field from the product to clean up the response
-        delete productItem.product.options;
-        delete productItem.option;
       });
     });
       
