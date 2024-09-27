@@ -61,22 +61,26 @@ const scheduleNotification = (notification) => {
   notificationTime = convertTimeTo24HourFormat(notificationTime);
 
   // Ensure notificationDate and notificationTime are valid before proceeding
-  const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+  const localTime = new Date(`${notificationDate}T${notificationTime}:00`);
 
-  if (isNaN(scheduledTime.getTime())) {
+  if (isNaN(localTime.getTime())) {
     console.error("Invalid scheduled time due to date or time format.");
     return;
   }
 
-  const currentTime = new Date();
-  const timeDiff = scheduledTime - currentTime;
+  // Convert to UTC time
+  const scheduledTimeUTC = new Date(localTime.toISOString());
 
-  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+  const currentTimeUTC = new Date();
+
+  const timeDiff = scheduledTimeUTC - currentTimeUTC;
+
+  console.log(`scheduledTime: ${scheduledTimeUTC}, timeDiff: ${timeDiff}`);
 
   if (timeDiff > 0) {
     // Schedule the notification
-    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
-      scheduledTime.getMonth() + 1
+    const cronExpression = `${scheduledTimeUTC.getUTCMinutes()} ${scheduledTimeUTC.getUTCHours()} ${scheduledTimeUTC.getUTCDate()} ${
+      scheduledTimeUTC.getUTCMonth() + 1
     } *`;
 
     nodeCron.schedule(cronExpression, async () => {
@@ -84,7 +88,7 @@ const scheduleNotification = (notification) => {
       await sendNotification(notification);
     });
 
-    console.log("Notification scheduled for: ", scheduledTime);
+    console.log("Notification scheduled for: ", scheduledTimeUTC);
   } else {
     console.log(
       "Scheduled time is in the past, sending notification immediately."
