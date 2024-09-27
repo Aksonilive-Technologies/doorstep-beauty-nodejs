@@ -1,47 +1,104 @@
 const { default: mongoose } = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Notification = require("../models/notificationModel.js");
-const admin = require("firebase-admin");
 const Partner = require("../models/partnerModel.js");
 const Customer = require("../models/customerModel.js");
 const FirebaseToken = require("../models/firebaseTokenModel.js");
-const partnerServiceAccount = JSON.parse(
-  process.env.PartnerFCMServiceAccountKey
-);
-const customerServiceAccount = JSON.parse(
-  process.env.CustomerFCMServiceAccountKey
-);
+const nodeCron = require("node-cron");
+const { sendPartnerNotification } = require("../helper/partnerFcmService.js");
+const { sendCustomerNotification } = require("../helper/customerFcmService.js");
 
-// Initialize Firebase Apps only if they are not already initialized
-const partnerAppName = "partnerApp";
-const customerAppName = "customerApp";
+// Function to send notifications
+const sendNotification = async (notification) => {
+  try {
+    const { title, body, targetAudience, audienceType } = notification;
 
-let partnerApp;
-let customerApp;
+    // Fetch FCM tokens for the specified userType and targetAudience
+    const tokens = await FirebaseToken.find({
+      userId: { $in: targetAudience }, // Match user IDs from targetAudience
+      userType: audienceType, // Match audience type: "customer" or "partner"
+      isActive: true,
+      isDeleted: false,
+    });
 
-if (!admin.apps.some((app) => app.name === partnerAppName)) {
-  partnerApp = admin.initializeApp(
-    {
-      credential: admin.credential.cert(partnerServiceAccount),
-    },
-    partnerAppName
-  );
-} else {
-  partnerApp = admin.app(partnerAppName);
-}
+    // Send notifications to each token using the appropriate app
+    if (tokens && tokens.length > 0) {
+      for (const token of tokens) {
+        if (audienceType === "partner") {
+          await sendPartnerNotification(token.token, title, body);
+        } else if (audienceType === "customer") {
+          await sendCustomerNotification(token.token, title, body);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification: ", error.message);
+  }
+};
 
-if (!admin.apps.some((app) => app.name === customerAppName)) {
-  customerApp = admin.initializeApp(
-    {
-      credential: admin.credential.cert(customerServiceAccount),
-    },
-    customerAppName
-  );
-} else {
-  customerApp = admin.app(customerAppName);
-}
+const convertTimeTo24HourFormat = (time12h) => {
+  // Split the time string into components
+  const [time, modifier] = time12h.split(" ");
 
-// need to approve
+  let [hours, minutes] = time.split(":");
+
+  // Convert the hours based on AM/PM
+  if (modifier === "PM" && hours !== "12") {
+    hours = parseInt(hours, 10) + 12;
+  }
+  if (modifier === "AM" && hours === "12") {
+    hours = "00";
+  }
+
+  return `${hours}:${minutes}`; // Return the time in HH:mm format
+};
+
+// Example Usage:
+let notificationTime = "12:47 AM"; // or "01:30 PM"
+let formattedTime = convertTimeTo24HourFormat(notificationTime);
+
+console.log(formattedTime); // "00:47" for 12:47 AM or "13:30" for 1:30 PM
+
+// Schedule a notification using cron
+const scheduleNotification = (notification) => {
+  let { notificationDate, notificationTime } = notification;
+
+  // Convert notificationTime from 12-hour to 24-hour format
+  notificationTime = convertTimeTo24HourFormat(notificationTime);
+
+  // Ensure notificationDate and notificationTime are valid before proceeding
+  const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+
+  if (isNaN(scheduledTime.getTime())) {
+    console.error("Invalid scheduled time due to date or time format.");
+    return;
+  }
+
+  const currentTime = new Date();
+  const timeDiff = scheduledTime - currentTime;
+
+  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+
+  if (timeDiff > 0) {
+    // Schedule the notification
+    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
+      scheduledTime.getMonth() + 1
+    } *`;
+
+    nodeCron.schedule(cronExpression, async () => {
+      console.log("Sending notification: ", notification.title);
+      await sendNotification(notification);
+    });
+
+    console.log("Notification scheduled for: ", scheduledTime);
+  } else {
+    console.log(
+      "Scheduled time is in the past, sending notification immediately."
+    );
+    sendNotification(notification); // Send immediately if the time has passed
+  }
+};
+
 // Create a new notification
 exports.createNotification = async (req, res) => {
   try {
@@ -58,7 +115,7 @@ exports.createNotification = async (req, res) => {
     if (
       !title ||
       !body ||
-      !audienceType || // Ensures audience type is provided
+      !audienceType ||
       !notificationDate ||
       !notificationTime
     ) {
@@ -91,37 +148,13 @@ exports.createNotification = async (req, res) => {
     // Save the notification in the database
     await notification.save();
 
-    // Fetch FCM tokens for the specified userType and targetAudience
-    const tokens = await FirebaseToken.find({
-      userId: { $in: targetAudience }, // Match user IDs from targetAudience
-      userType: audienceType, // Match audience type: "customer" or "partner"
-      isActive: true,
-      isDeleted: false,
-    });
-
-    // Send notifications to each token using the appropriate app
-    if (tokens && tokens.length > 0) {
-      for (const token of tokens) {
-        const message = {
-          notification: {
-            title,
-            body,
-          },
-          token: token.token,
-        };
-
-        if (audienceType === "partner") {
-          await partnerApp.messaging().send(message);
-        } else if (audienceType === "customer") {
-          await customerApp.messaging().send(message);
-        }
-      }
-    }
+    // Schedule the notification to be sent at the given date and time
+    scheduleNotification(notification);
 
     // Respond with success
     res.status(201).json({
       success: true,
-      message: "Successfully created notification and sent to target audience",
+      message: "Notification created and scheduled",
       data: notification,
     });
   } catch (error) {
