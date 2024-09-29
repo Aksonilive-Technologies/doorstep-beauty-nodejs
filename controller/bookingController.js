@@ -352,7 +352,9 @@ exports.fetchRecentBookedProducts = async (req, res) => {
     // Fetch bookings for the customer and populate products
     const bookings = await Booking.find({ customer: customerId, isDeleted: false })
       .populate("product.product")
-      .sort({ createdAt: -1 }).lean(); // Sort by most recent bookings
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean(); // Sort by most recent bookings
 
       
       if (bookings.length === 0) {
