@@ -44,16 +44,16 @@ exports.createProduct = async (req, res) => {
   }
 
   try {
-    console.log("Checking for existing product with name:", productData.name);
-    const existingProduct = await Product.findOne({ name: productData.name });
+    // console.log("Checking for existing product with name:", productData.name);
+    // const existingProduct = await Product.findOne({ name: productData.name });
 
-    if (existingProduct) {
-      console.log("Product already exists:", existingProduct);
-      return res.status(400).json({
-        success: false,
-        message: `Product with name ${productData.name} already exists`,
-      });
-    }
+    // if (existingProduct) {
+    //   console.log("Product already exists:", existingProduct);
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: `Product with name ${productData.name} already exists`,
+    //   });
+    // }
 
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
