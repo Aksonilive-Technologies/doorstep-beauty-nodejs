@@ -1,44 +1,28 @@
-name: Deploy to KVM Production
+name: Deploy to Hostinger KVM
 
 on:
   push:
     branches:
-      - production
+      - production  # Adjust this to the branch you want to trigger deployment from
 
 jobs:
-  Deploy-KVM-Prod:
+  deploy:
+    name: Deploy Changes to KVM Server
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa_deploy
-        chmod 600 ~/.ssh/id_rsa_deploy
-        ssh-keyscan -H ${SERVER_HOST} >> ~/.ssh/known_hosts
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      - name: Add SSH Key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Sync files to server using SSH
-      run: |
-        rsync -avz --delete ./ ${SERVER_USER}@${SERVER_HOST}:${SERVER_DIR}
-      env:
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        SERVER_DIR: ${{ secrets.SERVER_DIR }}
-
-    - name: Install dependencies and restart the app on the server
-      run: |
-        ssh -i ~/.ssh/id_rsa_deploy -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} << 'EOF'
-          cd ${SERVER_DIR}
-          npm install
-          pm2 restart node-api
-        EOF
-      env:
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        SERVER_DIR: ${{ secrets.SERVER_DIR }}
+      - name: Deploy to Hostinger KVM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_IP }} "
+          cd /var/www/node-api &&
+          git pull origin production &&
+          npm install && # Remove or replace if you're not using Node.js
+          pm2 restart api-server" # Replace with your actual server restart command, e.g., Apache or Nginx reload
