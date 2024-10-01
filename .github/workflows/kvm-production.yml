@@ -21,7 +21,7 @@ jobs:
 
       - name: Deploy to Hostinger KVM
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_IP }} "
+          ssh -v -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_IP }} "
           cd /var/www/node-api &&
           git pull origin production &&
           npm install && # Remove or replace if you're not using Node.js
