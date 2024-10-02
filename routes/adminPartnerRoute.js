@@ -7,6 +7,7 @@ const {
   updatePartner,
   deletePartner,
   changeStatus,
+  downloadExcelSheet,
 } = require("../controller/adminPartnerController.js");
 const verifyToken = require("../middleware/verifyToken");
 const { uploadSingleImage } = require("../middleware/uploadMiddleware");
@@ -17,5 +18,6 @@ router.get("/all", getPartners);
 router.put("/update", uploadSingleImage, updatePartner);
 router.delete("/delete", deletePartner);
 router.put("/change-status", changeStatus);
+router.get("/download-excel", downloadExcelSheet);
 
 module.exports = router;
