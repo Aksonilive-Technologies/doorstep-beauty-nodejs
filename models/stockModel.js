@@ -10,7 +10,7 @@ const stockSchema = new Schema(
     },
     brand: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
     },
     size: {
@@ -25,12 +25,12 @@ const stockSchema = new Schema(
     },
     mrp: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0,
     },
     purchasingRate: {
       type: Number,
-      required: true,
+      // required: true,
       min: 0,
     },
     barcodeNumber: {
