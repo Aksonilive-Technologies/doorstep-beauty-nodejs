@@ -7,12 +7,12 @@ const StockAssignment = require("../models/stockAssignmentModel.js");
 exports.createStock = async (req, res) => {
   const requiredFields = [
     "name",
-    "brand",
+    // "brand",
     "size",
     "currentStock",
-    "mrp",
-    "purchasingRate",
-    "barcodeNumber",
+    // "mrp",
+    // "purchasingRate",
+    // "barcodeNumber",
   ];
 
   // Check for missing fields
@@ -64,13 +64,13 @@ exports.createStock = async (req, res) => {
       mrp,
       purchasingRate,
       barcodeNumber,
-      image:imageUrl, // Add imageUrl if available
+      image: imageUrl, // Add imageUrl if available
     });
 
     return res.status(201).json({
       success: true,
       message: "Stock created successfully",
-      stock,
+      data: stock,
     });
   } catch (error) {
     // Handle potential errors, e.g., validation errors or database errors
@@ -118,6 +118,94 @@ exports.fetchAllStocks = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "An error occurred while fetching the stocks",
+      details: error.message,
+    });
+  }
+};
+
+// update stocks
+exports.updateStock = async (req, res) => {
+  const { id } = req.query; // Assuming stock ID is passed via query params
+  const stockData = req.body; // The fields to update
+  const file = req.file; // Image file, if provided
+
+  try {
+    // Validate stock ID
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock ID is required",
+      });
+    }
+
+    // Fetch the existing stock record
+    const stock = await Stock.findById(id);
+
+    if (!stock) {
+      return res.status(404).json({
+        success: false,
+        message: "Stock not found",
+      });
+    }
+
+    // Upload the image if a new file is provided
+    let imageUrl = stock.image; // Retain the existing image
+    if (file) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "Stock",
+          public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        imageUrl = result.secure_url; // Update the image URL with the new uploaded image
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          details: error.message,
+        });
+      }
+    }
+
+    // Update only the fields that are provided and exclude 'currentStock'
+    const updatedFields = {};
+    for (let key in stockData) {
+      if (stockData[key] !== undefined && key !== "currentStock") {
+        updatedFields[key] = stockData[key];
+      }
+    }
+
+    // Include the updated image URL
+    updatedFields["image"] = imageUrl;
+
+    // Update the stock item in the database
+    const updatedStock = await Stock.findByIdAndUpdate(
+      id,
+      { $set: updatedFields },
+      { new: true }
+    );
+
+    if (!updatedStock) {
+      return res.status(500).json({
+        success: false,
+        message: "Error updating stock",
+      });
+    }
+
+    // Save the updated stock record
+    updatedStock.save();
+
+    // Return a success response
+    res.status(200).json({
+      success: true,
+      message: "Stock updated successfully",
+      data: updatedStock,
+    });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
+      success: false,
+      message: "Error updating stock",
       details: error.message,
     });
   }
@@ -240,22 +328,25 @@ exports.fetchAssignedStocks = async (req, res) => {
     }
 
     // Fetch stock assignments for all partners in a single query
-    const partnerIds = partners.map(partner => partner._id);
-    const stockAssignments = await StockAssignment.find({ partner: { $in: partnerIds } })
+    const partnerIds = partners.map((partner) => partner._id);
+    const stockAssignments = await StockAssignment.find({
+      partner: { $in: partnerIds },
+    })
       .populate("stock") // Populate the stock field
       .lean(); // Return plain JavaScript objects
 
     // Map stock assignments to the respective partners
-    const partnerStockMap = partners.map(partner => {
-      const assignedStocks = stockAssignments.filter(sa => sa.partner.toString() === partner._id.toString())
-      .map(sa => {
-        // Create a new object excluding the 'partner' field
-        const { partner,_id, ...rest } = sa;
-        return rest;
-      });
+    const partnerStockMap = partners.map((partner) => {
+      const assignedStocks = stockAssignments
+        .filter((sa) => sa.partner.toString() === partner._id.toString())
+        .map((sa) => {
+          // Create a new object excluding the 'partner' field
+          const { partner, _id, ...rest } = sa;
+          return rest;
+        });
       return {
         ...partner,
-        stockAssignments: assignedStocks
+        stockAssignments: assignedStocks,
       };
     });
 
@@ -278,14 +369,17 @@ exports.fetchAssignedStocks = async (req, res) => {
   }
 };
 
-
-
 exports.assignStock = async (req, res) => {
   const { partnerId, assignStock } = req.body;
 
   try {
     // Check if all required fields are present
-    if (!partnerId || !assignStock || !Array.isArray(assignStock) || assignStock.length === 0) {
+    if (
+      !partnerId ||
+      !assignStock ||
+      !Array.isArray(assignStock) ||
+      assignStock.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Partner ID and valid assignStock array are required",
@@ -295,13 +389,17 @@ exports.assignStock = async (req, res) => {
     // Validate partner existence
     const partner = await Partner.findById(partnerId);
     if (!partner) {
-      return res.status(404).json({ success: false, message: "Partner not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Partner not found" });
     }
 
     // Assign stocks
     const stockAssignments = assignStock.map(({ stock, quantity }) => {
       if (!stock || !quantity) {
-        throw new Error("Each stock assignment must have a valid stock ID and quantity");
+        throw new Error(
+          "Each stock assignment must have a valid stock ID and quantity"
+        );
       }
       return new StockAssignment({
         partner: partnerId,
@@ -311,7 +409,9 @@ exports.assignStock = async (req, res) => {
     });
 
     // Save all stock assignments in parallel
-    await Promise.all(stockAssignments.map(stockAssignment => stockAssignment.save()));
+    await Promise.all(
+      stockAssignments.map((stockAssignment) => stockAssignment.save())
+    );
 
     // Respond with success
     res.status(201).json({
