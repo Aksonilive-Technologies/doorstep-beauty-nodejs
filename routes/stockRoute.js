@@ -13,7 +13,7 @@ const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 // Route for creating stock
 router.post("/create", uploadSingleImage, createStock);
 router.get("/all", fetchAllStocks);
-router.put("/update", updateStock);
+router.put("/update", uploadSingleImage, updateStock);
 router.delete("/delete", deleteStock);
 router.put("/change-status", changeStatus);
 router.post("/assign", assignStock);
