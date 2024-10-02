@@ -6,7 +6,11 @@ const { cloudinary } = require("../config/cloudinary");
 const Transaction = require("../models/transactionModel.js");
 const Plan = require("../models/customerMembershipPlan.js");
 const Membership = require("../models/membershipModel.js");
-const CustomerAddress = require('../models/customerAddressModel'); 
+const CustomerAddress = require("../models/customerAddressModel");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const path = require("path");
+
 //Create Register
 const validateUserInput = (name, email, mobile) => {
   if (!name) return "Please fill the name field";
@@ -112,19 +116,20 @@ exports.getAllCustomers = async (req, res) => {
     const customers = await Customer.find()
       .select("-__v")
       .skip(skip)
-      .limit(limit).lean();
+      .limit(limit)
+      .lean();
 
-      for(let i = 0; i < customers.length; i++) {
-        const address = await CustomerAddress.findOne({
-          customer: customers[i]._id,
-          isDeleted: false,
-          isActive: true,
-          isPrimary: true,
-        });
-        if(address) {
-          customers[i].address = address.address;
-        }
+    for (let i = 0; i < customers.length; i++) {
+      const address = await CustomerAddress.findOne({
+        customer: customers[i]._id,
+        isDeleted: false,
+        isActive: true,
+        isPrimary: true,
+      });
+      if (address) {
+        customers[i].address = address.address;
       }
+    }
 
     const totalCustomers = await Customer.countDocuments(); // Get the total number of customers
     const totalPages = Math.ceil(totalCustomers / limit); // Calculate total pages
@@ -673,7 +678,9 @@ exports.fetchWalletTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({
       customerId: id,
-      transactionType: { $in: ["recharge_wallet", "wallet_booking", "booking_refund"] },
+      transactionType: {
+        $in: ["recharge_wallet", "wallet_booking", "booking_refund"],
+      },
       status: "completed",
 
       isDeleted: false,
@@ -685,7 +692,6 @@ exports.fetchWalletTransactions = async (req, res) => {
         message: "No wallet transactions found for this customer",
       });
     }
-
 
     res.status(200).json({
       success: true,
@@ -703,4 +709,46 @@ exports.fetchWalletTransactions = async (req, res) => {
   }
 };
 
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch data from MongoDB
+    const customers = await Customer.find({ isDeleted: false }).populate(
+      "referredBy"
+    );
 
+    // Step 2: Prepare the data for Excel
+    const data = customers.map((customer) => ({
+      Name: customer.name,
+      Email: customer.email,
+      Mobile: customer.mobile,
+      ReferralCode: customer.referralCode || "N/A",
+      ReferredBy: customer.referredBy ? customer.referredBy.name : "N/A",
+      WalletBalance: customer.walletBalance,
+      Active: customer.isActive ? "Active" : "Inactive",
+      CreatedAt: customer.createdAt.toISOString(),
+      UpdatedAt: customer.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+
+    // Step 4: Write the Excel file to the server (or directly send it)
+    const filePath = path.join(__dirname, "customers.xlsx");
+    XLSX.writeFile(workbook, filePath);
+
+    // Step 5: Send the Excel file as a response
+    res.download(filePath, "customers.xlsx", (err) => {
+      if (err) {
+        console.error("Error while sending the file", err);
+      }
+      // Optionally delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
+  }
+};

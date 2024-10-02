@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const Partner = require("../models/partnerModel.js");
 const StockAssignment = require("../models/stockAssignmentModel.js");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const path = require("path");
 
 exports.createStock = async (req, res) => {
   const requiredFields = [
@@ -425,5 +428,49 @@ exports.assignStock = async (req, res) => {
       message: "Error while assigning stocks",
       error: error.message,
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch the stock data from MongoDB
+    const stocks = await Stock.find({ isDeleted: false });
+
+    // Step 2: Prepare the data for Excel
+    const data = stocks.map((stock) => ({
+      Name: stock.name,
+      Brand: stock.brand || "N/A",
+      Size: stock.size,
+      CurrentStock: stock.currentStock,
+      MRP: stock.mrp || "N/A",
+      PurchasingRate: stock.purchasingRate || "N/A",
+      BarcodeNumber: stock.barcodeNumber || "N/A",
+      Image: stock.image || "N/A",
+      IsActive: stock.isActive ? "Active" : "Inactive",
+      CreatedAt: stock.createdAt.toISOString(),
+      UpdatedAt: stock.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stock");
+
+    // Step 4: Write the Excel file to the server (or send directly)
+    const filePath = path.join(__dirname, "stock.xlsx");
+    XLSX.writeFile(workbook, filePath);
+
+    // Step 5: Send the Excel file as a response
+    res.download(filePath, "stock.xlsx", (err) => {
+      if (err) {
+        console.error("Error while sending the file", err);
+      }
+      // Optionally delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };

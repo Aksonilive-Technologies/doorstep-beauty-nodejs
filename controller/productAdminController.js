@@ -1,6 +1,9 @@
 const Product = require("../models/productModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const path = require("path");
 
 // Helper function for validating product input
 const validateProductInput = (productData, file) => {
@@ -235,7 +238,6 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-
     // Update the product in the database
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
@@ -421,5 +423,63 @@ exports.getAllNewProducts = async (req, res) => {
       message: "Error fetching products",
       errorMessage: error.message,
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch data from MongoDB
+    const products = await Product.find({ isDeleted: false }).populate(
+      "categoryId"
+    );
+
+    // Step 2: Prepare the data for Excel
+    const data = products.map((product) => ({
+      Name: product.name,
+      Image: product.image,
+      Price: product.price,
+      Duration: product.duration,
+      Category: product.categoryId ? product.categoryId.name : "NA",
+      Options:
+        product.options.length > 0
+          ? product.options
+              .map(
+                (opt) =>
+                  `Option: ${opt.option}, Price: ${opt.price}, Active: ${opt.isActive}`
+              )
+              .join("; ")
+          : "NA",
+      Details: product.details,
+      New: product.isnew ? "Yes" : "No",
+      BestSeller: product.isBestSeller ? "Yes" : "No",
+      DiscountPercentage: product.discountPercentage,
+      FinalPrice: product.finalPrice,
+      Rating: product.rating,
+      Active: product.isActive ? "Active" : "Inactive",
+      CreatedAt: product.createdAt.toISOString(),
+      UpdatedAt: product.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+    // Step 4: Write the Excel file to the server (or directly send it)
+    const filePath = path.join(__dirname, "products.xlsx");
+    XLSX.writeFile(workbook, filePath);
+
+    // Step 5: Send the Excel file as a response
+    res.download(filePath, "products.xlsx", (err) => {
+      if (err) {
+        console.error("Error while sending the file", err);
+      }
+      // Optionally delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };
