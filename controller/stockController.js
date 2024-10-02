@@ -123,6 +123,7 @@ exports.fetchAllStocks = async (req, res) => {
   }
 };
 
+// update stocks
 exports.updateStock = async (req, res) => {
   const { id } = req.query; // Assuming stock ID is passed via query params
   const stockData = req.body; // The fields to update
