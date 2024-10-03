@@ -61,38 +61,50 @@ const scheduleNotification = (notification) => {
   notificationTime = convertTimeTo24HourFormat(notificationTime);
 
   // Convert the provided notificationDate and notificationTime from IST to UTC
-  const scheduledTime = moment
-    .tz(
-      `${notificationDate} ${notificationTime}`,
-      "YYYY-MM-DD HH:mm",
-      "Asia/Kolkata" // Input is in IST
-    )
-    .utc()
-    .toDate(); // Convert to UTC
+  const scheduledTimeIST = moment.tz(
+    `${notificationDate} ${notificationTime}`,
+    "YYYY-MM-DD HH:mm",
+    "Asia/Kolkata" // Input is in IST
+  );
 
   // Validate the scheduled time
-  if (isNaN(scheduledTime.getTime())) {
+  if (!scheduledTimeIST.isValid()) {
     console.error("Invalid scheduled time due to date or time format.");
     return;
   }
 
-  const currentTime = new Date();
-  const timeDiff = (scheduledTime - currentTime) / (1000 * 60); // Convert milliseconds to minutes
+  // Convert IST scheduled time to UTC for comparison with current time
+  const scheduledTimeUTC = scheduledTimeIST.clone().tz("UTC");
+  const currentTimeUTC = moment().utc();
 
-  console.log(`Scheduled Time (UTC): ${scheduledTime}, Time Diff: ${timeDiff}`);
+  const timeDiff = scheduledTimeUTC.diff(currentTimeUTC, "minutes"); // Difference in minutes
+
+  console.log(
+    `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
+  );
 
   if (timeDiff > 0) {
-    // Schedule the notification
-    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
-      scheduledTime.getMonth() + 1
+    // Schedule the notification in IST timezone using cron
+    const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
+      scheduledTimeIST.month() + 1
     } *`;
 
-    nodeCron.schedule(cronExpression, async () => {
-      console.log("Sending notification: ", notification.title);
-      await sendNotification(notification);
-    });
+    console.log("Cron Expression: ", cronExpression);
 
-    console.log("Notification scheduled for: ", scheduledTime);
+    nodeCron.schedule(
+      cronExpression,
+      async () => {
+        console.log("Sending notification: ", notification.title);
+        await sendNotification(notification);
+      },
+      {
+        timezone: "Asia/Kolkata", // Ensure cron runs in IST timezone
+      }
+    );
+
+    console.log(
+      `Notification scheduled for: ${scheduledTimeIST.format()} IST`
+    );
   } else {
     console.log(
       "Scheduled time is in the past, sending notification immediately."
