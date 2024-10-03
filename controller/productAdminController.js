@@ -2,8 +2,6 @@ const Product = require("../models/productModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const XLSX = require("xlsx");
-const fs = require("fs");
-const path = require("path");
 
 // Helper function for validating product input
 const validateProductInput = (productData, file) => {

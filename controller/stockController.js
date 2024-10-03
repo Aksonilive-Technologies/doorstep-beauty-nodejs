@@ -2,8 +2,6 @@ const Stock = require("../models/stockModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
 const XLSX = require("xlsx");
-const fs = require("fs");
-const path = require("path");
 
 exports.createStock = async (req, res) => {
   const requiredFields = [

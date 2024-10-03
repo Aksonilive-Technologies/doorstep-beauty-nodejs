@@ -2,6 +2,7 @@ const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 const mongoose = require("mongoose");
+const XLSX = require("xlsx");
 
 exports.register = async (req, res) => {
   const { name, username, password, email, role } = req.body;

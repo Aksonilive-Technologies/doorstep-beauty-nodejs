@@ -3,8 +3,6 @@ const { cloudinary } = require("../config/cloudinary.js");
 const Product = require("../models/productModel.js");
 const Package = require("../models/packageModel.js");
 const XLSX = require("xlsx");
-const fs = require("fs");
-const path = require("path");
 
 // Create a new category
 exports.createCategory = async (req, res) => {
