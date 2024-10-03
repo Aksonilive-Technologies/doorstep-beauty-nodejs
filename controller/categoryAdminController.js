@@ -233,7 +233,6 @@ exports.downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
     const categories = await Category.find({});
-    console.log(categories);
 
     // Step 2: Prepare the data for Excel
     const data = categories.map((category) => ({
@@ -247,30 +246,28 @@ exports.downloadExcelSheet = async (req, res) => {
       UpdatedAt: category.updatedAt.toISOString(),
     }));
 
-    console.log("data: ", data);
-
     // Step 3: Create a new workbook and worksheet
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(data);
 
-    console.log("workbook:", workbook);
-    console.log("worksheet:", worksheet);
-
     // Append the worksheet to the workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, "Categories");
 
-    // Step 4: Write the Excel file to the server (or you can directly send it)
-    const filePath = path.join(__dirname, "categories.xlsx");
-    XLSX.writeFile(workbook, filePath);
-
-    // Step 5: Send the Excel file as a response
-    res.download(filePath, "categories.xlsx", (err) => {
-      if (err) {
-        console.error("Error while sending the file", err);
-      }
-      // Optionally delete the file after sending
-      fs.unlinkSync(filePath);
+    // Step 4: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
     });
+
+    // Step 5: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=categories.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    // Step 6: Send the buffer as the response
+    res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
   }
