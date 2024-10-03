@@ -155,6 +155,17 @@ exports.fetchBookings = async (req, res) => {
       .populate("partner.partner")
       .lean();
 
+    // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
+  for (let booking of bookings) {
+    if (
+      (booking.serviceStatus === "ongoing" || booking.serviceStatus === "completed") &&
+      booking.productTool && 
+      booking.productTool.length > 0
+    ) {
+      await Booking.populate(booking, { path: 'productTool.productTool', model: 'Stock' });
+    }
+  }
+
     if (bookings.length === 0) {
       return res.status(404).json({
         success: false,
