@@ -1,11 +1,8 @@
 const Booking = require("../models/bookingModel");
 const Partner = require("../models/partnerModel.js");
 const ServicablePincode = require("../models/servicablePincodeModel.js");
-const StockAssignment = require("../models/stockAssignmentModel.js");
 const Transaction = require("../models/transactionModel.js");
 const PartnerTransaction = require("../models/partnerTransactionModel.js");
-const Customer = require("../models/customerModel.js");
-const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
 const mongoose = require("mongoose");
 const CustomerFCMService = require("../helper/customerFcmService.js");
 const PartnerFCMService = require("../helper/partnerFcmService.js");
@@ -181,6 +178,18 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
+
+  // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
+  for (let booking of bookings) {
+    if (
+      (booking.serviceStatus === "ongoing" || booking.serviceStatus === "completed") &&
+      booking.productTool && 
+      booking.productTool.length > 0
+    ) {
+      await Booking.populate(booking, { path: 'productTool.productTool', model: 'Stock' });
+    }
+  }
+
 
   if (bookings.length === 0) {
     return res.status(404).json({
@@ -363,27 +372,10 @@ try {
       });
     }
 
-    // Prepare stock assignments update
-    const stockAssignments = await StockAssignment.find({
-      stock: { $in: stockItems },
-      partner: partnerId,
-    });
-
-    // Decrease quantity for each stock item and accumulate updates
-    const bulkUpdates = stockAssignments.map((assignment) => ({
-      updateOne: {
-        filter: { _id: assignment._id },
-        update: { $inc: { quantity: -1 } },
-      },
-    }));
-
     // Push product tools into booking and perform bulk updates
     booking.productTool.push(...stockItems.map((item) => ({ productTool: new mongoose.Types.ObjectId(item) })));
     booking.serviceStatus = "ongoing";
     booking.serviceStartedAt = new Date();
-
-    // Execute both save operations in parallel
-    await Promise.all([booking.save(), StockAssignment.bulkWrite(bulkUpdates)]);
 
     await booking.save();
     res.status(200).json({

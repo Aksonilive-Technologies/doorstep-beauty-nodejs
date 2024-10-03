@@ -18,6 +18,11 @@ const stockSchema = new Schema(
       required: true,
       trim: true,
     },
+    entryStock: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
     currentStock: {
       type: Number,
       required: true,
@@ -33,14 +38,12 @@ const stockSchema = new Schema(
       // required: true,
       min: 0,
     },
-    barcodeNumber: {
-      type: String,
-      unique: true,
-      trim: true,
-      sparse: true, // Allows unique to be null
-    },
     image: {
       type: String,
+    },
+    barcode: {
+      type: String,
+      required: true,
     },
     isDeleted: {
       type: Boolean,

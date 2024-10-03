@@ -1,17 +1,20 @@
 const CustomerAddress = require("../models/customerAddressModel");
 const Booking = require("../models/bookingModel");
 const Transaction = require("../models/transactionModel");
-const moment = require("moment"); 
+const moment = require("moment");
 const Product = require("../models/productModel");
 const MostBookedProduct = require("../models/mostBookedProductModel");
 const Customer = require("../models/customerModel");
 const CustomerFCMService = require("../helper/customerFcmService.js");
 const PartnerFCMService = require("../helper/partnerFcmService.js");
 const FirebaseTokens = require("../models/firebaseTokenModel.js");
-const { calculateCancellationCharge } = require('../helper/refundCalculator');
-const { addCancellationChargesRecord } = require('../helper/addCancellationChargesRecord');
+const { calculateCancellationCharge } = require("../helper/refundCalculator");
+const {
+  addCancellationChargesRecord,
+} = require("../helper/addCancellationChargesRecord");
 const { processPartnerRefund } = require("../helper/processPartnerRefund");
 const { processCustomerRefund } = require("../helper/processCustomerRefund");
+const XLSX = require('xlsx');
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -34,7 +37,6 @@ exports.bookProduct = async (req, res) => {
     if (!customerId) missingFields.push("customerId");
     if (!products || products.length === 0) missingFields.push("products");
     if (!totalPrice) missingFields.push("totalPrice");
-
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -69,7 +71,6 @@ exports.bookProduct = async (req, res) => {
 
     const finalPrice = totalPrice - discount;
 
-
     // Create Booking
     const newBooking = new Booking({
       customer: customerId,
@@ -89,32 +90,32 @@ exports.bookProduct = async (req, res) => {
 
     await newBooking.save();
 
-       // Update MostBookedProduct Schema
-       for (const product of products) {
-        const existingRecord = await MostBookedProduct.findOne({
+    // Update MostBookedProduct Schema
+    for (const product of products) {
+      const existingRecord = await MostBookedProduct.findOne({
+        product: product.product,
+        isActive: true,
+        isDeleted: false,
+      });
+
+      if (existingRecord) {
+        existingRecord.count += 1;
+        await existingRecord.save();
+      } else {
+        await MostBookedProduct.create({
           product: product.product,
-          isActive: true,
-          isDeleted: false,
+          count: 1,
         });
-  
-        if (existingRecord) {
-          existingRecord.count += 1;
-          await existingRecord.save();
-        } else {
-          await MostBookedProduct.create({
-            product: product.product,
-            count: 1,
-          });
-        }
       }
+    }
 
     // Send FCM to partner
     const partnerToken = await FirebaseTokens.find({ userType: "partner" });
     if (partnerToken) {
       for (let i = 0; i < partnerToken.length; i++) {
-      PartnerFCMService.sendNewBookingMessage(partnerToken[i].token);
-    }}
-
+        PartnerFCMService.sendNewBookingMessage(partnerToken[i].token);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -143,9 +144,25 @@ exports.fetchBookings = async (req, res) => {
     }
 
     // Fetch bookings with populated fields
-    const bookings = await Booking.find({ customer: customerId, isDeleted: false, childBooking: { $exists: false }, })
+    const bookings = await Booking.find({
+      customer: customerId,
+      isDeleted: false,
+      childBooking: { $exists: false },
+    })
       .populate("product.product")
-      .populate("partner.partner").lean();
+      .populate("partner.partner")
+      .lean();
+
+    // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
+  for (let booking of bookings) {
+    if (
+      (booking.serviceStatus === "ongoing" || booking.serviceStatus === "completed") &&
+      booking.productTool && 
+      booking.productTool.length > 0
+    ) {
+      await Booking.populate(booking, { path: 'productTool.productTool', model: 'Stock' });
+    }
+  }
 
     if (bookings.length === 0) {
       return res.status(404).json({
@@ -154,12 +171,13 @@ exports.fetchBookings = async (req, res) => {
       });
     }
 
-    bookings.forEach(booking => {
-      booking.product.forEach(productItem => {
+    bookings.forEach((booking) => {
+      booking.product.forEach((productItem) => {
         // Check if there is an option selected for this product
         if (productItem.option && productItem.product.options) {
-
-        const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+          const selectedOption = productItem.product.options.find((opt) =>
+            opt._id.equals(productItem.option)
+          );
 
           if (selectedOption) {
             // Store the original product name in a temporary variable
@@ -184,7 +202,6 @@ exports.fetchBookings = async (req, res) => {
         // Remove the options field from the product to clean up the response
       });
     });
-      
 
     // Current date for comparison
     const now = moment();
@@ -193,10 +210,10 @@ exports.fetchBookings = async (req, res) => {
     const categorized = {
       Ongoing: [],
       Upcoming: [],
-      Previous: []
+      Previous: [],
     };
 
-    bookings.forEach(booking => {
+    bookings.forEach((booking) => {
       if (booking.serviceStatus === "ongoing") {
         // Ongoing bookings
         categorized.Ongoing.push(booking);
@@ -216,15 +233,18 @@ exports.fetchBookings = async (req, res) => {
     });
 
     // Sort categories
-    categorized.Upcoming.sort((a, b) => moment(a.scheduleFor.date).diff(moment(b.scheduleFor.date)));
-    categorized.Previous.sort((a, b) => moment(b.scheduleFor.date).diff(moment(a.scheduleFor.date)));
+    categorized.Upcoming.sort((a, b) =>
+      moment(a.scheduleFor.date).diff(moment(b.scheduleFor.date))
+    );
+    categorized.Previous.sort((a, b) =>
+      moment(b.scheduleFor.date).diff(moment(a.scheduleFor.date))
+    );
 
     res.status(200).json({
       success: true,
       message: "Bookings fetched and categorized successfully",
-      data: categorized
+      data: categorized,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -247,8 +267,11 @@ exports.cancelBooking = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({ _id: bookingId, serviceStatus:{$in: ["pending", "scheduled"]}, isDeleted: false });
-  
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      serviceStatus: { $in: ["pending", "scheduled"] },
+      isDeleted: false,
+    });
 
     // Check if the booking exists
     if (!booking) {
@@ -257,76 +280,102 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
-    if(booking.serviceStatus === "scheduled"){
-    //step1: calculate cancellation charges
-    const cancellationCharges = calculateCancellationCharge(booking, "customer");
-    let customerCancellationFeeStatus = "";
-    
-    //step2: refund back to customer using the same payment mode and also to partner
-    //step3: create a transaction record for refund in both customer and partner
-  
-    // Fetch the associated transaction
-    const transaction = await Transaction.findById(booking.transaction);
+    if (booking.serviceStatus === "scheduled") {
+      //step1: calculate cancellation charges
+      const cancellationCharges = calculateCancellationCharge(
+        booking,
+        "customer"
+      );
+      let customerCancellationFeeStatus = "";
 
-    if (!transaction) {
-      throw new Error('Transaction not found');
-    } 
-    // If the payment method is "wallet_booking"
-    if (transaction.paymentGateway === "wallet") {
-      // processWalletRefund(booking, cancellationCharges, 0);
-      processCustomerRefund(booking, cancellationCharges, 0, "wallet");
-      processPartnerRefund(booking, cancellationCharges, 0);
-      customerCancellationFeeStatus = 'paid';
-    }else if(transaction.paymentGateway === "cash"){
-      processCustomerRefund(booking, cancellationCharges, 0, "cash");
-      processPartnerRefund(booking, cancellationCharges, 0);
-      customerCancellationFeeStatus = 'pending';
-    }else{
-      processCustomerRefund(booking, cancellationCharges, 0, transaction.paymentGateway);
-      processPartnerRefund(booking, cancellationCharges, 0);
-      customerCancellationFeeStatus = 'paid';
+      //step2: refund back to customer using the same payment mode and also to partner
+      //step3: create a transaction record for refund in both customer and partner
+
+      // Fetch the associated transaction
+      const transaction = await Transaction.findById(booking.transaction);
+
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+      // If the payment method is "wallet_booking"
+      if (transaction.paymentGateway === "wallet") {
+        // processWalletRefund(booking, cancellationCharges, 0);
+        processCustomerRefund(booking, cancellationCharges, 0, "wallet");
+        processPartnerRefund(booking, cancellationCharges, 0);
+        customerCancellationFeeStatus = "paid";
+      } else if (transaction.paymentGateway === "cash") {
+        processCustomerRefund(booking, cancellationCharges, 0, "cash");
+        processPartnerRefund(booking, cancellationCharges, 0);
+        customerCancellationFeeStatus = "pending";
+      } else {
+        processCustomerRefund(
+          booking,
+          cancellationCharges,
+          0,
+          transaction.paymentGateway
+        );
+        processPartnerRefund(booking, cancellationCharges, 0);
+        customerCancellationFeeStatus = "paid";
       }
 
-    //step4: add cancellation charges to partner and customer transaction
-    if (cancellationCharges > 0) {
-      addCancellationChargesRecord(booking, "customer", cancellationCharges, customerCancellationFeeStatus);
+      //step4: add cancellation charges to partner and customer transaction
+      if (cancellationCharges > 0) {
+        addCancellationChargesRecord(
+          booking,
+          "customer",
+          cancellationCharges,
+          customerCancellationFeeStatus
+        );
+      }
     }
-  }
-    
+
     //step5: update booking status to cancelled
     booking.serviceStatus = "cancelled";
     booking.status = "cancelled";
     booking.cancelledBy = "customer";
 
     await booking.save();
-  
-  const customerTokens = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
-  if(booking.partner.length > 0){
-    const partnerTokens = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
-    if (partnerTokens) {
-      for (let i = 0; i < partnerTokens.length; i++) {
-      PartnerFCMService.sendBookingCancellationMessage(partnerTokens[i].token);
-    }}
+
+    const customerTokens = await FirebaseTokens.find({
+      userId: booking.customer,
+      userType: "customer",
+    });
+    if (booking.partner.length > 0) {
+      const partnerTokens = await FirebaseTokens.find({
+        userId: booking.partner[0].partner,
+        userType: "partner",
+      });
+      if (partnerTokens) {
+        for (let i = 0; i < partnerTokens.length; i++) {
+          PartnerFCMService.sendBookingCancellationMessage(
+            partnerTokens[i].token
+          );
+        }
+      }
     }
     if (customerTokens) {
       for (let i = 0; i < customerTokens.length; i++) {
         const sendMessages = [
-          CustomerFCMService.sendBookingCancellationMessage(customerTokens[i].token)
+          CustomerFCMService.sendBookingCancellationMessage(
+            customerTokens[i].token
+          ),
         ];
-    
+
         // Check if the cancellation fee status is paid and add refund message if so
         if (cancellationFeeStatus === "paid") {
-          sendMessages.push(CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token));
+          sendMessages.push(
+            CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token)
+          );
         }
 
         await Promise.all(sendMessages);
-      }}
+      }
+    }
 
     res.status(200).json({
       success: true,
       message: "Booking cancelled successfully",
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -335,7 +384,6 @@ exports.cancelBooking = async (req, res) => {
     });
   }
 };
-
 
 exports.fetchRecentBookedProducts = async (req, res) => {
   const { customerId } = req.query;
@@ -350,52 +398,56 @@ exports.fetchRecentBookedProducts = async (req, res) => {
     }
 
     // Fetch bookings for the customer and populate products
-    const bookings = await Booking.find({ customer: customerId, isDeleted: false })
+    const bookings = await Booking.find({
+      customer: customerId,
+      isDeleted: false,
+    })
       .populate("product.product")
       .sort({ createdAt: -1 })
       .limit(10)
       .lean(); // Sort by most recent bookings
 
-      
-      if (bookings.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No bookings found",
-        });
-      }
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found",
+      });
+    }
 
-      // bookings.forEach(booking => {
-      //   booking.product.forEach(productItem => {
-      //     // Check if there is an option selected for this product
-      //     if (productItem.option && productItem.product.options) {
-      //       const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
-      
-      //       if (selectedOption) {
-      //         // Store the original product name in a temporary variable
-      //         const originalProductName = productItem.product.name;
-  
-      //         // Update product image with option's image
-      //         productItem.product.image = selectedOption.image;
-  
-      //         // Update product name by concatenating the option name with the original product name
-      //         productItem.product.name = `${selectedOption.option} ${originalProductName}`;
-  
-      //         // Update product price with option price
-      //         productItem.product.price = selectedOption.price;
-  
-      //         // Update product details with option's details
-      //         productItem.product.details = selectedOption.details;
-      //       }
-      //     }
-  
-      //     // Remove the options field from the product to clean up the response
-      //     delete productItem.product.options;
-      //     delete productItem.option;
-      //   });
-      // });
+    // bookings.forEach(booking => {
+    //   booking.product.forEach(productItem => {
+    //     // Check if there is an option selected for this product
+    //     if (productItem.option && productItem.product.options) {
+    //       const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
+
+    //       if (selectedOption) {
+    //         // Store the original product name in a temporary variable
+    //         const originalProductName = productItem.product.name;
+
+    //         // Update product image with option's image
+    //         productItem.product.image = selectedOption.image;
+
+    //         // Update product name by concatenating the option name with the original product name
+    //         productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+
+    //         // Update product price with option price
+    //         productItem.product.price = selectedOption.price;
+
+    //         // Update product details with option's details
+    //         productItem.product.details = selectedOption.details;
+    //       }
+    //     }
+
+    //     // Remove the options field from the product to clean up the response
+    //     delete productItem.product.options;
+    //     delete productItem.option;
+    //   });
+    // });
 
     // Extract recent booked products from the bookings
-    const recentProducts = bookings.flatMap(booking => booking.product.map(p => p.product));
+    const recentProducts = bookings.flatMap((booking) =>
+      booking.product.map((p) => p.product)
+    );
 
     // Limit the result to the last 10 products
     const limitedProducts = recentProducts.slice(0, 10);
@@ -405,7 +457,6 @@ exports.fetchRecentBookedProducts = async (req, res) => {
       message: "Recent booked products fetched successfully",
       data: limitedProducts,
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -428,8 +479,8 @@ exports.ratePartner = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({_id: bookingId, isDeleted: false});
-    
+    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -438,7 +489,9 @@ exports.ratePartner = async (req, res) => {
     }
 
     // Find the partner within the booking
-    const partnerIndex = booking.partner.findIndex(p => p.partner.toString() === partnerId);
+    const partnerIndex = booking.partner.findIndex(
+      (p) => p.partner.toString() === partnerId
+    );
 
     if (partnerIndex !== -1) {
       // Partner found, update the rating
@@ -469,108 +522,167 @@ exports.ratePartner = async (req, res) => {
   }
 };
 
-
 exports.rateBooking = async (req, res) => {
   try {
-      const { bookingId, rating } = req.body;
+    const { bookingId, rating } = req.body;
 
-      // Step 1: Find the booking by ID
-      const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
-      if (!booking) {
-          return res.status(404).json({ success: false, message: 'Booking not found' });
-      }
-
-      // Step 2: Update the rating for the booking
-      if (booking.rating === 0) {
-          booking.rating = rating;
-      } else {
-          booking.rating = (booking.rating + rating) / 2;
-      }
-
-      // Save the updated booking
-      await booking.save();
-
-      // Step 3: Update the ratings for each product in the booking
-      for (const item of booking.product) {
-          const productId = item.product;
-
-          const product = await Product.findById(productId);
-          if (product) {
-              if (product.rating === 0) {
-                  product.rating = rating;
-              } else {
-                  product.rating = (product.rating + rating) / 2;
-              }
-              await product.save();
-          }
-      }
-
-      // Respond with success
-      res.status(200).json({ success: true, message: 'Booking and product ratings updated successfully' ,data : {rating : booking.rating}});
-  } catch (error) {
-      console.error('Error updating booking and product ratings:', error);
-      res.status(500).json({ success: false, message: 'Server error', errorMessage: error.message });
-  }}
-
-exports.updateTransaction = async (req, res) => {
-    try {
-        const { bookingId, transactionStatus, paymentGatewayId } = req.body;
-
-        // Step 1: Find and update the transaction
-        const transaction = await Transaction.findOne({_id: booking.transaction, isDeleted: false});
-        if (!transaction) {
-            return res.status(404).json({ success: false, message: 'Transaction not found' });
-        }
-        if (transaction.status.toLowerCase() === 'completed' || transaction.status.toLowerCase() === 'failed'){
-            return res.status(400).json({ success: false, message: 'Transaction already marked as '+ transaction.status } );
-        }
-
-        // Update transaction status
-        transaction.status = transactionStatus;
-        if(transactionStatus === 'completed'){
-          transaction.transactionRefId = paymentGatewayId;
-        }
-
-        await transaction.save();
-
-        const booking = await Booking.findOne({ _id: bookingId, status:"processing",serviceStatus:"pending", isDeleted: false });
-        if (!booking) {
-            return res.status(404).json({ Success: false, message: 'Booking not found for the transaction' });
-        }
-
-        // Step 2: Find and update the booking
-        
-        // Update booking fields based on the transaction status
-        if (transactionStatus === 'completed') {
-            booking.paymentStatus = 'completed';
-            booking.serviceStatus = 'scheduled';
-
-      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
-      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
-      if (customerToken) {
-        for (let i = 0; i < customerToken.length; i++) {
-        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
-      }}
-      if (partnerToken) {
-        for (let i = 0; i < partnerToken.length; i++) {
-        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
-      }}
-        } else if (transactionStatus === 'failed') {
-            booking.paymentStatus = 'failed';
-            booking.status = 'failed';
-            booking.serviceStatus = 'cancelled';
-        }
-
-        await booking.save();
-
-        // Respond with success
-        res.status(200).json({ Success: true, message: 'Transaction and booking updated successfully' });
-    } catch (error) {
-        console.error('Error updating transaction and booking:', error);
-        res.status(500).json({Success: false, message: 'Server error', errorMessage: error.message });
+    // Step 1: Find the booking by ID
+    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
+
+    // Step 2: Update the rating for the booking
+    if (booking.rating === 0) {
+      booking.rating = rating;
+    } else {
+      booking.rating = (booking.rating + rating) / 2;
+    }
+
+    // Save the updated booking
+    await booking.save();
+
+    // Step 3: Update the ratings for each product in the booking
+    for (const item of booking.product) {
+      const productId = item.product;
+
+      const product = await Product.findById(productId);
+      if (product) {
+        if (product.rating === 0) {
+          product.rating = rating;
+        } else {
+          product.rating = (product.rating + rating) / 2;
+        }
+        await product.save();
+      }
+    }
+
+    // Respond with success
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Booking and product ratings updated successfully",
+        data: { rating: booking.rating },
+      });
+  } catch (error) {
+    console.error("Error updating booking and product ratings:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Server error",
+        errorMessage: error.message,
+      });
+  }
 };
 
+exports.updateTransaction = async (req, res) => {
+  try {
+    const { bookingId, transactionStatus, paymentGatewayId } = req.body;
+
+    // Step 1: Find and update the transaction
+    const transaction = await Transaction.findOne({
+      _id: booking.transaction,
+      isDeleted: false,
+    });
+    if (!transaction) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
+    }
+    if (
+      transaction.status.toLowerCase() === "completed" ||
+      transaction.status.toLowerCase() === "failed"
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Transaction already marked as " + transaction.status,
+        });
+    }
+
+    // Update transaction status
+    transaction.status = transactionStatus;
+    if (transactionStatus === "completed") {
+      transaction.transactionRefId = paymentGatewayId;
+    }
+
+    await transaction.save();
+
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      status: "processing",
+      serviceStatus: "pending",
+      isDeleted: false,
+    });
+    if (!booking) {
+      return res
+        .status(404)
+        .json({
+          Success: false,
+          message: "Booking not found for the transaction",
+        });
+    }
+
+    // Step 2: Find and update the booking
+
+    // Update booking fields based on the transaction status
+    if (transactionStatus === "completed") {
+      booking.paymentStatus = "completed";
+      booking.serviceStatus = "scheduled";
+
+      const customerToken = await FirebaseTokens.find({
+        userId: booking.customer,
+        userType: "customer",
+      });
+      const partnerToken = await FirebaseTokens.find({
+        userId: booking.partner[0].partner,
+        userType: "partner",
+      });
+      if (customerToken) {
+        for (let i = 0; i < customerToken.length; i++) {
+          CustomerFCMService.sendBookingConfirmationMessage(
+            customerToken[i].token
+          );
+        }
+      }
+      if (partnerToken) {
+        for (let i = 0; i < partnerToken.length; i++) {
+          PartnerFCMService.sendBookingConfirmationMessage(
+            partnerToken[i].token
+          );
+        }
+      }
+    } else if (transactionStatus === "failed") {
+      booking.paymentStatus = "failed";
+      booking.status = "failed";
+      booking.serviceStatus = "cancelled";
+    }
+
+    await booking.save();
+
+    // Respond with success
+    res
+      .status(200)
+      .json({
+        Success: true,
+        message: "Transaction and booking updated successfully",
+      });
+  } catch (error) {
+    console.error("Error updating transaction and booking:", error);
+    res
+      .status(500)
+      .json({
+        Success: false,
+        message: "Server error",
+        errorMessage: error.message,
+      });
+  }
+};
 
 exports.initiatePayment = async (req, res) => {
   const { bookingId, paymentMode } = req.body;
@@ -578,7 +690,9 @@ exports.initiatePayment = async (req, res) => {
     // Find the booking based on bookingId
     const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     // Get the final price from the booking
@@ -588,54 +702,74 @@ exports.initiatePayment = async (req, res) => {
     const transactionData = {
       customerId: booking.customer,
       amount: finalPrice,
-      paymentGateway:paymentMode,
+      paymentGateway: paymentMode,
     };
 
-    if (paymentMode === 'wallet') {
+    if (paymentMode === "wallet") {
       // Deduct from wallet and create a debit transaction
-      const customer = await Customer.findOne({ _id: booking.customer, isDeleted: false });
+      const customer = await Customer.findOne({
+        _id: booking.customer,
+        isDeleted: false,
+      });
       if (!customer) {
-        return res.status(404).json({ success: false, message: 'Customer not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "Customer not found" });
       }
 
       if (customer.walletBalance < finalPrice) {
-        return res.status(400).json({ success: false, message: 'Insufficient wallet balance' });
+        return res
+          .status(400)
+          .json({ success: false, message: "Insufficient wallet balance" });
       }
 
       customer.walletBalance -= finalPrice;
       await customer.save();
 
-      transactionData.transactionType = 'wallet_booking';
-      transactionData.status = 'completed';
+      transactionData.transactionType = "wallet_booking";
+      transactionData.status = "completed";
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
 
-      booking.paymentStatus = 'completed';
-      booking.serviceStatus = 'scheduled';
+      booking.paymentStatus = "completed";
+      booking.serviceStatus = "scheduled";
       booking.transaction = transaction._id;
       await booking.save();
 
-      const customerToken = await FirebaseTokens.find({ userId: booking.customer , userType: "customer" });
-      const partnerToken = await FirebaseTokens.find({ userId: booking.partner[0].partner , userType: "partner" });
+      const customerToken = await FirebaseTokens.find({
+        userId: booking.customer,
+        userType: "customer",
+      });
+      const partnerToken = await FirebaseTokens.find({
+        userId: booking.partner[0].partner,
+        userType: "partner",
+      });
       if (customerToken) {
         for (let i = 0; i < customerToken.length; i++) {
-        CustomerFCMService.sendBookingConfirmationMessage(customerToken[i].token);
-      }}
+          CustomerFCMService.sendBookingConfirmationMessage(
+            customerToken[i].token
+          );
+        }
+      }
       if (partnerToken) {
         for (let i = 0; i < partnerToken.length; i++) {
-        PartnerFCMService.sendBookingConfirmationMessage(partnerToken[i].token);
-      }}
+          PartnerFCMService.sendBookingConfirmationMessage(
+            partnerToken[i].token
+          );
+        }
+      }
 
       return res.status(200).json({
         success: true,
-        message: 'Payment processed successfully via wallet and booking updated',
+        message:
+          "Payment processed successfully via wallet and booking updated",
         data: booking,
       });
-    } else if (['cashfree', 'razorpay', 'cash'].includes(paymentMode)) {
+    } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
       // Create a pending transaction for gateway payments
-      transactionData.transactionType = 'gateway_booking';
-      transactionData.status = 'pending';
+      transactionData.transactionType = "gateway_booking";
+      transactionData.status = "pending";
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
@@ -645,25 +779,24 @@ exports.initiatePayment = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: 'Transaction initiated successfully via ' + paymentMode,
+        message: "Transaction initiated successfully via " + paymentMode,
         data: booking,
       });
     } else {
       return res.status(400).json({
         success: false,
-        message: 'Invalid payment gateway',
+        message: "Invalid payment gateway",
       });
     }
   } catch (error) {
-    console.error('Error processing payment:', error);
+    console.error("Error processing payment:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: "Server error",
       errorMessage: error.message,
     });
   }
 };
-
 
 exports.getMostBookedProducts = async (req, res) => {
   try {
@@ -673,35 +806,95 @@ exports.getMostBookedProducts = async (req, res) => {
     })
       .sort({ count: -1 }) // Sort by count in descending order
       .limit(10) // Limit the response to 10 products
-      .populate('product'); 
+      .populate("product");
 
-      if(!mostBookedProducts){
-        return res.status(404).json({
-          success: false,
-          message: 'No most booked products found',
-         })
-      }
+    if (!mostBookedProducts) {
+      return res.status(404).json({
+        success: false,
+        message: "No most booked products found",
+      });
+    }
 
     if (!mostBookedProducts || mostBookedProducts.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No most booked products found',
+        message: "No most booked products found",
       });
     }
 
-    const products = mostBookedProducts.map(item => item.product);
+    const products = mostBookedProducts.map((item) => item.product);
 
     res.status(200).json({
       success: true,
-      message: 'Most booked products fetched successfully',
+      message: "Most booked products fetched successfully",
       data: products,
     });
   } catch (error) {
-    console.error('Error fetching most booked products:', error.message);
+    console.error("Error fetching most booked products:", error.message);
     res.status(500).json({
       success: false,
-      message: 'Error fetching most booked products',
+      message: "Error fetching most booked products",
       errorMessage: error.message,
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch the booking data from MongoDB
+    const bookings = await Booking.find({ isDeleted: false })
+      .populate("customer", "name email")
+      .populate("partner.partner", "name")
+      .populate("product.product", "name price") // populate product details
+      .populate("transaction");
+
+    // Step 2: Prepare the data for Excel
+    const data = bookings.map((booking) => ({
+      CustomerName: booking.customer?.name || "N/A",
+      CustomerEmail: booking.customer?.email || "N/A",
+      PartnerName: booking.partner[0]?.partner?.name || "N/A",
+      ProductDetails: booking.product
+        .map(
+          (p) =>
+            `${p.product?.name} (Quantity: ${p.quantity}, Price: ${p.price})`
+        )
+        .join(", "),
+      TotalPrice: booking.totalPrice,
+      Discount: booking.discount,
+      FinalPrice: booking.finalPrice,
+      PaymentStatus: booking.paymentStatus,
+      BookingStatus: booking.status,
+      ScheduledFor: `${booking.scheduleFor?.date || "N/A"} ${
+        booking.scheduleFor?.time || ""
+      } ${booking.scheduleFor?.format || ""}`,
+      ServiceStatus: booking.serviceStatus,
+      CreatedAt: booking.createdAt.toISOString(),
+      UpdatedAt: booking.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings");
+
+    // Step 4: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
+    });
+
+    // Step 5: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=bookings.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    // Step 6: Send the buffer as the response
+    res.send(excelBuffer);
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };

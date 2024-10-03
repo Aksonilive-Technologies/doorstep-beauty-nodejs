@@ -1,8 +1,7 @@
 const Stock = require("../models/stockModel");
 const mongoose = require("mongoose");
 const { cloudinary } = require("../config/cloudinary.js");
-const Partner = require("../models/partnerModel.js");
-const StockAssignment = require("../models/stockAssignmentModel.js");
+const XLSX = require("xlsx");
 
 exports.createStock = async (req, res) => {
   const requiredFields = [
@@ -60,6 +59,7 @@ exports.createStock = async (req, res) => {
       name,
       brand,
       size,
+      entryStock: currentStock,
       currentStock,
       mrp,
       purchasingRate,
@@ -307,123 +307,49 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.fetchAssignedStocks = async (req, res) => {
-  const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
-
+exports.downloadExcelSheet = async (req, res) => {
   try {
-    // Fetch the list of partners with pagination
-    const partners = await Partner.find()
-      .limit(parseInt(limit)) // Ensure limit is a number
-      .skip((page - 1) * limit)
-      .select("_id image name") // Only select required fields
-      .lean(); // Lean for better performance
+    // Step 1: Fetch the stock data from MongoDB
+    const stocks = await Stock.find({ isDeleted: false });
 
-    const totalPartners = await Partner.countDocuments();
+    // Step 2: Prepare the data for Excel
+    const data = stocks.map((stock) => ({
+      Name: stock.name,
+      Brand: stock.brand || "N/A",
+      Size: stock.size,
+      CurrentStock: stock.currentStock,
+      MRP: stock.mrp || "N/A",
+      PurchasingRate: stock.purchasingRate || "N/A",
+      BarcodeNumber: stock.barcodeNumber || "N/A",
+      Image: stock.image || "N/A",
+      IsActive: stock.isActive ? "Active" : "Inactive",
+      CreatedAt: stock.createdAt.toISOString(),
+      UpdatedAt: stock.updatedAt.toISOString(),
+    }));
 
-    if (partners.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No partners found",
-      });
-    }
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
 
-    // Fetch stock assignments for all partners in a single query
-    const partnerIds = partners.map((partner) => partner._id);
-    const stockAssignments = await StockAssignment.find({
-      partner: { $in: partnerIds },
-    })
-      .populate("stock") // Populate the stock field
-      .lean(); // Return plain JavaScript objects
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stock");
 
-    // Map stock assignments to the respective partners
-    const partnerStockMap = partners.map((partner) => {
-      const assignedStocks = stockAssignments
-        .filter((sa) => sa.partner.toString() === partner._id.toString())
-        .map((sa) => {
-          // Create a new object excluding the 'partner' field
-          const { partner, _id, ...rest } = sa;
-          return rest;
-        });
-      return {
-        ...partner,
-        stockAssignments: assignedStocks,
-      };
+    // Step 4: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
     });
 
-    // Return successful response
-    return res.status(200).json({
-      success: true,
-      message: "Successfully retrieved all the assigned stocks",
-      data: partnerStockMap,
-      currentPage: parseInt(page),
-      totalPartners,
-      totalPages: Math.ceil(totalPartners / limit),
-    });
-  } catch (error) {
-    // Handle potential errors
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred while fetching the assigned stocks",
-      details: error.message,
-    });
-  }
-};
-
-exports.assignStock = async (req, res) => {
-  const { partnerId, assignStock } = req.body;
-
-  try {
-    // Check if all required fields are present
-    if (
-      !partnerId ||
-      !assignStock ||
-      !Array.isArray(assignStock) ||
-      assignStock.length === 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Partner ID and valid assignStock array are required",
-      });
-    }
-
-    // Validate partner existence
-    const partner = await Partner.findById(partnerId);
-    if (!partner) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Partner not found" });
-    }
-
-    // Assign stocks
-    const stockAssignments = assignStock.map(({ stock, quantity }) => {
-      if (!stock || !quantity) {
-        throw new Error(
-          "Each stock assignment must have a valid stock ID and quantity"
-        );
-      }
-      return new StockAssignment({
-        partner: partnerId,
-        stock: stock,
-        quantity: quantity,
-      });
-    });
-
-    // Save all stock assignments in parallel
-    await Promise.all(
-      stockAssignments.map((stockAssignment) => stockAssignment.save())
+    // Step 5: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=stocks.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
-    // Respond with success
-    res.status(201).json({
-      success: true,
-      message: "Successfully assigned stocks to the partner",
-    });
+    // Step 6: Send the buffer as the response
+    res.send(excelBuffer);
   } catch (error) {
-    // Handle errors
-    res.status(500).json({
-      success: false,
-      message: "Error while assigning stocks",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };

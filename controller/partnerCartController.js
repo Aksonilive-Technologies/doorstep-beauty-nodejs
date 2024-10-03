@@ -72,6 +72,35 @@ exports.bookCart = async (req, res) => {
           message: "There is no item in the cart",
         });
       }
+
+      // Extract product IDs from the cart
+    const productIds = cart.map(item => item.stockItem._id);
+
+    // Fetch all stock items in a single query
+    const stockItems = await Stock.find({ _id: { $in: productIds } });
+
+    // Validate stock availability for each item in the cart
+    for (let i = 0; i < stockItems.length; i++) {
+      const cartItem = cart.find(item => item.stockItem._id.equals(stockItems[i]._id));
+      if (stockItems[i].currentStock < cartItem.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for item ${stockItems[i].name}`,
+        });
+      }
+    }
+
+    // Deduct stock for each item in the cart
+    const stockUpdates = stockItems.map(stockItem => {
+      const cartItem = cart.find(item => item.stockItem._id.equals(stockItem._id));
+      if (cartItem) {
+        stockItem.currentStock -= cartItem.quantity;
+        return stockItem.save(); // Return a promise for each save
+      }
+    });
+
+    // Wait for all stock items to be updated
+    await Promise.all(stockUpdates);
   
       // Calculate total cart amount
       const totalAmount = cart.reduce(

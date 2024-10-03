@@ -5,6 +5,7 @@ const Partner = require("../models/partnerModel.js");
 const Customer = require("../models/customerModel.js");
 const FirebaseToken = require("../models/firebaseTokenModel.js");
 const nodeCron = require("node-cron");
+const moment = require("moment-timezone");
 const { sendPartnerNotification } = require("../helper/partnerFcmService.js");
 const { sendCustomerNotification } = require("../helper/customerFcmService.js");
 
@@ -36,62 +37,73 @@ const sendNotification = async (notification) => {
   }
 };
 
+// Helper function to convert 12-hour time to 24-hour format if necessary
 const convertTimeTo24HourFormat = (time12h) => {
-  // Split the time string into components
   const [time, modifier] = time12h.split(" ");
 
   let [hours, minutes] = time.split(":");
 
-  // Convert the hours based on AM/PM
-  if (modifier === "PM" && hours !== "12") {
-    hours = parseInt(hours, 10) + 12;
-  }
-  if (modifier === "AM" && hours === "12") {
+  if (hours === "12") {
     hours = "00";
   }
 
-  return `${hours}:${minutes}`; // Return the time in HH:mm format
+  if (modifier === "PM") {
+    hours = parseInt(hours, 10) + 12;
+  }
+
+  return `${hours}:${minutes}`;
 };
 
-// Schedule a notification using cron
 const scheduleNotification = (notification) => {
   let { notificationDate, notificationTime } = notification;
 
   // Convert notificationTime from 12-hour to 24-hour format
   notificationTime = convertTimeTo24HourFormat(notificationTime);
 
-  // Ensure notificationDate and notificationTime are valid before proceeding
-  // const localTime = new Date(`${notificationDate}T${notificationTime}:00`);
-  const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+  // Convert the provided notificationDate and notificationTime from IST to UTC
+  const scheduledTimeIST = moment.tz(
+    `${notificationDate} ${notificationTime}`,
+    "YYYY-MM-DD HH:mm",
+    "Asia/Kolkata" // Input is in IST
+  );
 
-  if (isNaN(scheduledTime.getTime())) {
+  // Validate the scheduled time
+  if (!scheduledTimeIST.isValid()) {
     console.error("Invalid scheduled time due to date or time format.");
     return;
   }
 
-  const currentTime = new Date();
-  const timeDiff = scheduledTime - currentTime;
+  // Convert IST scheduled time to UTC for comparison with current time
+  const scheduledTimeUTC = scheduledTimeIST.clone().tz("UTC");
+  const currentTimeUTC = moment().utc();
 
-  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+  const timeDiff = scheduledTimeUTC.diff(currentTimeUTC, "minutes"); // Difference in minutes
 
-  if (timeDiff > 0) {
-    // Schedule the notification
-    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
-      scheduledTime.getMonth() + 1
+  console.log(
+    `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
+  );
+
+    // Schedule the notification in IST timezone using cron
+    const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
+      scheduledTimeIST.month() + 1
     } *`;
 
-    nodeCron.schedule(cronExpression, async () => {
-      console.log("Sending notification: ", notification.title);
-      await sendNotification(notification);
-    });
+    console.log("Cron Expression: ", cronExpression);
 
-    console.log("Notification scheduled for: ", scheduledTime);
-  } else {
-    console.log(
-      "Scheduled time is in the past, sending notification immediately."
+    nodeCron.schedule(
+      cronExpression,
+      async () => {
+        console.log("Sending notification: ", notification.title);
+        await sendNotification(notification);
+      },
+      {
+        timezone: "Asia/Kolkata", // Ensure cron runs in IST timezone
+      }
     );
-    sendNotification(notification); // Send immediately if the time has passed
-  }
+
+    console.log(
+      `Notification scheduled for: ${scheduledTimeIST.format()} IST`
+    );
 };
 
 // Create a new notification

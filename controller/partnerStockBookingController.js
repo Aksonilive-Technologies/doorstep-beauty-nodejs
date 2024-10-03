@@ -8,7 +8,6 @@ exports.createStockBooking = async (req, res) => {
     partnerId,
     stockItemId,
     deliveryAddress,
-    quantity,
     status,
     paymentMode,
   } = req.body;
@@ -44,7 +43,7 @@ exports.createStockBooking = async (req, res) => {
       partner: partnerId,
       stockItem: stockItemId,
       deliveryAddress: finalDeliveryAddress, // Either the new address or the partner's address
-      quantity: quantity || 1, // Default to 1 if not provided
+      quantity: 1,
       status: status || "pending", // Default to "pending" if not provided
       paymentMode, // Optional field
     });
@@ -53,7 +52,7 @@ exports.createStockBooking = async (req, res) => {
     const savedBooking = await newStockBooking.save();
 
     // Now handle payment initiation based on paymentMode
-    const finalPrice = stockItem.price * (quantity || 1); // Assuming stockItem has a price field
+    const finalPrice = stockItem.price * (1); // Assuming stockItem has a price field
 
     const transactionData = {
       partnerId: partnerId,
@@ -96,6 +95,9 @@ exports.createStockBooking = async (req, res) => {
           );
         }
       }
+
+      stockItem.currentStock -= 1;
+      await stockItem.save();
 
       return res.status(200).json({
         success: true,
@@ -238,6 +240,23 @@ exports.cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
+
+    const productIds = booking.product.map(item => item.product);
+
+    // Find all related stock items in one query
+    const stockItems = await Stock.find({ _id: { $in: productIds } });
+
+    // Map the stock items to their corresponding product and update stock in one pass
+    const stockUpdates = stockItems.map(stockItem => {
+      const bookedProduct = booking.product.find(item => item.product.equals(stockItem._id));
+      if (bookedProduct) {
+        stockItem.currentStock += bookedProduct.quantity;
+        return stockItem.save();  // Return a promise to be resolved
+      }
+    });
+
+    // Update all stock items concurrently
+    await Promise.all(stockUpdates);
 
     booking.status = "cancelled";
     booking.statusUpdatedAt = new Date();

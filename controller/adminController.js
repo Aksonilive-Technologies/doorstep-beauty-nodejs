@@ -2,6 +2,7 @@ const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel.js");
 const mongoose = require("mongoose");
+const XLSX = require("xlsx");
 
 exports.register = async (req, res) => {
   const { name, username, password, email, role } = req.body;
@@ -373,6 +374,76 @@ exports.updateAdminRole = async (req, res) => {
       success: false,
       message: "Internal Server Error",
       errorMessage: error.message,
+    });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  const { superadminId } = req.query;
+
+  // Validate the presence of superadminId
+  if (!superadminId) {
+    return res.status(400).json({
+      success: false,
+      message: "Superadmin ID is required",
+    });
+  }
+
+  try {
+    // Step 1: Verify if the logged-in user is a SuperAdmin or has role 'all'
+    const loggedInUser = await Admin.findById(superadminId);
+
+    // Check if the user exists and has the appropriate role
+    if (!loggedInUser || loggedInUser.role !== "all") {
+      return res.status(loggedInUser ? 401 : 404).json({
+        success: false,
+        message: loggedInUser
+          ? "You are not authorized to download this file"
+          : "Superadmin not found",
+      });
+    }
+
+    // Step 2: Fetch the admin data from MongoDB
+    const admins = await Admin.find({ isDeleted: false });
+
+    // Step 3: Prepare the data for Excel
+    const data = admins.map((admin) => ({
+      Name: admin.name,
+      Username: admin.username,
+      Email: admin.email,
+      Role: admin.role,
+      IsActive: admin.isActive ? "Active" : "Inactive",
+      CreatedAt: admin.createdAt.toISOString(),
+      UpdatedAt: admin.updatedAt.toISOString(),
+    }));
+
+    // Step 4: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Admins");
+
+    // Step 5: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
+    });
+
+    // Step 6: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=admins.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    // Step 7: Send the buffer as the response
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error("Error generating Excel file:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error generating Excel file",
     });
   }
 };

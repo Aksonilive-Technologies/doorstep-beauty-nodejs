@@ -1,6 +1,7 @@
 const { cloudinary } = require("../config/cloudinary.js");
 const Partner = require("../models/partnerModel.js");
 const ServiceablePincode = require("../models/servicablePincodeModel.js");
+const XLSX = require("xlsx");
 
 //register the partner
 const validationRules = {
@@ -51,10 +52,15 @@ exports.register = async (req, res) => {
     return res.status(400).json({ success: false, message: validationError });
   }
   if (typeof pincode !== "string") {
-    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+    return res.status(400).json({
+      success: false,
+      message: "Data type error: pincode must be a string.",
+    });
   }
-  if(pincode.includes(" ")){
-    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
+  if (pincode.includes(" ")) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Pincode must not contain spaces." });
   }
 
   try {
@@ -92,7 +98,6 @@ exports.register = async (req, res) => {
     const pincodes = pincode.split(",").map((pin) => pin.trim());
 
     for (const pin of pincodes) {
-
       //create a new pincode document
       const serviceablePincode = new ServiceablePincode({
         pincode: pin,
@@ -128,13 +133,15 @@ exports.getPartners = async (req, res) => {
 
     const totalPartners = await Partner.countDocuments();
 
-    for(let i = 0; i < partners.length; i++) {
+    for (let i = 0; i < partners.length; i++) {
       const partner = partners[i];
       const serviceablePincodes = await ServiceablePincode.find({
         partner: partner._id,
       }).select("pincode -_id");
       // Generate a comma-separated string of pincodes
-  partner.pincode = serviceablePincodes.map(pincode => pincode.pincode).join(",");
+      partner.pincode = serviceablePincodes
+        .map((pincode) => pincode.pincode)
+        .join(",");
     }
 
     res.status(200).json({
@@ -172,10 +179,15 @@ exports.updatePartner = async (req, res) => {
     });
   }
   if (typeof pincode !== "string") {
-    return res.status(400).json({ success: false, message: "Data type error: pincode must be a string." });
+    return res.status(400).json({
+      success: false,
+      message: "Data type error: pincode must be a string.",
+    });
   }
-  if(pincode.includes(" ")){
-    return res.status(400).json({ success: false, message: "Pincode must not contain spaces." });
+  if (pincode.includes(" ")) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Pincode must not contain spaces." });
   }
 
   try {
@@ -206,51 +218,58 @@ exports.updatePartner = async (req, res) => {
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (address) updateData.address = address;
-    if(Object.keys(updateData).length > 0){
-    const partnerUpdated = await Partner.findByIdAndUpdate(id, updateData, {
-      new: true,
-    });
-
-    if (!partnerUpdated) {
-      return res.status(500).json({
-        success: false,
-        message: "Error updating partner details",
+    if (Object.keys(updateData).length > 0) {
+      const partnerUpdated = await Partner.findByIdAndUpdate(id, updateData, {
+        new: true,
       });
-    }}
-    
+
+      if (!partnerUpdated) {
+        return res.status(500).json({
+          success: false,
+          message: "Error updating partner details",
+        });
+      }
+    }
+
     if (pincode) {
       try {
-        const pincodes = pincode.split(",").map(pin => parseInt(pin.trim(), 10));
-        const existingPincodes = await ServiceablePincode.find({ partner: id }).select('pincode _id');
-        const existingPincodesArray = existingPincodes.map(p => ({
+        const pincodes = pincode
+          .split(",")
+          .map((pin) => parseInt(pin.trim(), 10));
+        const existingPincodes = await ServiceablePincode.find({
+          partner: id,
+        }).select("pincode _id");
+        const existingPincodesArray = existingPincodes.map((p) => ({
           pincode: p.pincode,
-          id: p._id
+          id: p._id,
         }));
 
         // Determine which pincodes need to be added
-        const pincodesToAdd = pincodes.filter(pin => 
-          !existingPincodesArray.some(existing => existing.pincode === pin)
+        const pincodesToAdd = pincodes.filter(
+          (pin) =>
+            !existingPincodesArray.some((existing) => existing.pincode === pin)
         );
-        
+
         // Determine which pincodes need to be removed
         const pincodesToRemove = existingPincodesArray
-          .filter(existing => !pincodes.includes(existing.pincode))
-          .map(existing => existing.id);
+          .filter((existing) => !pincodes.includes(existing.pincode))
+          .map((existing) => existing.id);
 
         // Remove old pincodes
         if (pincodesToRemove.length > 0) {
-          await ServiceablePincode.deleteMany({ _id: { $in: pincodesToRemove } });
+          await ServiceablePincode.deleteMany({
+            _id: { $in: pincodesToRemove },
+          });
         }
 
         // Add new pincodes
         if (pincodesToAdd.length > 0) {
-          const newPincodes = pincodesToAdd.map(pin => ({
+          const newPincodes = pincodesToAdd.map((pin) => ({
             pincode: pin,
             partner: id,
           }));
           await ServiceablePincode.insertMany(newPincodes);
         }
-        
       } catch (error) {
         return res.status(500).json({
           success: false,
@@ -259,7 +278,6 @@ exports.updatePartner = async (req, res) => {
         });
       }
     }
-    
 
     res.status(200).json({
       success: true,
@@ -376,5 +394,52 @@ exports.changeStatus = async (req, res) => {
       success: false,
       message: "Failed to update the status",
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch data from MongoDB
+    const partners = await Partner.find({ isDeleted: false });
+
+    // Step 2: Prepare the data for Excel
+    const data = partners.map((partner) => ({
+      Name: partner.name,
+      Email: partner.email,
+      Phone: partner.phone,
+      Address: partner.address,
+      Rating: partner.rating,
+      WalletBalance: partner.walletBalance,
+      Active: partner.isActive ? "Active" : "Inactive",
+      CreatedAt: partner.createdAt.toISOString(),
+      UpdatedAt: partner.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Partners");
+
+    // Step 4: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
+    });
+
+    // Step 5: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=partners.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    // Step 6: Send the buffer as the response
+    res.send(excelBuffer);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error generating Excel file", error: error.message });
   }
 };

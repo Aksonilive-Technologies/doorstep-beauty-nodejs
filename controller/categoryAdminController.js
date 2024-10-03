@@ -2,6 +2,7 @@ const Category = require("../models/categoriesModel");
 const { cloudinary } = require("../config/cloudinary.js");
 const Product = require("../models/productModel.js");
 const Package = require("../models/packageModel.js");
+const XLSX = require("xlsx");
 
 // Create a new category
 exports.createCategory = async (req, res) => {
@@ -223,5 +224,49 @@ exports.changeStatus = async (req, res) => {
       message: "Error updating category status",
       errorMessage: error.message,
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch data from MongoDB
+    const categories = await Category.find({});
+
+    // Step 2: Prepare the data for Excel
+    const data = categories.map((category) => ({
+      Name: category.name,
+      Image: category.image,
+      Type: category.type,
+      Position: category.position,
+      IsActive: category.isActive ? "Active" : "Inactive",
+      IsDeleted: category.isDeleted ? "Deleted" : "Not Deleted",
+      CreatedAt: category.createdAt.toISOString(),
+      UpdatedAt: category.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Categories");
+
+    // Step 4: Generate the Excel file as a buffer (in-memory)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "buffer",
+    });
+
+    // Step 5: Set the appropriate headers for file download
+    res.setHeader("Content-Disposition", "attachment; filename=categories.xlsx");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    // Step 6: Send the buffer as the response
+    res.send(excelBuffer);
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };

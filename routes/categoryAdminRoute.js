@@ -16,4 +16,6 @@ router.delete("/delete/single", categoryAdminController.deleteCategory);
 
 router.get("/change-status", categoryAdminController.changeStatus);
 
+router.get("/download-excel", categoryAdminController.downloadExcelSheet)
+
 module.exports = router;

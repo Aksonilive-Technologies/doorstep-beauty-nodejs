@@ -5,9 +5,8 @@ const {
   fetchAllStocks,
   deleteStock,
   changeStatus,
-  assignStock,
-  fetchAssignedStocks,
   updateStock,
+  downloadExcelSheet,
 } = require("../controller/stockController");
 const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 // Route for creating stock
@@ -16,7 +15,6 @@ router.get("/all", fetchAllStocks);
 router.put("/update", uploadSingleImage, updateStock);
 router.delete("/delete", deleteStock);
 router.put("/change-status", changeStatus);
-router.post("/assign", assignStock);
-router.get("/assigned", fetchAssignedStocks);
+router.get("/download-excel", downloadExcelSheet);
 
 module.exports = router;
