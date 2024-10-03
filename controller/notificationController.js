@@ -83,8 +83,8 @@ const scheduleNotification = (notification) => {
 
   if (timeDiff > 0) {
     // Schedule the notification
-    const cronExpression = `${scheduledTime.getUTCMinutes()} ${scheduledTime.getUTCHours()} ${scheduledTime.getUTCDate()} ${
-      scheduledTime.getUTCMonth() + 1
+    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
+      scheduledTime.getMonth() + 1
     } *`;
 
     nodeCron.schedule(cronExpression, async () => {
