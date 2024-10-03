@@ -1,6 +1,7 @@
 const { cloudinary } = require("../config/cloudinary.js");
 const Partner = require("../models/partnerModel.js");
 const ServiceablePincode = require("../models/servicablePincodeModel.js");
+const XLSX = require("xlsx");
 
 //register the partner
 const validationRules = {
@@ -51,12 +52,10 @@ exports.register = async (req, res) => {
     return res.status(400).json({ success: false, message: validationError });
   }
   if (typeof pincode !== "string") {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Data type error: pincode must be a string.",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Data type error: pincode must be a string.",
+    });
   }
   if (pincode.includes(" ")) {
     return res
@@ -180,12 +179,10 @@ exports.updatePartner = async (req, res) => {
     });
   }
   if (typeof pincode !== "string") {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Data type error: pincode must be a string.",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Data type error: pincode must be a string.",
+    });
   }
   if (pincode.includes(" ")) {
     return res
@@ -441,6 +438,8 @@ exports.downloadExcelSheet = async (req, res) => {
     // Step 6: Send the buffer as the response
     res.send(excelBuffer);
   } catch (error) {
-    res.status(500).json({ message: "Error generating Excel file", error });
+    res
+      .status(500)
+      .json({ message: "Error generating Excel file", error: error.message });
   }
 };

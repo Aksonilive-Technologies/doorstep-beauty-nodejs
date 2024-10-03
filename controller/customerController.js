@@ -8,8 +8,6 @@ const Plan = require("../models/customerMembershipPlan.js");
 const Membership = require("../models/membershipModel.js");
 const CustomerAddress = require("../models/customerAddressModel");
 const XLSX = require("xlsx");
-const fs = require("fs");
-const path = require("path");
 
 //Create Register
 const validateUserInput = (name, email, mobile) => {

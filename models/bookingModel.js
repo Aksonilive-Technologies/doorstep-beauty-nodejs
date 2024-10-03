@@ -31,7 +31,7 @@ const BookingSchema = new mongoose.Schema(
       {
         productTool: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "ProductTool",
+          ref: "Stock",
         }
       },
     ],

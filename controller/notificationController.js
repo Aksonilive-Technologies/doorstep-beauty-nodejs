@@ -5,6 +5,7 @@ const Partner = require("../models/partnerModel.js");
 const Customer = require("../models/customerModel.js");
 const FirebaseToken = require("../models/firebaseTokenModel.js");
 const nodeCron = require("node-cron");
+const moment = require("moment-timezone");
 const { sendPartnerNotification } = require("../helper/partnerFcmService.js");
 const { sendCustomerNotification } = require("../helper/customerFcmService.js");
 
@@ -36,34 +37,37 @@ const sendNotification = async (notification) => {
   }
 };
 
+// Helper function to convert 12-hour time to 24-hour format if necessary
 const convertTimeTo24HourFormat = (time12h) => {
-  // Split the time string into components
-  const [time, modifier] = time12h.split(" ");
+  const [time, modifier] = time12h.split(' ');
 
-  let [hours, minutes] = time.split(":");
+  let [hours, minutes] = time.split(':');
 
-  // Convert the hours based on AM/PM
-  if (modifier === "PM" && hours !== "12") {
+  if (hours === '12') {
+    hours = '00';
+  }
+
+  if (modifier === 'PM') {
     hours = parseInt(hours, 10) + 12;
   }
-  if (modifier === "AM" && hours === "12") {
-    hours = "00";
-  }
 
-  return `${hours}:${minutes}`; // Return the time in HH:mm format
+  return `${hours}:${minutes}`;
 };
 
-// Schedule a notification using cron
 const scheduleNotification = (notification) => {
   let { notificationDate, notificationTime } = notification;
 
   // Convert notificationTime from 12-hour to 24-hour format
   notificationTime = convertTimeTo24HourFormat(notificationTime);
 
-  // Ensure notificationDate and notificationTime are valid before proceeding
-  // const localTime = new Date(`${notificationDate}T${notificationTime}:00`);
-  const scheduledTime = new Date(`${notificationDate}T${notificationTime}:00`);
+  // Convert the provided notificationDate and notificationTime from IST to UTC
+  const scheduledTime = moment.tz(
+    `${notificationDate} ${notificationTime}`,
+    "YYYY-MM-DD HH:mm",
+    "Asia/Kolkata"  // Input is in IST
+  ).utc().toDate();  // Convert to UTC
 
+  // Validate the scheduled time
   if (isNaN(scheduledTime.getTime())) {
     console.error("Invalid scheduled time due to date or time format.");
     return;
@@ -72,12 +76,12 @@ const scheduleNotification = (notification) => {
   const currentTime = new Date();
   const timeDiff = scheduledTime - currentTime;
 
-  console.log(`scheduledTime: ${scheduledTime}, timeDiff: ${timeDiff}`);
+  console.log(`Scheduled Time (UTC): ${scheduledTime}, Time Diff: ${timeDiff}`);
 
   if (timeDiff > 0) {
     // Schedule the notification
-    const cronExpression = `${scheduledTime.getMinutes()} ${scheduledTime.getHours()} ${scheduledTime.getDate()} ${
-      scheduledTime.getMonth() + 1
+    const cronExpression = `${scheduledTime.getUTCMinutes()} ${scheduledTime.getUTCHours()} ${scheduledTime.getUTCDate()} ${
+      scheduledTime.getUTCMonth() + 1
     } *`;
 
     nodeCron.schedule(cronExpression, async () => {
@@ -161,6 +165,7 @@ exports.createNotification = async (req, res) => {
     });
   }
 };
+
 
 exports.getNotifications = async (req, res) => {
   try {

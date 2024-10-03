@@ -15,8 +15,6 @@ const {
 const { processPartnerRefund } = require("../helper/processPartnerRefund");
 const { processCustomerRefund } = require("../helper/processCustomerRefund");
 const XLSX = require('xlsx');
-const fs = require('fs');
-const path = require('path');
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -154,6 +152,17 @@ exports.fetchBookings = async (req, res) => {
       .populate("product.product")
       .populate("partner.partner")
       .lean();
+
+    // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
+  for (let booking of bookings) {
+    if (
+      (booking.serviceStatus === "ongoing" || booking.serviceStatus === "completed") &&
+      booking.productTool && 
+      booking.productTool.length > 0
+    ) {
+      await Booking.populate(booking, { path: 'productTool.productTool', model: 'Stock' });
+    }
+  }
 
     if (bookings.length === 0) {
       return res.status(404).json({
