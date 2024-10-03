@@ -83,7 +83,6 @@ const scheduleNotification = (notification) => {
     `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
   );
 
-  if (timeDiff > 0) {
     // Schedule the notification in IST timezone using cron
     const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
       scheduledTimeIST.month() + 1
@@ -105,12 +104,6 @@ const scheduleNotification = (notification) => {
     console.log(
       `Notification scheduled for: ${scheduledTimeIST.format()} IST`
     );
-  } else {
-    console.log(
-      "Scheduled time is in the past, sending notification immediately."
-    );
-    sendNotification(notification); // Send immediately if the time has passed
-  }
 };
 
 // Create a new notification
