@@ -39,15 +39,15 @@ const sendNotification = async (notification) => {
 
 // Helper function to convert 12-hour time to 24-hour format if necessary
 const convertTimeTo24HourFormat = (time12h) => {
-  const [time, modifier] = time12h.split(' ');
+  const [time, modifier] = time12h.split(" ");
 
-  let [hours, minutes] = time.split(':');
+  let [hours, minutes] = time.split(":");
 
-  if (hours === '12') {
-    hours = '00';
+  if (hours === "12") {
+    hours = "00";
   }
 
-  if (modifier === 'PM') {
+  if (modifier === "PM") {
     hours = parseInt(hours, 10) + 12;
   }
 
@@ -61,11 +61,14 @@ const scheduleNotification = (notification) => {
   notificationTime = convertTimeTo24HourFormat(notificationTime);
 
   // Convert the provided notificationDate and notificationTime from IST to UTC
-  const scheduledTime = moment.tz(
-    `${notificationDate} ${notificationTime}`,
-    "YYYY-MM-DD HH:mm",
-    "Asia/Kolkata"  // Input is in IST
-  ).utc().toDate();  // Convert to UTC
+  const scheduledTime = moment
+    .tz(
+      `${notificationDate} ${notificationTime}`,
+      "YYYY-MM-DD HH:mm",
+      "Asia/Kolkata" // Input is in IST
+    )
+    .utc()
+    .toDate(); // Convert to UTC
 
   // Validate the scheduled time
   if (isNaN(scheduledTime.getTime())) {
@@ -74,7 +77,7 @@ const scheduleNotification = (notification) => {
   }
 
   const currentTime = new Date();
-  const timeDiff = scheduledTime - currentTime;
+  const timeDiff = (scheduledTime - currentTime) / (1000 * 60); // Convert milliseconds to minutes
 
   console.log(`Scheduled Time (UTC): ${scheduledTime}, Time Diff: ${timeDiff}`);
 
@@ -165,7 +168,6 @@ exports.createNotification = async (req, res) => {
     });
   }
 };
-
 
 exports.getNotifications = async (req, res) => {
   try {
