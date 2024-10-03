@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../controller/productAdminController.js");
-const { uploadMultipleImages, uploadSingleImage } = require("../middleware/uploadMiddleware");
- // Update the path accordingly
+const {
+  uploadMultipleImages,
+  uploadSingleImage,
+} = require("../middleware/uploadMiddleware");
+// Update the path accordingly
 
 // Route to create a new product with image upload
 // router.post("/create", upload.single("file"), Product.createProduct);
@@ -14,6 +17,7 @@ router.put("/update", uploadMultipleImages, Product.updateProduct);
 router.delete("/delete", Product.deleteProduct);
 router.get("/fetch/all", Product.getAllProducts);
 router.put("/change-status", Product.changeStatusById);
+router.get("/download-excel", Product.downloadExcelSheet);
 // router.get("/fetch/new-products", Product.getAllNewProducts);
 
 module.exports = router;

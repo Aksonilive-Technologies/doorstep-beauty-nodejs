@@ -2,6 +2,9 @@ const Category = require("../models/categoriesModel");
 const { cloudinary } = require("../config/cloudinary.js");
 const Product = require("../models/productModel.js");
 const Package = require("../models/packageModel.js");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const path = require("path");
 
 // Create a new category
 exports.createCategory = async (req, res) => {
@@ -223,5 +226,52 @@ exports.changeStatus = async (req, res) => {
       message: "Error updating category status",
       errorMessage: error.message,
     });
+  }
+};
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch data from MongoDB
+    const categories = await Category.find({});
+    console.log(categories);
+
+    // Step 2: Prepare the data for Excel
+    const data = categories.map((category) => ({
+      Name: category.name,
+      Image: category.image,
+      Type: category.type,
+      Position: category.position,
+      IsActive: category.isActive ? "Active" : "Inactive",
+      IsDeleted: category.isDeleted ? "Deleted" : "Not Deleted",
+      CreatedAt: category.createdAt.toISOString(),
+      UpdatedAt: category.updatedAt.toISOString(),
+    }));
+
+    console.log("data: ", data);
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    console.log("workbook:", workbook);
+    console.log("worksheet:", worksheet);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Categories");
+
+    // Step 4: Write the Excel file to the server (or you can directly send it)
+    const filePath = path.join(__dirname, "categories.xlsx");
+    XLSX.writeFile(workbook, filePath);
+
+    // Step 5: Send the Excel file as a response
+    res.download(filePath, "categories.xlsx", (err) => {
+      if (err) {
+        console.error("Error while sending the file", err);
+      }
+      // Optionally delete the file after sending
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error generating Excel file", error });
   }
 };

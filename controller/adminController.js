@@ -376,3 +376,47 @@ exports.updateAdminRole = async (req, res) => {
     });
   }
 };
+
+exports.downloadExcelSheet = async (req, res) => {
+  try {
+    // Step 1: Fetch the admin data from MongoDB
+    const admins = await Admin.find({ isDeleted: false });
+
+    // Step 2: Prepare the data for Excel
+    const data = admins.map((admin) => ({
+      Name: admin.name,
+      Username: admin.username,
+      Email: admin.email,
+      Role: admin.role,
+      IsActive: admin.isActive ? "Active" : "Inactive",
+      CreatedAt: admin.createdAt.toISOString(),
+      UpdatedAt: admin.updatedAt.toISOString(),
+    }));
+
+    // Step 3: Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    // Append the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Admins");
+
+    // Step 4: Define a path to save the Excel file temporarily
+    const filePath = path.join(__dirname, "admins.xlsx");
+
+    // Write the workbook to the file system
+    XLSX.writeFile(workbook, filePath);
+
+    // Step 5: Send the Excel file as a response
+    res.download(filePath, "admins.xlsx", (err) => {
+      if (err) {
+        console.error("Error while sending the file", err);
+        res.status(500).json({ message: "Error downloading Excel file" });
+      }
+      // Optionally delete the file after sending
+      fs.unlinkSync(filePath); // Deletes the file from the server after download
+    });
+  } catch (error) {
+    console.error("Error generating Excel file", error);
+    res.status(500).json({ message: "Error generating Excel file", error });
+  }
+};

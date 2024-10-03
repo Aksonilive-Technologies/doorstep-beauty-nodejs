@@ -9,6 +9,7 @@ const {
   updateAdminPassword,
   updateAdminRole,
   changeStatus,
+  downloadExcelSheet,
 } = require("../controller/adminController");
 const verifyToken = require("../middleware/verifyToken");
 
@@ -20,5 +21,6 @@ router.put("/toggle/status", verifyToken, changeStatus);
 router.put("/delete", verifyToken, deleteAdmin);
 router.post("/update/password", updateAdminPassword);
 router.post("/update/role", verifyToken, updateAdminRole);
+router.get("/download-excel", verifyToken, downloadExcelSheet);
 
 module.exports = router;
