@@ -353,3 +353,58 @@ exports.downloadExcelSheet = async (req, res) => {
     res.status(500).json({ message: "Error generating Excel file", error });
   }
 };
+
+exports.searchStock = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define search conditions using case-insensitive regex to match multiple fields
+    const searchCondition = query
+      ? {
+          $or: [
+            { name: { $regex: query, $options: "i" } }, // Case-insensitive search
+            { brand: { $regex: query, $options: "i" } },
+            { size: { $regex: query, $options: "i" } },
+          ],
+        }
+      : {};
+
+    // Find the stocks matching the search condition, including both deleted and non-deleted stocks
+    const stocks = await Stock.find(searchCondition)
+      .limit(limit) // Convert string to number
+      .skip(skip)
+      .lean();
+
+    // Check if no stocks are found
+    if (stocks.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No data found",
+      });
+    }
+
+    const totalStocks = await Stock.countDocuments(searchCondition);
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Stock retrieved successfully",
+      data: stocks,
+      totalStocks,
+      totalPages: Math.ceil(totalStocks / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching stocks:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while searching stocks",
+      errorMessage: error.message,
+    });
+  }
+};

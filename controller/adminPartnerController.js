@@ -443,3 +443,71 @@ exports.downloadExcelSheet = async (req, res) => {
       .json({ message: "Error generating Excel file", error: error.message });
   }
 };
+
+exports.searchPartners = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define search conditions using case-insensitive regex to match multiple fields
+    const searchCondition = query
+      ? {
+          $or: [
+            { name: { $regex: query, $options: "i" } }, // Case-insensitive search
+            { email: { $regex: query, $options: "i" } },
+            { phone: { $regex: query, $options: "i" } },
+            { address: { $regex: query, $options: "i" } },
+          ],
+        }
+      : {};
+
+    // Find the partners matching the search condition, including both deleted and non-deleted partners
+    const partners = await Partner.find(searchCondition)
+      .limit(limit) // Convert string to number
+      .skip(skip)
+      .lean();
+
+    // Check if no partners are found
+    if (partners.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No data found",
+      });
+    }
+
+    const totalPartners = await Partner.countDocuments(searchCondition);
+
+    // Fetch pincodes for each partner
+    for (let i = 0; i < partners.length; i++) {
+      const partner = partners[i];
+      const serviceablePincodes = await ServiceablePincode.find({
+        partner: partner._id,
+      }).select("pincode -_id");
+      // Generate a comma-separated string of pincodes
+      partner.pincode = serviceablePincodes
+        .map((pincode) => pincode.pincode)
+        .join(",");
+    }
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Partners retrieved successfully",
+      data: partners,
+      totalPartners,
+      totalPages: Math.ceil(totalPartners / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching partners:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while searching partners",
+      errorMessage: error.message,
+    });
+  }
+};
