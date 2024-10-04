@@ -35,6 +35,7 @@ const bookingAdminRoute = require("./bookingAdminRoute.js");
 const productRoute = require("./productRoute");
 const partnerRoute = require("./partnerRoute");
 const adminPartnerRoute = require("./adminPartnerRoute");
+const adminCustomerRoute = require("./adminCustomerRoute");
 const slotCustomerRoute = require("./slotCustomerRoute");
 const slotRoute = require("./slotRoutes");
 const appVersionRoute = require("./appVersionRoute");
@@ -90,6 +91,7 @@ app.use("/api/v1/partner/cart", partnerCartRoute);
 
 //**************Admin Route API**************************** */
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/admin/customer", adminCustomerRoute);
 app.use("/api/v1/admin/partner", adminPartnerRoute);
 app.use("/api/v1/admin/banner", bannerRoute);
 app.use("/api/v1/admin/category", categoryAdminRoute);
