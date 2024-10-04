@@ -13,5 +13,5 @@ router.post("/rate-booking", Order.rateBooking);
 router.post("/update-transaction", Order.updateTransaction);
 router.post("/create-transaction", Order.initiatePayment);
 router.get("/most-booked", Order.getMostBookedProducts);
-router.get("/download-excel", Order.downloadExcelSheet);
+
 module.exports = router;
