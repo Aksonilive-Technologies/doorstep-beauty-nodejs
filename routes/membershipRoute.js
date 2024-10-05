@@ -6,6 +6,7 @@ const {
   changeMembershipStatus,
   fetchAllMemberships,
   deleteMembership,
+  searchMembership,
 } = require("../controller/membershipController.js");
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.put("/update", updateMembership);
 router.get("/fetch/all", fetchAllMemberships);
 router.put("/change-status", changeMembershipStatus);
 router.put("/delete", deleteMembership);
+router.get("/search-membership", searchMembership);
 
 module.exports = router;
