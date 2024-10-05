@@ -200,13 +200,12 @@ exports.changeSlotStatus = async (req, res) => {
   }
 };
 
-
 exports.getSlotsCustomer = async (req, res) => {
   try {
     // Retrieve all slots
     const slots = await Slot.find({
-      isActive:true,
-      isDeleted:false,
+      isActive: true,
+      isDeleted: false,
     });
 
     // Successful response
@@ -222,6 +221,60 @@ exports.getSlotsCustomer = async (req, res) => {
       message: "An error occurred while retrieving slots",
       data: null,
       error: err.message,
+    });
+  }
+};
+
+exports.searchSlots = async (req, res) => {
+  const { query, page = 1, limit = 10 } = req.query;
+
+  try {
+    // Define search conditions dynamically based on the query
+    let searchCondition = {};
+
+    if (query) {
+      searchCondition = {
+        $or: [
+          { startTime: { $regex: query, $options: "i" } }, // Case-insensitive search on startTime
+          { clockCycle: { $regex: query, $options: "i" } }, // Case-insensitive search on clockCycle (AM/PM)
+        ],
+      };
+    }
+
+    // Find the slots matching the search condition
+    const slots = await Slot.find(searchCondition)
+      .sort({ createdAt: -1 }) // Sort by the latest slots created
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Get the total count of slots matching the search condition
+    const totalSlots = await Slot.countDocuments(searchCondition);
+
+    if (slots.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No slots found matching the search criteria",
+      });
+    }
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Slots retrieved successfully",
+      data: slots,
+      totalSlots,
+      currentPage: page,
+      totalPages: Math.ceil(totalSlots / limit),
+    });
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error searching slots:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while searching slots",
+      error: error.message,
     });
   }
 };
