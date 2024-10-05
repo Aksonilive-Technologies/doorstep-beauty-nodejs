@@ -107,3 +107,59 @@ exports.downloadExcelSheet = async (req, res) => {
     res.status(500).json({ message: "Error generating Excel file", error });
   }
 };
+
+exports.searchBookings = async (req, res) => {
+  try {
+    const { query, page = 1, limit = 10 } = req.query;
+
+    // Pagination logic
+    const skip = (page - 1) * limit;
+
+    // Build search conditions
+    let searchCondition = {};
+
+    if (query) {
+      // Search condition for customer details (name, email, number)
+      searchCondition.$or = [
+        { discountType: new RegExp(query, "i") }, // Search for discountType
+        { "customer.name": new RegExp(query, "i") }, // Search for customer name
+        { "customer.email": new RegExp(query, "i") }, // Search for customer email
+        { "customer.number": new RegExp(query, "i") }, // Search for customer phone number
+      ];
+    }
+
+    // Fetch bookings with pagination and populated customer details
+    const bookings = await Booking.find(searchCondition)
+      .populate("customer") // Populates the customer details using customerId
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No booking found matching the search criteria",
+      });
+    }
+
+    // Get total count of matching bookings
+    const totalBookings = await Booking.countDocuments(searchCondition);
+
+    res.status(200).json({
+      success: true,
+      message: "Bookings retrieved successfully",
+      data: bookings,
+      pagination: {
+        totalBookings,
+        currentPage: page,
+        totalPages: Math.ceil(totalBookings / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching bookings",
+      error: error.message,
+    });
+  }
+};
