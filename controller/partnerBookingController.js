@@ -171,15 +171,20 @@ try {
     });
   }
 
-const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {                               // Use $elemMatch to find the partner by ID
+const bookings = await Booking.find({ 
+  // serviceStatus: {$ne:"pending"}, 
+  partner: {                               // Use $elemMatch to find the partner by ID
   $elemMatch: {
     partner: id
   }
-}, isDeleted: false, isActive: true })
+}, 
+isDeleted: false, isActive: true })
   .populate("product.product")
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
+
+  console.log("Bookings:", bookings);
 
   // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
   for (let booking of bookings) {
@@ -232,7 +237,10 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
 
   const groupedBookings = bookings.reduce((acc, booking) => {
     // Get the current service status
-    const status = booking.serviceStatus;
+    let status = booking.serviceStatus;
+    if(booking.status === "processing"){
+      status = "processing";
+    }
   
     // If the group doesn't exist yet, initialize it as an array
     if (!acc[status]) {
