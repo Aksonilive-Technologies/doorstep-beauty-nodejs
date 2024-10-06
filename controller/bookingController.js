@@ -172,35 +172,38 @@ exports.fetchBookings = async (req, res) => {
     }
 
     bookings.forEach((booking) => {
+      console.log("booking", booking.product);
       booking.product.forEach((productItem) => {
         // Check if there is an option selected for this product
+        // console.log("productItem", productItem);
         if (productItem.option && productItem.product.options) {
-          const selectedOption = productItem.product.options.find((opt) =>
+          let selectedOption = productItem.product.options.find((opt) =>
             opt._id.equals(productItem.option)
           );
 
           if (selectedOption) {
-            // Store the original product name in a temporary variable
-            const originalProductName = productItem.product.name;
+            let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
 
-            // Update product image with option's image
-            productItem.product.image = selectedOption.image;
+        // Update product image with option's image
+        clonedProduct.image = selectedOption.image;
 
-            // Update product name by concatenating the option name with the original product name
-            productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+        // Update product name by concatenating the option name with the original product name
+        clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
 
-            // Update product price with option price
-            productItem.product.price = selectedOption.price;
+        // Update product price with option price
+        clonedProduct.price = selectedOption.price;
 
-            // Update product details with option's details
-            productItem.product.details = selectedOption.details;
-          }
-          delete productItem.product.options;
-          delete productItem.option;
+        // Update product details with option's details
+        clonedProduct.details = selectedOption.details;
+
+        // Assign the cloned product back to the productItem
+        productItem.product = clonedProduct;
+          
         }
 
-        // Remove the options field from the product to clean up the response
-      });
+        }}
+    );
+    console.log("booking", booking.product);
     });
 
     // Current date for comparison
@@ -839,62 +842,4 @@ exports.getMostBookedProducts = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
-  try {
-    // Step 1: Fetch the booking data from MongoDB
-    const bookings = await Booking.find({ isDeleted: false })
-      .populate("customer", "name email")
-      .populate("partner.partner", "name")
-      .populate("product.product", "name price") // populate product details
-      .populate("transaction");
 
-    // Step 2: Prepare the data for Excel
-    const data = bookings.map((booking) => ({
-      CustomerName: booking.customer?.name || "N/A",
-      CustomerEmail: booking.customer?.email || "N/A",
-      PartnerName: booking.partner[0]?.partner?.name || "N/A",
-      ProductDetails: booking.product
-        .map(
-          (p) =>
-            `${p.product?.name} (Quantity: ${p.quantity}, Price: ${p.price})`
-        )
-        .join(", "),
-      TotalPrice: booking.totalPrice,
-      Discount: booking.discount,
-      FinalPrice: booking.finalPrice,
-      PaymentStatus: booking.paymentStatus,
-      BookingStatus: booking.status,
-      ScheduledFor: `${booking.scheduleFor?.date || "N/A"} ${
-        booking.scheduleFor?.time || ""
-      } ${booking.scheduleFor?.format || ""}`,
-      ServiceStatus: booking.serviceStatus,
-      CreatedAt: booking.createdAt.toISOString(),
-      UpdatedAt: booking.updatedAt.toISOString(),
-    }));
-
-    // Step 3: Create a new workbook and worksheet
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data);
-
-    // Append the worksheet to the workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings");
-
-    // Step 4: Generate the Excel file as a buffer (in-memory)
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "buffer",
-    });
-
-    // Step 5: Set the appropriate headers for file download
-    res.setHeader("Content-Disposition", "attachment; filename=bookings.xlsx");
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-
-    // Step 6: Send the buffer as the response
-    res.send(excelBuffer);
-  } catch (error) {
-    res.status(500).json({ message: "Error generating Excel file", error });
-  }
-};

@@ -7,19 +7,14 @@ const createOffer = async (req, res) => {
       offerName,
       offerDescription,
       applicableOn,
-      offerValidOn ,
+      offerValidOn,
       offerType,
       offerValue,
       offerValidity,
     } = req.body;
 
     // Validate required fields
-    if (
-      !offerValue ||
-      !offerType ||
-      !offerValidOn  ||
-      !applicableOn
-    ) {
+    if (!offerValue || !offerType || !offerValidOn || !applicableOn) {
       return res.status(400).send({
         success: false,
         message:
@@ -31,7 +26,7 @@ const createOffer = async (req, res) => {
       offerName,
       offerDescription,
       applicableOn,
-      offerValidOn ,
+      offerValidOn,
       offerType,
       offerValue,
       offerValidity,
@@ -63,17 +58,15 @@ const getOffers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch the offers with pagination
-    const offers = await Offer.find()
-      .skip(skip)
-      .limit(limit);
+    const offers = await Offer.find().skip(skip).limit(limit);
 
     // Get the total number of offers to calculate total pages
     const totalOffers = await Offer.countDocuments();
 
     res.status(200).send({
       success: true,
-      message:"offer retrieved successfully",
-      data:offers,
+      message: "offer retrieved successfully",
+      data: offers,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalOffers / limit),
@@ -141,7 +134,7 @@ const changeOfferStatus = async (req, res) => {
     res.status(200).send({
       success: true,
       message: `Offer is ${offer.isActive ? "Activated" : "Deactivated"} now`,
-      data:offer,
+      data: offer,
     });
   } catch (error) {
     res.status(500).send({
@@ -152,9 +145,65 @@ const changeOfferStatus = async (req, res) => {
   }
 };
 
+const searchOffers = async (req, res) => {
+  const { query, page = 1, limit = 10 } = req.query;
+
+  try {
+    // Create an empty search condition object
+    let searchCondition = {};
+
+    // If the `query` param is provided, search across multiple fields
+    if (query) {
+      searchCondition.$or = [
+        { offerName: { $regex: query, $options: "i" } }, // Search in offerName (case-insensitive)
+        { offerDescription: { $regex: query, $options: "i" } }, // Search in offerDescription (case-insensitive)
+        { applicableOn: { $regex: query, $options: "i" } }, // Search in applicableOn (case-insensitive)
+        { offerValidOn: isNaN(Number(query)) ? undefined : Number(query) }, // Search in offerValidOn (must be a number)
+        { offerType: { $regex: query, $options: "i" } }, // Search in offerType (case-insensitive)
+      ];
+    }
+
+    // Fetch data based on the search condition with pagination
+    const offers = await Offer.find(searchCondition)
+      .sort({ createdAt: -1 }) // Sort by latest offers
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .lean();
+
+    if (offers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No offer found matching the search criteria",
+      });
+    }
+
+    // Get the total count of matching offers
+    const totalOffers = await Offer.countDocuments(searchCondition);
+
+    // Send the result back to the client
+    res.status(200).json({
+      success: true,
+      message: "Offers retrieved successfully",
+      data: offers,
+      totalOffers,
+      currentPage: page,
+      totalPages: Math.ceil(totalOffers / limit),
+    });
+  } catch (error) {
+    // Handle any error during the search process
+    console.error("Error searching offers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while searching offers",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOffer,
   getOffers,
   deleteOffer,
   changeOfferStatus,
+  searchOffers,
 };

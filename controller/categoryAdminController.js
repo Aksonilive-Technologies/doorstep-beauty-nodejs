@@ -258,7 +258,10 @@ exports.downloadExcelSheet = async (req, res) => {
     });
 
     // Step 5: Set the appropriate headers for file download
-    res.setHeader("Content-Disposition", "attachment; filename=categories.xlsx");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=categories.xlsx"
+    );
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -268,5 +271,63 @@ exports.downloadExcelSheet = async (req, res) => {
     res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
+  }
+};
+
+exports.searchCategory = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define search conditions using case-insensitive regex for 'name'
+    // and exact or number conversion for 'position'
+    let searchCondition = {};
+
+    if (query) {
+      const isNumericQuery = !isNaN(query);
+      searchCondition = {
+        $or: [
+          { name: { $regex: query, $options: "i" } }, // Case-insensitive search for name
+          ...(isNumericQuery ? [{ position: parseInt(query, 10) }] : []), // Exact match for numeric position
+        ],
+      };
+    }
+
+    // Find the categories matching the search condition
+    const categories = await Category.find(searchCondition)
+      .limit(limit)
+      .skip(skip)
+      .lean();
+
+    // Check if no categories are found
+    if (categories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No data found",
+      });
+    }
+
+    const totalCategories = await Category.countDocuments(searchCondition);
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Categories retrieved successfully",
+      data: categories,
+      totalCategories,
+      totalPages: Math.ceil(totalCategories / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching categories:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while searching categories",
+      errorMessage: error.message,
+    });
   }
 };

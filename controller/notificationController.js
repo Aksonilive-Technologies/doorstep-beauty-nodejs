@@ -83,27 +83,25 @@ const scheduleNotification = (notification) => {
     `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
   );
 
-    // Schedule the notification in IST timezone using cron
-    const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
-      scheduledTimeIST.month() + 1
-    } *`;
+  // Schedule the notification in IST timezone using cron
+  const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
+    scheduledTimeIST.month() + 1
+  } *`;
 
-    console.log("Cron Expression: ", cronExpression);
+  console.log("Cron Expression: ", cronExpression);
 
-    nodeCron.schedule(
-      cronExpression,
-      async () => {
-        console.log("Sending notification: ", notification.title);
-        await sendNotification(notification);
-      },
-      {
-        timezone: "Asia/Kolkata", // Ensure cron runs in IST timezone
-      }
-    );
+  nodeCron.schedule(
+    cronExpression,
+    async () => {
+      console.log("Sending notification: ", notification.title);
+      await sendNotification(notification);
+    },
+    {
+      timezone: "Asia/Kolkata", // Ensure cron runs in IST timezone
+    }
+  );
 
-    console.log(
-      `Notification scheduled for: ${scheduledTimeIST.format()} IST`
-    );
+  console.log(`Notification scheduled for: ${scheduledTimeIST.format()} IST`);
 };
 
 // Create a new notification
@@ -388,6 +386,68 @@ exports.deleteNotification = async (req, res) => {
       success: false,
       message: "Error while deleting the notification",
       error: error.message,
+    });
+  }
+};
+
+exports.searchNotification = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define search conditions using case-insensitive regex for text fields
+    let searchCondition = {};
+
+    if (query) {
+      searchCondition = {
+        $or: [
+          { title: { $regex: query, $options: "i" } }, // Case-insensitive search for title
+          { body: { $regex: query, $options: "i" } }, // Case-insensitive search for body
+          { targetAudience: { $regex: query, $options: "i" } }, // Case-insensitive search within targetAudience
+          { audienceType: { $regex: query, $options: "i" } }, // Case-insensitive search for audienceType
+          { notificationDate: { $regex: query, $options: "i" } }, // Search by notificationDate
+          { notificationTime: { $regex: query, $options: "i" } }, // Search by notificationTime
+        ],
+      };
+    }
+
+    // Find notifications matching the search condition
+    const notifications = await Notification.find(searchCondition)
+      .limit(limit)
+      .skip(skip)
+      .lean();
+
+    // Check if no notifications are found
+    if (notifications.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No notifications found",
+      });
+    }
+
+    const totalNotifications = await Notification.countDocuments(
+      searchCondition
+    );
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Notifications retrieved successfully",
+      data: notifications,
+      totalNotifications,
+      totalPages: Math.ceil(totalNotifications / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching notifications:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while searching notifications",
+      errorMessage: error.message,
     });
   }
 };

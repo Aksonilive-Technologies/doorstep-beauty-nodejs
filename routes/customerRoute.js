@@ -34,6 +34,5 @@ router.post("/debit", debitMoneyFromWallet);
 router.post("/fetch", getWalletBalance);
 router.post("/update-transaction-status", updateTransactionStatus);
 router.post("/fetch-transactions", fetchWalletTransactions);
-router.get("/download-excel", downloadExcelSheet);
 
 module.exports = router;

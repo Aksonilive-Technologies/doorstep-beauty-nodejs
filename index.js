@@ -1,6 +1,6 @@
 
  const app = require("./routes/apiRoute");
- const port = 5000;
+ const port = 3000;
  const AppError = require("./utility/appError");
  
 

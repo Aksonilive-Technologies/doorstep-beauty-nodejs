@@ -213,10 +213,69 @@ const deleteMembership = async (req, res) => {
   }
 };
 
+const searchMembership = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define search conditions
+    let searchCondition = {};
+
+    if (query) {
+      // Check if the query is a number for `tenure`, otherwise it's for `tenureType`
+      if (!isNaN(query)) {
+        // If query is a number, treat it as tenure
+        searchCondition.tenure = Number(query);
+      } else {
+        // Otherwise, perform case-insensitive search on tenureType
+        searchCondition.tenureType = { $regex: query, $options: "i" };
+      }
+    }
+
+    // Find memberships matching the search condition
+    const memberships = await Membership.find(searchCondition)
+      .limit(limit)
+      .skip(skip)
+      .lean();
+
+    // Check if no memberships are found
+    if (memberships.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No memberships found",
+      });
+    }
+
+    const totalMemberships = await Membership.countDocuments(searchCondition);
+
+    // Return the search results along with pagination details
+    res.status(200).json({
+      success: true,
+      message: "Memberships retrieved successfully",
+      data: memberships,
+      totalMemberships,
+      totalPages: Math.ceil(totalMemberships / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching memberships:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while searching memberships",
+      errorMessage: error.message,
+    });
+  }
+};
+
 module.exports = {
   createMembership,
   updateMembership,
   fetchAllMemberships,
   changeMembershipStatus,
   deleteMembership,
+  searchMembership,
 };
