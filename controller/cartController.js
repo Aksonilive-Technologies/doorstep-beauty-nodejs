@@ -222,25 +222,28 @@ exports.getCartByCustomerId = async (req, res) => {
 
         if (selectedOption) {
 
-          // Store the original product name in a temporary variable
-          const originalProductName = productItem.name;
-          // Update product image with option's image
-          productItem.image = selectedOption.image;
+          let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
 
-          // Concatenate option's name with product's name
-          productItem.name = `${selectedOption.option} ${originalProductName}`;
+        // Update product image with option's image
+        clonedProduct.image = selectedOption.image;
 
-          //update product price with option's price
-          productItem.price = selectedOption.price;
+        // Update product name by concatenating the option name with the original product name
+        clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
 
-          // Update product details with option's details
-          productItem.details = selectedOption.details;
+        // Update product price with option price
+        clonedProduct.price = selectedOption.price;
+
+        // Update product details with option's details
+        clonedProduct.details = selectedOption.details;
+
+        // Assign the cloned product back to the productItem
+        productItem.product = clonedProduct;
         }
       }
 
-      delete cartItem.productOption;
-      delete cartItem.price;
-      delete cartItem.product.options;
+      // delete cartItem.productOption;
+      // delete cartItem.price;
+      // delete cartItem.product.options;
     });
     
     cart.sort((a, b) => b.product.price - a.product.price);

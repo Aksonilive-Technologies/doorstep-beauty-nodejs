@@ -172,35 +172,38 @@ exports.fetchBookings = async (req, res) => {
     }
 
     bookings.forEach((booking) => {
+      console.log("booking", booking.product);
       booking.product.forEach((productItem) => {
         // Check if there is an option selected for this product
+        // console.log("productItem", productItem);
         if (productItem.option && productItem.product.options) {
-          const selectedOption = productItem.product.options.find((opt) =>
+          let selectedOption = productItem.product.options.find((opt) =>
             opt._id.equals(productItem.option)
           );
 
           if (selectedOption) {
-            // Store the original product name in a temporary variable
-            const originalProductName = productItem.product.name;
+            let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
 
-            // Update product image with option's image
-            productItem.product.image = selectedOption.image;
+        // Update product image with option's image
+        clonedProduct.image = selectedOption.image;
 
-            // Update product name by concatenating the option name with the original product name
-            productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+        // Update product name by concatenating the option name with the original product name
+        clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
 
-            // Update product price with option price
-            productItem.product.price = selectedOption.price;
+        // Update product price with option price
+        clonedProduct.price = selectedOption.price;
 
-            // Update product details with option's details
-            productItem.product.details = selectedOption.details;
-          }
-          delete productItem.product.options;
-          delete productItem.option;
+        // Update product details with option's details
+        clonedProduct.details = selectedOption.details;
+
+        // Assign the cloned product back to the productItem
+        productItem.product = clonedProduct;
+          
         }
 
-        // Remove the options field from the product to clean up the response
-      });
+        }}
+    );
+    console.log("booking", booking.product);
     });
 
     // Current date for comparison
