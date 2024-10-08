@@ -41,7 +41,7 @@ const stockSchema = new Schema(
     image: {
       type: String,
     },
-    barcode: {
+    barcodeNumber: {
       type: String,
       required: true,
     },
