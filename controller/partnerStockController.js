@@ -35,10 +35,12 @@ exports.fetchAllStocks = async (req, res) => {
 
 exports.getProductByBarcode = async (req, res) => {
   try {
-    const { barcode } = req.params;
+    const { barcode } = req.query;
+
+    console.log(barcode);
 
     // Fetch stock by barcode
-    const stock = await Stock.findOne({ barcode })
+    const stock = await Stock.findOne({ barcodeNumber: barcode })
       .select("-currentStock -__v -entryStock");
 
     // If no stock found
