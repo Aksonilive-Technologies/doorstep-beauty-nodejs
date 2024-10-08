@@ -226,7 +226,12 @@ exports.getSlotsCustomer = async (req, res) => {
 };
 
 exports.searchSlots = async (req, res) => {
-  const { query, page = 1, limit = 10 } = req.query;
+  const { query } = req.query;
+
+  // Handle pagination parameters
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const skip = (page - 1) * limit;
 
   try {
     // Define search conditions dynamically based on the query
@@ -243,9 +248,8 @@ exports.searchSlots = async (req, res) => {
 
     // Find the slots matching the search condition
     const slots = await Slot.find(searchCondition)
-      .sort({ createdAt: -1 }) // Sort by the latest slots created
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
+      .skip(skip)
+      .limit(limit)
       .lean();
 
     // Get the total count of slots matching the search condition

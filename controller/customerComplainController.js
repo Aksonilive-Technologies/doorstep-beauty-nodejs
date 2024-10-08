@@ -306,7 +306,7 @@ const searchComplaints = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
-      .populate("customerId", "name email number") // Populate specific fields from customer details
+      .populate("customerId", "name email mobile") // Populate specific fields from customer details
       .populate("resolvedBy", "name");
 
     // Get total count of complaints matching the search condition
