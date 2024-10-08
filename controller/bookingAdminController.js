@@ -1,4 +1,5 @@
 const Booking = require("../models/bookingModel");
+const Customer = require("../models/customerModel");
 
 exports.fetchBookings = async (req, res) => {
   try {
@@ -109,42 +110,62 @@ exports.downloadExcelSheet = async (req, res) => {
 };
 
 exports.searchBookings = async (req, res) => {
+  const { query, page = 1, limit = 10 } = req.query;
+
   try {
-    const { query, page = 1, limit = 10 } = req.query;
-
-    // Pagination logic
-    const skip = (page - 1) * limit;
-
-    // Build search conditions
+    // Define the search condition dynamically based on the query
     let searchCondition = {};
 
     if (query) {
-      // Search condition for customer details (name, email, number)
-      searchCondition.$or = [
-        { discountType: new RegExp(query, "i") }, // Search for discountType
-        { "customer.name": new RegExp(query, "i") }, // Search for customer name
-        { "customer.email": new RegExp(query, "i") }, // Search for customer email
-        { "customer.number": new RegExp(query, "i") }, // Search for customer phone number
-      ];
+      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
+
+      // If the query is exactly "true" or "false", handle it as a search for isActive or isDeleted
+      if (query.toLowerCase() === "true" || query.toLowerCase() === "false") {
+        searchCondition.isActive = query.toLowerCase() === "true"; // Example using isActive; you can also use isDeleted if needed
+      } else {
+        // Search by customer name, email, number, or discountType if it's not a boolean query
+        const customerSearchCondition = {
+          $or: [
+            { name: queryRegex }, // Search by customer name
+            { email: queryRegex }, // Search by customer email
+            { number: queryRegex }, // Search by customer phone number
+          ],
+        };
+
+        // Find matching customers by name, email, or number
+        const matchingCustomers = await Customer.find(
+          customerSearchCondition
+        ).select("_id");
+        const customerIds = matchingCustomers.map((customer) => customer._id);
+
+        // Search condition for customerId, discountType, or other fields
+        searchCondition = {
+          $or: [
+            { customer: { $in: customerIds } }, // Match by customerId
+            { discountType: queryRegex }, // Match discountType
+          ],
+        };
+      }
     }
 
     // Fetch bookings with pagination and populated customer details
     const bookings = await Booking.find(searchCondition)
-      .populate("customer") // Populates the customer details using customerId
-      .skip(skip)
+      .populate("customer", "name email mobile") // Populate specific fields from customer details
+      .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
+
+    // Get total count of bookings matching the search condition
+    const totalBookings = await Booking.countDocuments(searchCondition);
 
     if (bookings.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No booking found matching the search criteria",
+        message: "No bookings found matching the search criteria",
       });
     }
 
-    // Get total count of matching bookings
-    const totalBookings = await Booking.countDocuments(searchCondition);
-
+    // Return the search results along with pagination details
     res.status(200).json({
       success: true,
       message: "Bookings retrieved successfully",
@@ -156,9 +177,11 @@ exports.searchBookings = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error searching bookings:", error);
+
     res.status(500).json({
       success: false,
-      message: "Error fetching bookings",
+      message: "Error occurred while searching bookings",
       error: error.message,
     });
   }
