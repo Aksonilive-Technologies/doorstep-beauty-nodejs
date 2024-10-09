@@ -170,11 +170,9 @@ exports.searchBookings = async (req, res) => {
       success: true,
       message: "Bookings retrieved successfully",
       data: bookings,
-      pagination: {
-        totalBookings,
-        currentPage: page,
-        totalPages: Math.ceil(totalBookings / limit),
-      },
+      totalBookings,
+      currentPage: page,
+      totalPages: Math.ceil(totalBookings / limit),
     });
   } catch (error) {
     console.error("Error searching bookings:", error);
