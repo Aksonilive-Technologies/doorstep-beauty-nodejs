@@ -447,3 +447,78 @@ exports.downloadExcelSheet = async (req, res) => {
     });
   }
 };
+
+exports.searchAdmin = async (req, res) => {
+  const { adminId, query } = req.query; // 'query' will be the search input from the search bar
+
+  try {
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin ID is required",
+      });
+    }
+
+    const loggedInUser = await Admin.findById(adminId);
+    if (!loggedInUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    if (loggedInUser.role !== "all") {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized to view this page",
+      });
+    }
+
+    // Handle pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    // Define the search condition
+    const searchCondition = query
+      ? {
+          $or: [
+            { name: { $regex: query, $options: "i" } }, // Case-insensitive search
+            { username: { $regex: query, $options: "i" } },
+            { email: { $regex: query, $options: "i" } },
+            { role: { $regex: query, $options: "i" } },
+          ],
+          _id: { $ne: adminId }, // Exclude the logged-in admin
+        }
+      : { _id: { $ne: adminId } }; // If no query, just exclude logged-in admin
+
+    // Fetch the admins based on the search condition
+    const admins = await Admin.find(searchCondition)
+      .select("-password -__v")
+      .skip(skip)
+      .limit(limit);
+
+    if (admins.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No admins found",
+      });
+    }
+
+    const totalAdmins = await Admin.countDocuments(searchCondition);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admins found",
+      data: admins,
+      totalPages: Math.ceil(totalAdmins / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Error while searching admins:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while searching admins",
+    });
+  }
+};

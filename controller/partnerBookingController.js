@@ -79,26 +79,28 @@ const bookings = await Booking.find(bookingQuery)
         const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
   
         if (selectedOption) {
-          // Store the original product name in a temporary variable
-          const originalProductName = productItem.product.name;
+          let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
 
-          // Update product image with option's image
-          productItem.product.image = selectedOption.image;
+        // Update product image with option's image
+        clonedProduct.image = selectedOption.image;
 
-          // Update product name by concatenating the option name with the original product name
-          productItem.product.name = `${selectedOption.option} ${originalProductName}`;
+        // Update product name by concatenating the option name with the original product name
+        clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
 
-          // Update product price with option price
-          productItem.product.price = selectedOption.price;
+        // Update product price with option price
+        clonedProduct.price = selectedOption.price;
 
-          // Update product details with option's details
-          productItem.product.details = selectedOption.details;
+        // Update product details with option's details
+        clonedProduct.details = selectedOption.details;
+
+        // Assign the cloned product back to the productItem
+        productItem.product = clonedProduct;
         }
-        delete productItem.product.options;
-        delete productItem.option;
+        // Remove the options field from the product to clean up the response
+        // delete productItem.product.options;
+        // delete productItem.option;
       }
 
-      // Remove the options field from the product to clean up the response
     });
   });
 
@@ -169,15 +171,20 @@ try {
     });
   }
 
-const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {                               // Use $elemMatch to find the partner by ID
+const bookings = await Booking.find({ 
+  // serviceStatus: {$ne:"pending"}, 
+  partner: {                               // Use $elemMatch to find the partner by ID
   $elemMatch: {
     partner: id
   }
-}, isDeleted: false, isActive: true })
+}, 
+isDeleted: false, isActive: true })
   .populate("product.product")
   .populate("customer")
   .sort({ "scheduleFor.date": 1 })
   .lean();
+
+  console.log("Bookings:", bookings);
 
   // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
   for (let booking of bookings) {
@@ -230,7 +237,10 @@ const bookings = await Booking.find({ serviceStatus: {$ne:"pending"}, partner: {
 
   const groupedBookings = bookings.reduce((acc, booking) => {
     // Get the current service status
-    const status = booking.serviceStatus;
+    let status = booking.serviceStatus;
+    if(booking.status === "processing"){
+      status = "processing";
+    }
   
     // If the group doesn't exist yet, initialize it as an array
     if (!acc[status]) {
