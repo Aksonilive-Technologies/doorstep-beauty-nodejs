@@ -192,25 +192,18 @@ exports.getNotifications = async (req, res) => {
         .json({ success: false, message: "Invalid pagination parameters" });
     }
 
-    const filter = {
-      isActive: true,
-      isDeleted: false,
-    };
-
     let notifications, totalCount, totalPages;
 
     if (showAll === "true") {
-      notifications = await Notification.find(filter);
+      notifications = await Notification.find();
       totalCount = notifications.length;
       totalPages = 1;
     } else {
       const skip = (pageNumber - 1) * limitNumber;
 
-      notifications = await Notification.find(filter)
-        .skip(skip)
-        .limit(limitNumber);
+      notifications = await Notification.find().skip(skip).limit(limitNumber);
 
-      totalCount = await Notification.countDocuments(filter);
+      totalCount = await Notification.countDocuments();
       totalPages = Math.ceil(totalCount / limitNumber);
     }
 
@@ -378,7 +371,6 @@ exports.deleteNotification = async (req, res) => {
     // Successfully deleted
     res.status(200).json({
       success: true,
-      data: notification,
       message: "Notification deleted successfully",
     });
   } catch (error) {
