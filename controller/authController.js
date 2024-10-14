@@ -4,6 +4,7 @@ const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
 const sendWaMsg = require("../utility/sendWaMsg");
 const axios = require('axios');
+const fs = require('fs');
 
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
@@ -296,14 +297,12 @@ exports.handleOrderCreatedWebhook = async (req, res) => {
     const orderData = req.body;
     const customerPhone = orderData.customer.phone;
 
-    console.log('Order data:', orderData);
-    console.log('Customer phone:', customerPhone);
+    logToFile(JSON.stringify(orderData));
 
     if (customerPhone) {
       // Format phone number by removing '+' (if needed for the API)
       const formattedPhone = customerPhone.replace('+', '');
 
-      console.log('Formatted phone:', formattedPhone);
       // API URL for sending the WhatsApp message
       const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${formattedPhone}`;
 
