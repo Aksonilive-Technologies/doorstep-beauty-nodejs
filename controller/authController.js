@@ -288,4 +288,93 @@ async function sendOTPWhatsAppGupshup(mobileNumber, otp) {
   }
 }
 
+
+exports.sendTestOTP = catchAsync(async (req, res) => {
+  let { mobile, signature } = req.query;
+
+  if (!mobile) {
+     return res.status(400).json({
+      success: "false",
+      message: "please enter mobile number",
+     })
+  }
+  // Change signature name
+  if (!signature) {
+    signature = "doorsbeauty";
+  }
+
+  if (!/^\d{10}$/.test(mobile)) {
+   return res.status(400).json({
+    success: false,
+    message: "please enter valid 10 digit mobile number",
+   })
+  }
+
+  const existingMasterOTP = await MasterOTP.findOne({ mobileNumber: mobile });
+  if (existingMasterOTP) {
+    console.log("Master number found");
+
+    return res.status(200).json({
+      success: true,
+      message: "Entered Mobile Number is a Master number",
+      data: null,
+    });
+  }
+
+  console.log("Generating OTP");
+
+  const otp = Math.floor(1000 + Math.random() * 9000);
+
+  // Delete any existing OTP for the mobile number
+  const deleteResult = await otpModel.deleteOne({ mobile });
+  console.log("Delete result:", deleteResult);
+
+  // Update or create new OTP
+  const newVerification = await otpModel.updateOne(
+    { mobile: mobile },
+    { otp: otp },
+    { upsert: true }  // Use upsert to create if not exists
+  );
+
+  console.log("Update result:", newVerification);
+
+  if (!newVerification) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errorMessage : "Error sending OTP"
+    })
+  }
+
+  mobile = Number(mobile);
+
+  try {
+    console.log("Sending OTP...");
+    // Implement actual OTP sending logic here
+    const response = await sendWaMsg(mobile,otp)
+    if(!response){
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        errorMessage : "Error sending OTP through what's app"
+      })
+    }
+
+    console.log("OTP sent successfully");
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errorMessage : error.message
+    })
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "OTP sent successfully",
+    data: null,
+  });
+});
+
 exports.sendOTPWhatsAppGupshup = sendOTPWhatsAppGupshup;
