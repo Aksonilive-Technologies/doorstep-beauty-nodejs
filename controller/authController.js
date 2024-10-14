@@ -307,6 +307,7 @@ exports.handleOrderCreatedWebhook = async (req, res) => {
     const orderID = orderData.name;
     const orderTotal = orderData.total_discounted_price;
 
+    logInChunks(JSON.stringify(orderData));
     console.log('Customer phone:', customerPhone);
     console.log('Customer name:', customerName);
     console.log('Order ID:', orderID);
