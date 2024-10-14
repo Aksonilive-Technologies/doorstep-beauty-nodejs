@@ -3,6 +3,8 @@ const MasterOTP = require("../models/masterOtpModel");
 const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
 const sendWaMsg = require("../utility/sendWaMsg");
+const axios = require('axios');
+const fs = require('fs');
 
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
@@ -287,5 +289,51 @@ async function sendOTPWhatsAppGupshup(mobileNumber, otp) {
     return false;
   }
 }
+
+const logInChunks = (data) => {
+  const chunkSize = 1000; // Customize based on the length limit
+  for (let i = 0; i < data.length; i += chunkSize) {
+    console.log(data.substring(i, i + chunkSize));
+  }
+};
+
+
+exports.handleOrderCreatedWebhook = async (req, res) => {
+  try {
+    // Extract order data and customer phone number from the Shopify webhook request
+    const orderData = req.body;
+    const customerPhone = orderData.billing_address.phone;
+    const customerName = orderData.billing_address.name;
+    const orderID = orderData.name;
+    const orderTotal = orderData.current_total_price;
+
+    logInChunks(JSON.stringify(orderData));
+    console.log('Customer phone:', customerPhone);
+    console.log('Customer name:', customerName);
+    console.log('Order ID:', orderID);
+    console.log('Order total:', orderTotal);
+
+    if (customerPhone) {
+
+      // API URL for sending the WhatsApp message
+      // const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${customerPhone}`;
+
+      // // Make API call to send the WhatsApp message
+      // const response = await axios.get(apiURL);
+
+      // console.log('WhatsApp message sent successfully:', response.data);
+
+      // Respond back to Shopify indicating success
+      return res.status(200).send('Webhook processed successfully');
+    } else {
+      // If phone number is not available, respond with an error
+      return res.status(400).send('Customer phone number not available');
+    }
+  } catch (error) {
+    // Log the error and respond with a server error message
+    console.error('Error processing webhook:', error);
+    return res.status(500).send('Error processing webhook');
+  }
+};
 
 exports.sendOTPWhatsAppGupshup = sendOTPWhatsAppGupshup;
