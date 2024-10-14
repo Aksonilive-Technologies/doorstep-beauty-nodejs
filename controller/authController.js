@@ -303,19 +303,24 @@ exports.handleOrderCreatedWebhook = async (req, res) => {
     // Extract order data and customer phone number from the Shopify webhook request
     const orderData = req.body;
     const customerPhone = orderData.billing_address.phone;
+    const customerName = orderData.billing_address.name;
+    const orderID = orderData.name;
+    const orderTotal = orderData.total_discounted_price;
 
-    console.log('Billing data:', orderData.billing_address);
     console.log('Customer phone:', customerPhone);
+    console.log('Customer name:', customerName);
+    console.log('Order ID:', orderID);
+    console.log('Order total:', orderTotal);
 
     if (customerPhone) {
 
       // API URL for sending the WhatsApp message
-      const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${customerPhone}`;
+      // const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${customerPhone}`;
 
-      // Make API call to send the WhatsApp message
-      const response = await axios.get(apiURL);
+      // // Make API call to send the WhatsApp message
+      // const response = await axios.get(apiURL);
 
-      console.log('WhatsApp message sent successfully:', response.data);
+      // console.log('WhatsApp message sent successfully:', response.data);
 
       // Respond back to Shopify indicating success
       return res.status(200).send('Webhook processed successfully');
