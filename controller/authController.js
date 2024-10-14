@@ -290,21 +290,28 @@ async function sendOTPWhatsAppGupshup(mobileNumber, otp) {
   }
 }
 
+const logInChunks = (data) => {
+  const chunkSize = 1000; // Customize based on the length limit
+  for (let i = 0; i < data.length; i += chunkSize) {
+    console.log(data.substring(i, i + chunkSize));
+  }
+};
+
 
 exports.handleOrderCreatedWebhook = async (req, res) => {
   try {
     // Extract order data and customer phone number from the Shopify webhook request
     const orderData = req.body;
-    const customerPhone = orderData.customer.phone;
+    const customerPhone = '+91 8800840310';
 
-    logToFile(JSON.stringify(orderData));
+    logInChunks(JSON.stringify(orderData));
 
     if (customerPhone) {
       // Format phone number by removing '+' (if needed for the API)
       const formattedPhone = customerPhone.replace('+', '');
 
       // API URL for sending the WhatsApp message
-      const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${formattedPhone}`;
+      const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${8800840310}`;
 
       // Make API call to send the WhatsApp message
       const response = await axios.get(apiURL);
