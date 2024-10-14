@@ -305,7 +305,7 @@ exports.handleOrderCreatedWebhook = async (req, res) => {
     const customerPhone = orderData.billing_address.phone;
     const customerName = orderData.billing_address.name;
     const orderID = orderData.name;
-    const orderTotal = orderData.total_discounted_price;
+    const orderTotal = orderData.current_total_price;
 
     logInChunks(JSON.stringify(orderData));
     console.log('Customer phone:', customerPhone);
