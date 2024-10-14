@@ -302,16 +302,15 @@ exports.handleOrderCreatedWebhook = async (req, res) => {
   try {
     // Extract order data and customer phone number from the Shopify webhook request
     const orderData = req.body;
-    const customerPhone = '+91 8800840310';
+    const customerPhone = orderData.billing_address.phone;
 
-    logInChunks(JSON.stringify(orderData));
+    console.log('Billing data:', orderData.billing_address);
+    console.log('Customer phone:', customerPhone);
 
     if (customerPhone) {
-      // Format phone number by removing '+' (if needed for the API)
-      const formattedPhone = customerPhone.replace('+', '');
 
       // API URL for sending the WhatsApp message
-      const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${8800840310}`;
+      const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${customerPhone}`;
 
       // Make API call to send the WhatsApp message
       const response = await axios.get(apiURL);
