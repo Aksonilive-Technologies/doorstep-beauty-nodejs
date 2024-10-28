@@ -8,6 +8,7 @@ const Plan = require("../models/customerMembershipPlan.js");
 const Membership = require("../models/membershipModel.js");
 const CustomerAddress = require("../models/customerAddressModel");
 const XLSX = require("xlsx");
+const Booking = require("../models/bookingModel.js");
 
 //Create Register
 const validateUserInput = (name, email, mobile) => {
@@ -702,6 +703,198 @@ exports.fetchWalletTransactions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching wallet transactions",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.getCustomerStats = async (req, res) => {
+  try {
+    const { range, from, to } = req.body; // Use body instead of query
+    let startDate, endDate;
+
+    // Helper function to parse `dd/mm/yyyy` format
+    const parseDate = (dateStr) => {
+      const [day, month, year] = dateStr.split("/").map(Number);
+      return new Date(year, month - 1, day); // Months are zero-indexed in JS Date
+    };
+
+    // Set the date range based on `from` and `to` or the predefined range
+    if (from && to) {
+      startDate = parseDate(from);
+      endDate = parseDate(to);
+    } else {
+      endDate = new Date(); // Default to the current date
+      switch (range) {
+        case "weekly":
+          startDate = new Date();
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case "monthly":
+          startDate = new Date();
+          startDate.setMonth(endDate.getMonth() - 1);
+          break;
+        case "yearly":
+          startDate = new Date();
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        default:
+          return res.status(400).json({
+            success: false,
+            message:
+              "Invalid range. Please provide 'weekly', 'monthly', 'yearly', or valid 'from' and 'to' dates in 'dd/mm/yyyy' format.",
+            data: "No data found.",
+          });
+      }
+    }
+
+    // Check if the dates are valid
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format. Please use 'dd/mm/yyyy'.",
+      });
+    }
+
+    // Aggregate data to get customer counts in the selected date range
+    const customerStats = await Customer.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          isDeleted: false,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+            ...(range === "weekly" && { day: { $dayOfMonth: "$createdAt" } }),
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1,
+          ...(range === "weekly" && { "_id.day": 1 }),
+        },
+      },
+    ]);
+
+    // Initialize the data with zero counts for missing periods
+    let results = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      let period = {
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1,
+        ...(range === "weekly" && { day: currentDate.getDate() }),
+        count: 0,
+      };
+
+      // Check if there's data for the current period
+      const match = customerStats.find(
+        (stat) =>
+          stat._id.year === period.year &&
+          stat._id.month === period.month &&
+          (range !== "weekly" || stat._id.day === period.day)
+      );
+
+      // If data exists, use it; otherwise, keep the count at 0
+      if (match) {
+        period.count = match.count;
+      }
+
+      results.push(period);
+
+      // Move to the next period
+      if (range === "weekly") {
+        currentDate.setDate(currentDate.getDate() + 1);
+      } else if (range === "monthly" || (from && to)) {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      } else {
+        currentDate.setFullYear(currentDate.getFullYear() + 1);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Customer stats retrieved successfully",
+      data: results,
+    });
+  } catch (error) {
+    console.error("Error fetching customer stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching customer stats",
+      errorMessage: error.message,
+    });
+  }
+};
+
+exports.getTopCustomerByBookings = async (req, res) => {
+  try {
+    // Aggregate bookings to get count per customer
+    const topCustomerBooking = await Booking.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$customer",
+          bookingCount: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { bookingCount: -1 }, // Sort by highest booking count
+      },
+      {
+        $limit: 1, // Get the top customer only
+      },
+    ]);
+
+    if (topCustomerBooking.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found",
+        data: null,
+      });
+    }
+
+    // Get the customer details for the top customer by bookings
+    const topCustomer = await Customer.findById(
+      topCustomerBooking[0]._id
+    ).select("image name mobile");
+
+    if (!topCustomer) {
+      return res.status(404).json({
+        success: false,
+        message: "Top customer not found",
+        data: null,
+      });
+    }
+
+    // Prepare the response with customer details and booking count
+    res.status(200).json({
+      success: true,
+      message: "Top customer by bookings retrieved successfully",
+      data: {
+        image: topCustomer.image,
+        name: topCustomer.name,
+        mobile: topCustomer.mobile,
+        bookingCount: topCustomerBooking[0].bookingCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching top customer by bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching top customer by bookings",
       errorMessage: error.message,
     });
   }

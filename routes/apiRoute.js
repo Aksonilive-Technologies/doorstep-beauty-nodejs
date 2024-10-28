@@ -64,6 +64,7 @@ const partnerWalletRoute = require("./partnerWalletRoute");
 const partnerStockRoute = require("./partnerStockRoute");
 const parnterStockBookingRoute = require("./parnterStockBookingRoute.js");
 const partnerCartRoute = require("./partnerCartRoute");
+const graphRoute = require("./graphRoute")
 
 //***************Customer Route API************************ */
 
@@ -105,6 +106,7 @@ app.use("/api/v1/admin/offers", offerRoute);
 app.use("/api/v1/admin/slot", slotRoute);
 app.use("/api/v1/admin/stock", stockRoute);
 app.use("/api/v1/admin/booking", bookingAdminRoute);
+app.use("/api/v1/admin/graph", graphRoute);
 
 //**************Testing Route API************************ */
 app.use("/api/v1/testing/admin", require("./testingRoute.js"));
