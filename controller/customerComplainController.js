@@ -359,16 +359,24 @@ const getComplaintStatsByCategory = async (req, res) => {
       },
     ]);
 
-    // Prepare data for pie chart
+    // Calculate total count of complaints for percentage calculation
+    const totalCount = complaintStats.reduce(
+      (sum, stat) => sum + stat.complaintCount,
+      0
+    );
+
+    // Prepare data for pie chart, including percentage for each category
     const pieChartData = complaintStats.map((stat) => ({
       category: stat._id,
       count: stat.complaintCount,
+      percentage: ((stat.complaintCount / totalCount) * 100).toFixed(2), // Calculate and format percentage
     }));
 
     res.status(200).json({
       success: true,
       message: "Complaint stats by category retrieved successfully",
       data: pieChartData,
+      totalCount, // Include total count in response
     });
   } catch (error) {
     console.error("Error fetching complaint stats by category:", error);
