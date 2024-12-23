@@ -5,6 +5,7 @@ const AppError = require("../utility/appError");
 const sendWaMsg = require("../utility/sendWaMsg");
 const axios = require('axios');
 const fs = require('fs');
+const request = require('request');
 
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
@@ -246,94 +247,3 @@ exports.deleteMasterOTP = catchAsync(async (req, res) => {
       data: null,
     });
 });
-
-async function sendOTPWhatsAppGupshup(mobileNumber, otp) {
-  try {
-    const endpoint = 'https://api.gupshup.io/wa/api/v1/template/msg';
-    const apiKey = 'y6augsnlvufcalxps2grvxgbmxvdjgo7';
-    const businessNumber = '12345293827';
-    const templateId = '900020ae-6fee-41d7-abdf-7f230d27f524';
-    const countryCode = '91'; // Country code to attach to the phone number
-    const MobileNo = countryCode + mobileNumber; 
-
-    const body = new URLSearchParams({
-      'channel': 'whatsapp',
-      'source': businessNumber,
-      'destination': MobileNo,
-      'src.name': 'ChatWeaver',
-      'template': JSON.stringify({
-        "id": templateId,
-        "params": ["Mitra Fintech", otp]
-      })
-    });
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'apikey': apiKey,
-        'Cache-Control': 'no-cache'
-      },
-      body
-    });
-
-    console.log('Response:', response);
-
-    if (response.ok) {
-      return true;
-    } else {
-      throw new Error('Error sending OTP via WhatsApp');
-    }
-  } catch (error) {
-    console.error('Error sending OTP via WhatsApp:', error);
-    return false;
-  }
-}
-
-const logInChunks = (data) => {
-  const chunkSize = 1000; // Customize based on the length limit
-  for (let i = 0; i < data.length; i += chunkSize) {
-    console.log(data.substring(i, i + chunkSize));
-  }
-};
-
-
-exports.handleOrderCreatedWebhook = async (req, res) => {
-  try {
-    // Extract order data and customer phone number from the Shopify webhook request
-    const orderData = req.body;
-    const customerPhone = orderData.billing_address.phone;
-    const customerName = orderData.billing_address.name;
-    const orderID = orderData.name;
-    const orderTotal = orderData.current_total_price;
-
-    logInChunks(JSON.stringify(orderData));
-    console.log('Customer phone:', customerPhone);
-    console.log('Customer name:', customerName);
-    console.log('Order ID:', orderID);
-    console.log('Order total:', orderTotal);
-
-    if (customerPhone) {
-
-      // API URL for sending the WhatsApp message
-      // const apiURL = `https://doorstepbeautybeta.vercel.app/api/v1/user/auth/otp/send?mobile=${customerPhone}`;
-
-      // // Make API call to send the WhatsApp message
-      // const response = await axios.get(apiURL);
-
-      // console.log('WhatsApp message sent successfully:', response.data);
-
-      // Respond back to Shopify indicating success
-      return res.status(200).send('Webhook processed successfully');
-    } else {
-      // If phone number is not available, respond with an error
-      return res.status(400).send('Customer phone number not available');
-    }
-  } catch (error) {
-    // Log the error and respond with a server error message
-    console.error('Error processing webhook:', error);
-    return res.status(500).send('Error processing webhook');
-  }
-};
-
-exports.sendOTPWhatsAppGupshup = sendOTPWhatsAppGupshup;
