@@ -8,6 +8,7 @@ const {
   updateStock,
   downloadExcelSheet,
   searchStock,
+  fetahAllStockBooking,
 } = require("../controller/stockController");
 const { uploadSingleImage } = require("../middleware/uploadMiddleware");
 // Route for creating stock
@@ -18,5 +19,6 @@ router.delete("/delete", deleteStock);
 router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
 router.get("/searchStock", searchStock);
+router.get("/booking/fetch/all", fetahAllStockBooking);
 
 module.exports = router;

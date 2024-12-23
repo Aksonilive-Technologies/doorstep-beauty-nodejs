@@ -339,10 +339,116 @@ const searchComplaints = async (req, res) => {
   }
 };
 
+const getComplaintStatsByCategory = async (req, res) => {
+  try {
+    // Aggregate complaints grouped by complaintCategory and count each category
+    const complaintStats = await Complaint.aggregate([
+      {
+        $match: {
+          isDeleted: false, // Only consider active complaints
+        },
+      },
+      {
+        $group: {
+          _id: "$complaintCategory", // Group by complaint category
+          complaintCount: { $sum: 1 }, // Count complaints per category
+        },
+      },
+      {
+        $sort: { complaintCount: -1 }, // Optional: sort by highest count
+      },
+    ]);
+
+    // Calculate total count of complaints for percentage calculation
+    const totalCount = complaintStats.reduce(
+      (sum, stat) => sum + stat.complaintCount,
+      0
+    );
+
+    // Prepare data for pie chart, including percentage for each category
+    const pieChartData = complaintStats.map((stat) => ({
+      category: stat._id,
+      count: stat.complaintCount,
+      percentage: ((stat.complaintCount / totalCount) * 100).toFixed(2), // Calculate and format percentage
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Complaint stats by category retrieved successfully",
+      data: pieChartData,
+      totalCount, // Include total count in response
+    });
+  } catch (error) {
+    console.error("Error fetching complaint stats by category:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching complaint stats by category",
+      errorMessage: error.message,
+    });
+  }
+};
+
+const getResolvedComplaintStatsByCategory = async (req, res) => {
+  try {
+    // Get count of resolved complaints grouped by category
+    const resolvedComplaintStats = await Complaint.aggregate([
+      {
+        $match: {
+          isDeleted: false, // Only consider active complaints
+          resolved: true, // Only include resolved complaints
+        },
+      },
+      {
+        $group: {
+          _id: "$complaintCategory", // Group by complaint category
+          resolvedCount: { $sum: 1 }, // Count resolved complaints per category
+        },
+      },
+      {
+        $sort: { resolvedCount: -1 }, // Optional: sort by highest count
+      },
+    ]);
+
+    // Get total count of unresolved complaints
+    const unresolvedComplaintCount = await Complaint.countDocuments({
+      isDeleted: false,
+      resolved: false,
+    });
+
+    // Format the resolved data for charting
+    const resolvedPieChartData = resolvedComplaintStats.map((stat) => ({
+      category: stat._id,
+      resolvedCount: stat.resolvedCount,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message:
+        "Resolved complaint stats by category and unresolved total count retrieved successfully",
+      data: {
+        resolvedByCategory: resolvedPieChartData,
+        unresolvedTotalCount: unresolvedComplaintCount,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error fetching resolved complaint stats by category:",
+      error
+    );
+    res.status(500).json({
+      success: false,
+      message: "Error fetching resolved complaint stats by category",
+      errorMessage: error.message,
+    });
+  }
+};
+
 module.exports = {
   createComplaint,
   getAllComplaints,
   resolvedComplaint,
   getAllComplaintWithCustomerId,
   searchComplaints,
+  getComplaintStatsByCategory,
+  getResolvedComplaintStatsByCategory,
 };

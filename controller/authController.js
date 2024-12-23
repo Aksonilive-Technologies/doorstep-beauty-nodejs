@@ -3,6 +3,9 @@ const MasterOTP = require("../models/masterOtpModel");
 const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
 const sendWaMsg = require("../utility/sendWaMsg");
+const axios = require('axios');
+const fs = require('fs');
+const request = require('request');
 
 exports.sendOTP = catchAsync(async (req, res) => {
   let { mobile, signature } = req.query;
@@ -244,48 +247,3 @@ exports.deleteMasterOTP = catchAsync(async (req, res) => {
       data: null,
     });
 });
-
-async function sendOTPWhatsAppGupshup(mobileNumber, otp) {
-  try {
-    const endpoint = 'https://api.gupshup.io/wa/api/v1/template/msg';
-    const apiKey = 'y6augsnlvufcalxps2grvxgbmxvdjgo7';
-    const businessNumber = '12345293827';
-    const templateId = '900020ae-6fee-41d7-abdf-7f230d27f524';
-    const countryCode = '91'; // Country code to attach to the phone number
-    const MobileNo = countryCode + mobileNumber; 
-
-    const body = new URLSearchParams({
-      'channel': 'whatsapp',
-      'source': businessNumber,
-      'destination': MobileNo,
-      'src.name': 'ChatWeaver',
-      'template': JSON.stringify({
-        "id": templateId,
-        "params": ["Mitra Fintech", otp]
-      })
-    });
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'apikey': apiKey,
-        'Cache-Control': 'no-cache'
-      },
-      body
-    });
-
-    console.log('Response:', response);
-
-    if (response.ok) {
-      return true;
-    } else {
-      throw new Error('Error sending OTP via WhatsApp');
-    }
-  } catch (error) {
-    console.error('Error sending OTP via WhatsApp:', error);
-    return false;
-  }
-}
-
-exports.sendOTPWhatsAppGupshup = sendOTPWhatsAppGupshup;
