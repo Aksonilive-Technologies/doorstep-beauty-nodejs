@@ -3,30 +3,48 @@ const AppError = require("./appError");
 const catchAsync = require("./catchAsync");
 
 async function sendOtp(phoneNumber, otp) {
-    const data = {
-        countryCode: "+91", // Assuming it's an Indian number, modify as per the requirement
-        phoneNumber: phoneNumber,
-        callbackData: "OTP Request",
-        type: "Template",
-        template: {
-            name: "send_otp_v1", // Replace with the actual template name for OTP
-            languageCode: "en",
-            bodyValues: [otp],
-            buttonValues: {
-                "0": [otp],
-            }
-        },
-    };
+    // const data = {
+    //     countryCode: "+91", // Assuming it's an Indian number, modify as per the requirement
+    //     phoneNumber: phoneNumber,
+    //     callbackData: "OTP Request",
+    //     type: "Template",
+    //     template: {
+    //         name: "send_otp_v1", // Replace with the actual template name for OTP
+    //         languageCode: "en",
+    //         bodyValues: [otp],
+    //         buttonValues: {
+    //             "0": [otp],
+    //         }
+    //     },
+    // };
+
+    const data = new URLSearchParams({
+        source: process.env.GUPSHUP_Phone_Number, // Replace with your Gupshup-approved WhatsApp number
+        destination: phoneNumber, // Customer's phone number in E.164 format (e.g., 919876543210 for +91)
+        "src.name": process.env.GUPSHUP_App_Name,
+        template: JSON.stringify({
+            id: process.env.otp_template_id, // Replace with your Gupshup-approved template ID
+            params: [String(otp)], // Replace with your template parameters
+        }), 
+    });
 
     const config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: 'https://api.interakt.ai/v1/public/message/',
+        // method: 'post',
+        // maxBodyLength: Infinity,
+        // url: 'https://api.interakt.ai/v1/public/message/',
+        // headers: {
+        //     'Content-Type': 'application/json',
+        //     "Authorization": "Basic " + process.env.INTERAKT_API_KEY, // Replace with your actual API key
+        // },
+        // data: data,
+
+        method: "post",
+        url: "https://api.gupshup.io/sm/api/v1/msg",
         headers: {
-            'Content-Type': 'application/json',
-            "Authorization": "Basic " + process.env.INTERAKT_API_KEY, // Replace with your actual API key
+            "Content-Type": "application/x-www-form-urlencoded",
+            apikey: process.env.GUPSHUP_API_KEY, // Use your Gupshup API key from environment variables
         },
-        data: data,
+        data: data.toString(),
     };
 
     try {

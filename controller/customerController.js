@@ -708,10 +708,12 @@ exports.fetchWalletTransactions = async (req, res) => {
   }
 };
 
+//need to do changes
 exports.getCustomerStats = async (req, res) => {
   try {
-    const { range, from, to } = req.body; // Use body instead of query
+    const { range, from, to } = req.body;
     let startDate, endDate;
+    const currentDate = new Date();
 
     // Helper function to parse `dd/mm/yyyy` format
     const parseDate = (dateStr) => {
@@ -719,44 +721,61 @@ exports.getCustomerStats = async (req, res) => {
       return new Date(year, month - 1, day); // Months are zero-indexed in JS Date
     };
 
-    // Set the date range based on `from` and `to` or the predefined range
-    if (from && to) {
-      startDate = parseDate(from);
-      endDate = parseDate(to);
-    } else {
-      endDate = new Date(); // Default to the current date
-      switch (range) {
-        case "weekly":
-          startDate = new Date();
-          startDate.setDate(endDate.getDate() - 7);
-          break;
-        case "monthly":
-          startDate = new Date();
-          startDate.setMonth(endDate.getMonth() - 1);
-          break;
-        case "yearly":
-          startDate = new Date();
-          startDate.setFullYear(endDate.getFullYear() - 1);
-          break;
-        default:
-          return res.status(400).json({
-            success: false,
-            message:
-              "Invalid range. Please provide 'weekly', 'monthly', 'yearly', or valid 'from' and 'to' dates in 'dd/mm/yyyy' format.",
-            data: "No data found.",
-          });
+    // Calculate date ranges based on provided `from` date or default to previous periods
+    if (range === "weekly") {
+      if (from) {
+        startDate = parseDate(from);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6); // 7 days from startDate
+      } else {
+        startDate = new Date(currentDate);
+        startDate.setDate(currentDate.getDate() - 7); // 1 week before current date
+        endDate = currentDate;
       }
-    }
+    } else if (range === "monthly") {
+      if (from) {
+        startDate = parseDate(from);
+        endDate = new Date(startDate);
+        endDate.setMonth(startDate.getMonth() + 1); // 1 month from startDate
+        endDate.setDate(endDate.getDate() - 1); // End of the month from startDate
+      } else {
+        startDate = new Date(currentDate);
+        startDate.setMonth(currentDate.getMonth() - 1); // 1 month before current date
+        startDate.setDate(1); // Start of the previous month
+        endDate = new Date(currentDate);
+        endDate.setDate(0); // End of the previous month
+      }
+    } else if (range === "yearly") {
+      // If 'from' date is provided, use it; otherwise, default to one year before the current month
+      if (from) {
+        startDate = parseDate(from);
+        endDate = new Date(startDate);
+        endDate.setFullYear(startDate.getFullYear() + 1);
+        endDate.setDate(endDate.getDate() - 1); // Set to the end of the year from the startDate
+      } else {
+        // Set startDate to the first day of the same month, one year ago
+        startDate = new Date(
+          currentDate.getFullYear() - 1,
+          currentDate.getMonth(),
+          1
+        );
 
-    // Check if the dates are valid
-    if (isNaN(startDate) || isNaN(endDate)) {
+        // Set endDate to the last day of the previous month
+        endDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          0
+        );
+      }
+    } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid date format. Please use 'dd/mm/yyyy'.",
+        message:
+          "Invalid range. Please specify 'weekly', 'monthly', or 'yearly'.",
       });
     }
 
-    // Aggregate data to get customer counts in the selected date range
+    // Aggregate customer data within the specified date range
     const customerStats = await Customer.aggregate([
       {
         $match: {
@@ -769,7 +788,7 @@ exports.getCustomerStats = async (req, res) => {
           _id: {
             year: { $year: "$createdAt" },
             month: { $month: "$createdAt" },
-            ...(range === "weekly" && { day: { $dayOfMonth: "$createdAt" } }),
+            week: { $week: "$createdAt" },
           },
           count: { $sum: 1 },
         },
@@ -778,45 +797,92 @@ exports.getCustomerStats = async (req, res) => {
         $sort: {
           "_id.year": 1,
           "_id.month": 1,
-          ...(range === "weekly" && { "_id.day": 1 }),
+          "_id.week": 1,
         },
       },
     ]);
 
-    // Initialize the data with zero counts for missing periods
+    // Initialize the data structure based on the selected range
     let results = [];
-    let currentDate = new Date(startDate);
+    let currentDateIter = new Date(startDate);
 
-    while (currentDate <= endDate) {
-      let period = {
-        year: currentDate.getFullYear(),
-        month: currentDate.getMonth() + 1,
-        ...(range === "weekly" && { day: currentDate.getDate() }),
-        count: 0,
-      };
+    if (range === "weekly") {
+      while (currentDateIter <= endDate) {
+        const dayData = {
+          year: currentDateIter.getFullYear(),
+          month: currentDateIter.getMonth() + 1,
+          day: currentDateIter.getDate(),
+          count: 0,
+        };
 
-      // Check if there's data for the current period
-      const match = customerStats.find(
-        (stat) =>
-          stat._id.year === period.year &&
-          stat._id.month === period.month &&
-          (range !== "weekly" || stat._id.day === period.day)
-      );
+        const match = customerStats.find(
+          (stat) =>
+            stat._id.year === dayData.year &&
+            stat._id.month === dayData.month &&
+            stat._id.day === dayData.day
+        );
 
-      // If data exists, use it; otherwise, keep the count at 0
-      if (match) {
-        period.count = match.count;
+        if (match) {
+          dayData.count = match.count;
+        }
+
+        results.push(dayData);
+        currentDateIter.setDate(currentDateIter.getDate() + 1); // Move to next day
       }
+    } else if (range === "monthly") {
+      let weekCounter = 0;
 
-      results.push(period);
+      while (currentDateIter <= endDate && weekCounter < 4) {
+        const weekStart = new Date(currentDateIter);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6); // Calculate end of the week
 
-      // Move to the next period
-      if (range === "weekly") {
-        currentDate.setDate(currentDate.getDate() + 1);
-      } else if (range === "monthly" || (from && to)) {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      } else {
-        currentDate.setFullYear(currentDate.getFullYear() + 1);
+        const weekData = {
+          year: currentDateIter.getFullYear(),
+          month: currentDateIter.getMonth() + 1,
+          week: Math.ceil(currentDateIter.getDate() / 7), // Calculate week of the month
+          count: 0,
+          range: {
+            start: weekStart.toISOString().split("T")[0], // Week start date
+            end: weekEnd.toISOString().split("T")[0], // Week end date
+          },
+        };
+
+        const match = customerStats.find(
+          (stat) =>
+            stat._id.year === weekData.year &&
+            stat._id.month === weekData.month &&
+            stat._id.week === weekData.week
+        );
+
+        if (match) {
+          weekData.count = match.count;
+        }
+
+        results.push(weekData);
+        currentDateIter.setDate(currentDateIter.getDate() + 7); // Move to next week
+        weekCounter++; // Increment week counter
+      }
+    } else if (range === "yearly") {
+      while (currentDateIter <= endDate) {
+        const monthData = {
+          year: currentDateIter.getFullYear(),
+          month: currentDateIter.getMonth() + 1,
+          count: 0,
+        };
+
+        const match = customerStats.find(
+          (stat) =>
+            stat._id.year === monthData.year &&
+            stat._id.month === monthData.month
+        );
+
+        if (match) {
+          monthData.count = match.count;
+        }
+
+        results.push(monthData);
+        currentDateIter.setMonth(currentDateIter.getMonth() + 1); // Move to the next month
       }
     }
 

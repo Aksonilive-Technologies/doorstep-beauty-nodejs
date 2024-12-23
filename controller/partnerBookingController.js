@@ -648,14 +648,16 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+//need to do changes
 exports.getTopPartnerByServiceCount = async (req, res) => {
   try {
-    // Aggregation to find the partner with the highest number of services provided
+    // Aggregation to find the partner with the highest number of completed services provided
     const topPartner = await Booking.aggregate([
-      // Only include active bookings in the aggregation
+      // Only include active bookings with completed status in the aggregation
       {
         $match: {
           isDeleted: false,
+          status: "completed", // Ensure the booking status is completed
           "partner.partner": { $exists: true }, // Ensure bookings have partners
         },
       },
@@ -663,11 +665,11 @@ exports.getTopPartnerByServiceCount = async (req, res) => {
       {
         $unwind: "$partner",
       },
-      // Group by partner to count total services provided by each
+      // Group by partner to count total completed services provided by each
       {
         $group: {
           _id: "$partner.partner", // Group by partner ID
-          serviceCount: { $sum: 1 }, // Count each booking for the partner
+          serviceCount: { $sum: 1 }, // Count each completed booking for the partner
         },
       },
       // Sort by service count in descending order and limit to the highest
@@ -695,6 +697,7 @@ exports.getTopPartnerByServiceCount = async (req, res) => {
           _id: 0,
           partnerId: "$_id",
           name: "$partnerDetails.name",
+          email: "$partnerDetails.email",
           image: "$partnerDetails.image",
           phone: "$partnerDetails.phone",
           contactNumber: "$partnerDetails.contactNumber",
@@ -707,24 +710,25 @@ exports.getTopPartnerByServiceCount = async (req, res) => {
     if (!topPartner.length) {
       return res.status(404).json({
         success: false,
-        message: "No services found for any partner",
+        message: "No completed services found for any partner",
       });
     }
 
     res.status(200).json({
       success: true,
       message:
-        "Partner with the highest number of services retrieved successfully",
+        "Partner with the highest number of completed services retrieved successfully",
       data: topPartner[0], // Since we limited to 1 result
     });
   } catch (error) {
     console.error(
-      "Error fetching partner with the highest number of services:",
+      "Error fetching partner with the highest number of completed services:",
       error
     );
     res.status(500).json({
       success: false,
-      message: "Error fetching partner with the highest number of services",
+      message:
+        "Error fetching partner with the highest number of completed services",
       errorMessage: error.message,
     });
   }
