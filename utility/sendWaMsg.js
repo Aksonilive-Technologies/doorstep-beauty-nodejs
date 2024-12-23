@@ -20,13 +20,15 @@ async function sendOtp(phoneNumber, otp) {
 
     const data = new URLSearchParams({
         source: process.env.GUPSHUP_Phone_Number, // Replace with your Gupshup-approved WhatsApp number
-        destination: phoneNumber, // Customer's phone number in E.164 format (e.g., 919876543210 for +91)
+        destination: "91"+phoneNumber, // Customer's phone number in E.164 format (e.g., 919876543210 for +91)
         "src.name": process.env.GUPSHUP_App_Name,
         template: JSON.stringify({
             id: process.env.otp_template_id, // Replace with your Gupshup-approved template ID
-            params: [String(otp)], // Replace with your template parameters
+            params: [otp], // Replace with your template parameters
         }), 
     });
+
+    console.log(data.toString)
 
     const config = {
         // method: 'post',
@@ -39,7 +41,7 @@ async function sendOtp(phoneNumber, otp) {
         // data: data,
 
         method: "post",
-        url: "https://api.gupshup.io/sm/api/v1/msg",
+        url: "https://api.gupshup.io/wa/api/v1/template/msg",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             apikey: process.env.GUPSHUP_API_KEY, // Use your Gupshup API key from environment variables
