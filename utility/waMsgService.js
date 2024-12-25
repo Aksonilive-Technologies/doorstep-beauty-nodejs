@@ -1,7 +1,6 @@
 const axios = require("axios");
 const AppError = require("./appError");
 
-// Gupshup API Helper Class
 class WaMsgService {
     constructor() {
         this.baseUrl = "https://api.gupshup.io/wa/api/v1/template/msg";
@@ -30,7 +29,7 @@ class WaMsgService {
             destination: "91" + phoneNumber,
             "src.name": this.appName,
             template: JSON.stringify({
-                id: process.env.otp_template_id,
+                id: "39f46c01-4fa3-46a8-958c-bc8710be4b1e",
                 params: [otp],
             }),
         });
@@ -38,24 +37,21 @@ class WaMsgService {
         const config = this.createConfig(data);
 
         try {
-            console.log("Sending OTP...");
             const response = await axios(config);
-            console.log("OTP sent successfully:", JSON.stringify(response.data));
             return response.data;
         } catch (error) {
-            console.error("Error sending OTP:", error.response ? error.response.data : error.message);
             throw new AppError(error.response?.data?.message || "Failed to send OTP", error.response?.status || 500);
         }
     }
 
-    // Function to send a template message
+    // Function to send a welcome message
     async sendWelcomeMessage(phoneNumber, customerName) {
         const data = new URLSearchParams({
             source: this.source,
             destination: "91" + phoneNumber,
             "src.name": this.appName,
             template: JSON.stringify({
-                id: process.env.welcome_message_template_id,
+                id: "bb1a1c31-b6ff-4b88-9e53-2c3ab55d407e",
                 params: [customerName],
             }),
         });
@@ -63,17 +59,37 @@ class WaMsgService {
         const config = this.createConfig(data);
 
         try {
-            console.log("Sending welcome message...");
             const response = await axios(config);
-            console.log("Welcome message sent successfully:", JSON.stringify(response.data));
             return response.data;
         } catch (error) {
-            console.error("Error sending welcome message:", error.response ? error.response.data : error.message);
             throw new AppError(error.response?.data?.message || "Failed to send welcome message", error.response?.status || 500);
         }
     }
 
-    // Add more functions as needed
+    // Function to send booking confirmation message to customer
+    async sendCusBoookingConfirmationMessage(phoneNumber, customerName, serviceName, itemCount, date, time, address, bookingAmount) {
+        const data = new URLSearchParams({
+            source: this.source,
+            destination: "91" + phoneNumber,
+            "src.name": this.appName,
+            template: itemCount>1?JSON.stringify({
+                id: "c51d0f0a-5400-446d-a6c5-3cfacf0e50f6",
+                params: [customerName,serviceName,itemCount,date,time,address,bookingAmount],
+            }):JSON.stringify({
+                id: "017d7294-4a22-4db7-85fb-61e9db480eb6",
+                params: [customerName,serviceName,date,time,address,bookingAmount],
+            }),
+        });
+
+        const config = this.createConfig(data);
+
+        try {
+            const response = await axios(config);
+            return response.data;
+        } catch (error) {
+            throw new AppError(error.response?.data?.message || "Failed to send welcome message", error.response?.status || 500);
+        }
+    }
 }
 
 module.exports = new WaMsgService();
