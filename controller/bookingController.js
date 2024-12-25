@@ -850,5 +850,3 @@ exports.getMostBookedProducts = async (req, res) => {
     });
   }
 };
-
-
