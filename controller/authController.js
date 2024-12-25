@@ -2,7 +2,7 @@ const otpModel = require("../models/otpModel");
 const MasterOTP = require("../models/masterOtpModel");
 const catchAsync = require("../utility/catchAsync");
 const AppError = require("../utility/appError");
-const sendWaMsg = require("../utility/sendWaMsg");
+const waMsgService = require("../utility/waMsgService");
 const axios = require('axios');
 const fs = require('fs');
 const request = require('request');
@@ -69,7 +69,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
   try {
     console.log("Sending OTP...");
     // Implement actual OTP sending logic here
-    const response = await sendWaMsg(mobile,otp)
+    const response = await waMsgService.sendOtp(mobile,otp)
     if(!response){
       return res.status(500).json({
         success: false,

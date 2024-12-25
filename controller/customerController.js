@@ -9,6 +9,7 @@ const Membership = require("../models/membershipModel.js");
 const CustomerAddress = require("../models/customerAddressModel");
 const XLSX = require("xlsx");
 const Booking = require("../models/bookingModel.js");
+const waMsgService = require("../utility/waMsgService.js")
 
 //Create Register
 const validateUserInput = (name, email, mobile) => {
@@ -73,6 +74,8 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
+
+    const response = await waMsgService.sendWelcomeMessage(mobile,name)
 
     res.status(201).json({
       success: true,
