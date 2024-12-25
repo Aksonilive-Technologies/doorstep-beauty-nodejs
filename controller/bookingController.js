@@ -663,9 +663,9 @@ exports.updateTransaction = async (req, res) => {
           );
         }
       }
-      const product = Product.findById(booking.product[0].product);
+      const product = await Product.findById(booking.product[0].product);
     
-      await waMsgService.sendCusBoookingConfirmationMessage(customer.mobile,customer.name,product.name,booking.product.length,Date(booking.scheduleFor.date),booking.scheduleFor.time+booking.scheduleFor.format,booking.customerAddress,booking.finalPrice)
+      await waMsgService.sendCusBoookingConfirmationMessage(customer.mobile,customer.name,product.name,booking.product.length,moment(booking.scheduleFor.date).format("DD/MM/YYYY"),booking.scheduleFor.time+" "+booking.scheduleFor.format,booking.customerAddress,booking.finalPrice)
     } else if (transactionStatus === "failed") {
       booking.paymentStatus = "failed";
       booking.status = "failed";
@@ -768,11 +768,10 @@ exports.initiatePayment = async (req, res) => {
           );
         }
       }
-      const product = Product.findById(booking.product[0].product);
+      const product = await Product.findById(booking.product[0].product);
     
-      await waMsgService.sendCusBoookingConfirmationMessage(customer.mobile,customer.name,product.name,booking.product.length,Date(booking.scheduleFor.date),booking.scheduleFor.time+booking.scheduleFor.format,booking.customerAddress,booking.finalPrice)
+      await waMsgService.sendCusBoookingConfirmationMessage(customer.mobile,customer.name,product.name,booking.product.length,moment(booking.scheduleFor.date).format("DD/MM/YYYY"),booking.scheduleFor.time+" "+booking.scheduleFor.format,booking.customerAddress,booking.finalPrice)
     
-
       return res.status(200).json({
         success: true,
         message:
