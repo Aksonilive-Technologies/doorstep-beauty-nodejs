@@ -22,7 +22,7 @@ jobs:
       - name: Deploy to Hostinger KVM
         run: |
           ssh -v -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SERVER_IP }} "
-          cd /var/www/node-api &&
+          cd /var/www/doorstep-beauty-backend &&
           git pull origin production &&
           npm install && # Remove or replace if you're not using Node.js
-          pm2 restart api-server" # Replace with your actual server restart command, e.g., Apache or Nginx reload
+          pm2 restart doorstep-beauty" # Replace with your actual server restart command, e.g., Apache or Nginx reload
