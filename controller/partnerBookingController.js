@@ -62,7 +62,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
     // Booking query with conditional logic based on partner's rating
     const bookingQuery = {
       serviceStatus: "pending",
-      status: "pending",
+      // status: "pending",
       isDeleted: false,
       isActive: true,
     };
