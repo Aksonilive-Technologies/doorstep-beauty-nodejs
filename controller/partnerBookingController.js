@@ -263,9 +263,9 @@ exports.fetchAllBookings = async (req, res) => {
     const groupedBookings = bookings.reduce((acc, booking) => {
       // Get the current service status
       let status = booking.serviceStatus;
-      if (booking.status === "processing") {
-        status = "processing";
-      }
+      // if (booking.status === "processing") {
+      //   status = "processing";
+      // }
 
       // If the group doesn't exist yet, initialize it as an array
       if (!acc[status]) {
