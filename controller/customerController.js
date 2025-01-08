@@ -476,6 +476,8 @@ exports.addMoneyToWallet = async (req, res) => {
       });
     }
 
+    const orderId = await createOrder(Number(amount)*100);
+
     // Create a transaction record with status "Pending"
     const transaction = new Transaction({
       customerId: id,
@@ -490,7 +492,7 @@ exports.addMoneyToWallet = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `₹${amount} recharge initiated for ${customerRecord.name}'s wallet.`,
-      data: { Transaction: transaction },
+      data: {Transaction: transaction , OrderId: orderId}
     });
   } catch (error) {
     console.error("Error adding money to wallet:", error);

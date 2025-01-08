@@ -3,6 +3,7 @@ const Membership = require("../models/membershipModel.js");
 const Plan = require("../models/customerMembershipPlan.js"); // Assuming this is the correct path for your Plan model
 const Transaction = require("../models/transactionModel.js");
 const PlanPurchaseHistory = require("../models/PlanPurchaseHistoryModel.js");
+const {createOrder} = require("../helper/razorpayHelper.js")
 
 exports.buyMembershipPlan = async (req, res) => {
   // const { customerId } = req.query;
@@ -63,6 +64,8 @@ exports.buyMembershipPlan = async (req, res) => {
 
     console.log(membership);
 
+    const orderId = await createOrder(Number(membership.discountedPrice)*100);
+
     // Create a transaction record with status "Pending"
     const transaction = new Transaction({
       customerId: customerId,
@@ -81,7 +84,7 @@ exports.buyMembershipPlan = async (req, res) => {
       } for ${
         membership.tenure + " " + membership.tenureType
       } membership plan purchase.`,
-      data: { Transaction: transaction },
+      data: { Transaction: transaction, OrderId: orderId },
     });
   } catch (error) {
     console.error("Error while purchasing membership plan :", error);
