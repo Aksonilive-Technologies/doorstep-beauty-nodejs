@@ -7,7 +7,7 @@ const instance = new Razorpay({
 });
 
 // Function to create an order
-export const createOrder = async (amount) => {
+exports.createOrder = async (amount) => {
   const options = {
     amount, // Amount in paise (e.g., ₹500 is 50000)
     currency: "INR",
