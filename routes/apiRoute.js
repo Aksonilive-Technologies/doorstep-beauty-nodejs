@@ -116,6 +116,7 @@ app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/user/auth/otp", authorizationRoute);
 app.use("/api/v1/user/fcm/token", firebaseTokenRoute);
 app.use("/api/v1/user/app/version", appVersionRoute);
+ // comment
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
