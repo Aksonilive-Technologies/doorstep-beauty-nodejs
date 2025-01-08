@@ -16,6 +16,7 @@ const { processPartnerRefund } = require("../helper/processPartnerRefund");
 const { processCustomerRefund } = require("../helper/processCustomerRefund");
 const XLSX = require('xlsx');
 const waMsgService = require("../utility/waMsgService");
+const {createOrder} = require("../helper/razorpayHelper.js")
 
 exports.bookProduct = async (req, res) => {
   const {
@@ -738,6 +739,8 @@ exports.initiatePayment = async (req, res) => {
       transactionData.transactionType = "wallet_booking";
       transactionData.status = "completed";
 
+      const orderId = await createOrder(Number(finalPrice)*100);
+
       const transaction = new Transaction(transactionData);
       await transaction.save();
 
@@ -776,7 +779,7 @@ exports.initiatePayment = async (req, res) => {
         success: true,
         message:
           "Payment processed successfully via wallet and booking updated",
-        data: booking,
+        data: {Booking: booking, OrderId: orderId}
       });
     } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
       // Create a pending transaction for gateway payments
