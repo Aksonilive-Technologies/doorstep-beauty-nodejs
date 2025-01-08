@@ -739,7 +739,6 @@ exports.initiatePayment = async (req, res) => {
       transactionData.transactionType = "wallet_booking";
       transactionData.status = "completed";
 
-      const orderId = await createOrder(Number(finalPrice)*100);
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
@@ -779,12 +778,14 @@ exports.initiatePayment = async (req, res) => {
         success: true,
         message:
           "Payment processed successfully via wallet and booking updated",
-        data: {Booking: booking, OrderId: orderId}
+        // data: {Booking: booking, OrderId: orderId}
       });
     } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
       // Create a pending transaction for gateway payments
       transactionData.transactionType = "gateway_booking";
       transactionData.status = "pending";
+
+      const orderId = await createOrder(Number(finalPrice)*100);
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
@@ -795,7 +796,7 @@ exports.initiatePayment = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Transaction initiated successfully via " + paymentMode,
-        data: booking,
+        data: {OrderId: orderId},
       });
     } else {
       return res.status(400).json({
