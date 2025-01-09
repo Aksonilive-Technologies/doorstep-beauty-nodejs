@@ -2,8 +2,8 @@ const Razorpay = require('razorpay');
 
 // Initialize Razorpay instance
 const instance = new Razorpay({
-  key_id: 'YOUR_KEY_ID', // Replace with your Razorpay Key ID
-  key_secret: 'YOUR_KEY_SECRET', // Replace with your Razorpay Key Secret
+  key_id: process.env.PG_Key, // Replace with your Razorpay Key ID
+  key_secret: process.env.PG_Secret, // Replace with your Razorpay Key Secret
 });
 
 // Function to create an order
