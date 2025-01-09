@@ -588,6 +588,21 @@ exports.updateTransaction = async (req, res) => {
   try {
     const { bookingId, transactionStatus, paymentGatewayId } = req.body;
 
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      status: "processing",
+      serviceStatus: "pending",
+      isDeleted: false,
+    });
+    if (!booking) {
+      return res
+        .status(404)
+        .json({
+          Success: false,
+          message: "Booking not found for the transaction",
+        });
+    }
+
     // Step 1: Find and update the transaction
     const transaction = await Transaction.findOne({
       _id: booking.transaction,
@@ -618,20 +633,7 @@ exports.updateTransaction = async (req, res) => {
 
     await transaction.save();
 
-    const booking = await Booking.findOne({
-      _id: bookingId,
-      status: "processing",
-      serviceStatus: "pending",
-      isDeleted: false,
-    });
-    if (!booking) {
-      return res
-        .status(404)
-        .json({
-          Success: false,
-          message: "Booking not found for the transaction",
-        });
-    }
+    
 
     // Step 2: Find and update the booking
 
