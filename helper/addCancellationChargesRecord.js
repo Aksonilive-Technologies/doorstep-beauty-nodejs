@@ -9,17 +9,20 @@ const BookingCancellationFees = require("../models/bookingCancellationFeesModel.
  */
 const addCancellationChargesRecord = async (booking, userType, charges, status) => {
   try {
+    let userId;
+    if (userType === 'customer') {
+      userId = booking.customerId;
+    } else if (userType === 'partner') {
+        userId = booking.partner[0].partner;
+    }
     const cancellationFeeRecord = new BookingCancellationFees({
       booking: booking._id,
+      userId: userId,
       userType: userType,
       charges: charges,
       status: status,
     });
-    if (userType === 'customer') {
-      cancellationFeeRecord.userId = booking.customerId;
-    } else if (userType === 'partner') {
-        cancellationFeeRecord.userId = booking.partner[0].partner;
-    }
+    
 
     // Save the cancellation fee record to the database
     await cancellationFeeRecord.save();
