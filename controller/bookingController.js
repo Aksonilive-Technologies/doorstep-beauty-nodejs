@@ -367,7 +367,7 @@ exports.cancelBooking = async (req, res) => {
         ];
 
         // Check if the cancellation fee status is paid and add refund message if so
-        if (cancellationFeeStatus === "paid") {
+        if (customerCancellationFeeStatus === "paid") {
           sendMessages.push(
             CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token)
           );
@@ -382,6 +382,7 @@ exports.cancelBooking = async (req, res) => {
       message: "Booking cancelled successfully",
     });
   } catch (error) {
+    console.error("Error cancelling booking:", error);
     res.status(500).json({
       success: false,
       message: "Error cancelling booking",
