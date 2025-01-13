@@ -9,8 +9,8 @@ const Transaction = require("../models/transactionModel");
 let processCustomerRefund = async (booking, customerCancellationCharges, partnerCancellationCharges, paymentMode) => {
   try {
     
-    const customerRefundAmount = partnerCancellationCharges - customerCancellationCharges;
-    const customer = await Customer.findById(booking.customer);
+    let customerRefundAmount = partnerCancellationCharges - customerCancellationCharges;
+    let customer = await Customer.findById(booking.customer);
     
     if (!customer) {
     throw new Error('Customer not found');
