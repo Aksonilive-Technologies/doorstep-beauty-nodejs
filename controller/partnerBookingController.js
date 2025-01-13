@@ -619,11 +619,11 @@ exports.cancelBooking = async (req, res) => {
         ];
 
         // Check if the cancellation fee status is paid and add refund message if so
-        if (cancellationFeeStatus === "paid") {
+        // if (cancellationFeeStatus === "paid") {
           sendMessages.push(
             CustomerFCMService.sendBookingRefundMessage(customerTokens[i].token)
           );
-        }
+        // }
         await Promise.all(sendMessages);
       }
     }
