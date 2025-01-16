@@ -4,6 +4,7 @@ const Cart = require("../controller/partnerCartController");
 const verifyToken = require("../middleware/verifyToken");
 
 router.post("/add-item", Cart.addItemToCart);
+router.post("/create-transaction", Cart.createCartBookingTransaction)
 router.post("/fetch", Cart.getCartByPartnerId);
 router.post("/remove-item", Cart.removeItemFromCart);
 router.post("/item/increment", Cart.incrementItemQuantity);
