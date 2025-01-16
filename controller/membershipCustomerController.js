@@ -2,9 +2,6 @@ const Membership = require("../models/membershipModel.js");
 const PlanPurchaseHistory = require("../models/PlanPurchaseHistoryModel.js");
 const Transaction = require("../models/transactionModel.js");
 const Customer = require("../models/customerModel.js");
-const Membership = require("../models/membershipModel.js");
-const Transaction = require("../models/transactionModel.js");
-const PlanPurchaseHistory = require("../models/PlanPurchaseHistoryModel.js");
 const {createOrder} = require("../helper/razorpayHelper.js")
 
 exports.buyMembershipPlan = async (req, res) => {

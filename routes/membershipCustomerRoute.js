@@ -2,9 +2,6 @@
 const express = require("express");
 const {
   buyMembershipPlan,
-  getPlansByCustomerId,
-} = require("../controller/planAdminController.js");
-const {
   getAllMembership,
   updateMembershipTransactionStatus,
   getActivePlan
