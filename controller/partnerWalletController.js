@@ -6,6 +6,8 @@ const { cloudinary } = require("../config/cloudinary");
 const PartnerTransaction = require("../models/partnerTransactionModel.js");
 const ServicablePincode = require('../models/servicablePincodeModel');
 const { partnerById } = require("./partnerController.js");
+const {createOrder} = require("../helper/razorpayHelper.js")
+
 
 // Add money to wallet
 exports.addMoneyToWallet = async (req, res) => {
@@ -34,6 +36,8 @@ exports.addMoneyToWallet = async (req, res) => {
       });
     }
 
+    const orderId = await createOrder(Number(amount)*100);
+
     // Create a transaction record with status "Pending"
     const partnerTransaction = new PartnerTransaction({
       partnerId: id,
@@ -48,7 +52,7 @@ exports.addMoneyToWallet = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `₹${amount} recharge initiated for ${partnerRecord.name}'s wallet.`,
-      data: { Transaction: partnerTransaction },
+      data: { Transaction: partnerTransaction, OrderId: orderId },
     });
   } catch (error) {
     console.error("Error adding money to wallet:", error);
