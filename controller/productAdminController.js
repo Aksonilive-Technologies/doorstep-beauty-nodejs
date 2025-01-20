@@ -139,7 +139,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// This one is to update product and update multiple images 
+// This one is to update product and update multiple images
 // Update product
 // exports.updateProduct = async (req, res) => {
 //   const { id } = req.query;
@@ -283,17 +283,17 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    if (productData.options) {
-      try {
-        productData.options = JSON.parse(productData.options);
-      } catch (error) {
-        console.log("Error parsing options:", error.message);
-        return res.status(400).json({
-          success: false,
-          message: "Invalid options format. It should be a valid JSON array.",
-        });
-      }
-    }
+    // if (productData.options) {
+    //   try {
+    //     productData.options = JSON.parse(productData.options);
+    //   } catch (error) {
+    //     console.log("Error parsing options:", error.message);
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "Invalid options format. It should be a valid JSON array.",
+    //     });
+    //   }
+    // }
 
     const product = await Product.findById(id);
 
@@ -366,7 +366,6 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
-
 
 // Delete product
 exports.deleteProduct = async (req, res) => {
