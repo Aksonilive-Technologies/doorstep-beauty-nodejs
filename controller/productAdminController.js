@@ -139,11 +139,140 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+// This one is to update product and update multiple images 
 // Update product
+// exports.updateProduct = async (req, res) => {
+//   const { id } = req.query;
+//   const productData = req.body;
+//   const files = req.files;
+
+//   try {
+//     // Validate product input
+//     if (!id) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Product ID is required",
+//       });
+//     }
+
+//     if (productData.options) {
+//       try {
+//         productData.options = JSON.parse(productData.options);
+//       } catch (error) {
+//         console.log("Error parsing options:", error.message);
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid options format. It should be a valid JSON array.",
+//         });
+//       }
+//     }
+
+//     const product = await Product.findById(id);
+
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//       });
+//     }
+
+//     // Update only the fields that are provided
+//     const updatedFields = {};
+//     for (let key in productData) {
+//       if (productData[key] !== undefined) {
+//         updatedFields[key] = productData[key];
+//       }
+//     }
+
+//     console.log("updatedFields :", updatedFields);
+
+//     // Upload the image to Cloudinary if a file is present
+//     let optionsImages = [];
+
+//     if (files && files.length > 0) {
+//       // Upload the first image to 'product' folder and the rest to 'options' folder
+//       console.log("Uploading files to Cloudinary");
+//       for (let i = 0; i < files.length; i++) {
+//         try {
+//           const result = await cloudinary.uploader.upload(files[i].path, {
+//             folder: i === 0 && productData.image === "" ? "product" : "options", // First image goes to 'product' folder, others to 'options'
+//             public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
+//             overwrite: true,
+//           });
+
+//           if (i === 0 && productData.image === "") {
+//             updatedFields["image"] = result.secure_url; // First image is for the product
+//           } else {
+//             optionsImages.push(result.secure_url); // Other images are for the options
+//           }
+//         } catch (error) {
+//           return res.status(500).json({
+//             success: false,
+//             message: "Error uploading images",
+//             errorMessage: error.message,
+//           });
+//         }
+//       }
+//     } else {
+//       console.log("No files provided, skipping image upload.");
+//     }
+
+//     console.log(updatedFields);
+
+//     if (updatedFields.options && optionsImages.length > 0) {
+//       let imageIndex = 0;
+//       updatedFields.options.forEach((option) => {
+//         if (optionsImages[imageIndex] && !option._id) {
+//           option.image = optionsImages[imageIndex];
+//           imageIndex++;
+//         }
+//         if (!option._id) {
+//           console.log(option);
+
+//           product.options.push(option); // This will add a new option to the product
+//         } else {
+//           // Existing option will be updated (handled above)
+//           return option;
+//         }
+//       });
+//     }
+
+//     // Update the product in the database
+//     const updatedProduct = await Product.findByIdAndUpdate(
+//       id,
+//       { $set: updatedFields },
+//       { new: true }
+//     );
+
+//     updatedProduct.save();
+
+//     if (!updatedProduct) {
+//       return res.status(500).json({
+//         success: false,
+//         message: "Error updating product",
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Product updated successfully",
+//       data: updatedProduct,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error updating product",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
+
+// This one is to update only single image
 exports.updateProduct = async (req, res) => {
   const { id } = req.query;
   const productData = req.body;
-  const files = req.files;
+  const file = req.file; // Changed from req.files to req.file for single upload
 
   try {
     // Validate product input
@@ -183,58 +312,30 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    console.log("updatedFields :", updatedFields);
+    console.log("updatedFields:", updatedFields);
 
-    // Upload the image to Cloudinary if a file is present
-    let optionsImages = [];
-
-    if (files && files.length > 0) {
-      // Upload the first image to 'product' folder and the rest to 'options' folder
-      console.log("Uploading files to Cloudinary");
-      for (let i = 0; i < files.length; i++) {
-        try {
-          const result = await cloudinary.uploader.upload(files[i].path, {
-            folder: i === 0 && productData.image === "" ? "product" : "options", // First image goes to 'product' folder, others to 'options'
-            public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
-            overwrite: true,
-          });
-
-          if (i === 0 && productData.image === "") {
-            updatedFields["image"] = result.secure_url; // First image is for the product
-          } else {
-            optionsImages.push(result.secure_url); // Other images are for the options
-          }
-        } catch (error) {
-          return res.status(500).json({
-            success: false,
-            message: "Error uploading images",
-            errorMessage: error.message,
-          });
-        }
+    // Upload single image to Cloudinary if a file is present
+    if (file) {
+      console.log("Uploading file to Cloudinary");
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "product",
+          public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        updatedFields["image"] = result.secure_url;
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: error.message,
+        });
       }
     } else {
-      console.log("No files provided, skipping image upload.");
+      console.log("No file provided, skipping image upload.");
     }
 
     console.log(updatedFields);
-
-    if (updatedFields.options && optionsImages.length > 0) {
-      let imageIndex = 0;
-      updatedFields.options.forEach((option) => {
-        if (optionsImages[imageIndex] && !option._id) {
-          option.image = optionsImages[imageIndex];
-          imageIndex++;
-        }
-        if (!option._id) {
-          console.log(option);
-
-          product.options.push(option); // This will add a new option to the product
-        } else {
-          // Existing option will be updated (handled above)
-          return option;
-        }
-      });
-    }
 
     // Update the product in the database
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -265,6 +366,7 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
+
 
 // Delete product
 exports.deleteProduct = async (req, res) => {
