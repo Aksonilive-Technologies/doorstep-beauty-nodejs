@@ -65,6 +65,7 @@ const partnerStockRoute = require("./partnerStockRoute");
 const parnterStockBookingRoute = require("./parnterStockBookingRoute.js");
 const partnerCartRoute = require("./partnerCartRoute");
 const graphRoute = require("./graphRoute")
+const spareFileUploadRoute = require("./spareFileUploadRoute.js")
 
 //***************Customer Route API************************ */
 
@@ -108,8 +109,8 @@ app.use("/api/v1/admin/stock", stockRoute);
 app.use("/api/v1/admin/booking", bookingAdminRoute);
 app.use("/api/v1/admin/graph", graphRoute);
 
-//**************Testing Route API************************ */
-app.use("/api/v1/testing/admin", require("./testingRoute.js"));
+//**************Spare Route API************************ */
+app.use("/api/v1/spare-file", spareFileUploadRoute);
 
 //**************User Route API************************ */
 app.use("/api/v1/customer/auth/otp", authorizationRoute);

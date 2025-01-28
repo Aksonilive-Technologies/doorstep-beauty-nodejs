@@ -5,7 +5,7 @@ const customersSchema = new mongoose.Schema(
     image: {
       type: String,
       default:
-        "https://img.freepik.com/free-vector/flat-style-woman-avatar_90220-2944.jpg?t=st=1723229342~exp=1723232942~hmac=f7ae6821ecd30cc5ed961db3b5494b70a6a3d757ad095a733f38740d141dcaa2&w=740",
+        "https://res.cloudinary.com/da54w0hbc/image/upload/v1738085572/spare_files/1738085570964_Singup%20girl%20icon.png",
     },
     name: {
       type: String,
