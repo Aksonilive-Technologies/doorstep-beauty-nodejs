@@ -1,10 +1,10 @@
 const { cloudinary } = require("../config/cloudinary.js");
-exports.testImages = async (req, res) => {
+exports.uploadProfileImage = async (req, res) => {
 	try {
 	  let imageUrl = null;
 	  if (req.file) {
 		const result = await cloudinary.uploader.upload(req.file.path, {
-		  folder: "testing",
+		  folder: "spare_files",
 		  public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
 		  overwrite: true,
 		});
