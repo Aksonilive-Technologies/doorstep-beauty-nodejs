@@ -1,4 +1,4 @@
-const BookingCancellationFees = require("../models/bookingCancellationFeesModel.js");
+const BookingCancellationFees = require("../src/features/booking-cancellation-fees/model/booking-cancellation-fees.model.js");
 
 /**
  * Creates a new BookingCancellationFees record.
