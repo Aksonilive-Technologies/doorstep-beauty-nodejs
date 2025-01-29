@@ -5,6 +5,6 @@ const {
   uploadProfileImage,
 } = require("./spareFileUploadController");
 
-router.post("/upload/profile-image", uploadSingleImage, uploadProfileImage);
+router.post("/profile-image/upload", uploadSingleImage, uploadProfileImage);
 
 module.exports = router;
