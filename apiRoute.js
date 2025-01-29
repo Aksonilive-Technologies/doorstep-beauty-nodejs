@@ -110,11 +110,12 @@ app.use("/api/v1/admin/stock", stockRoute);
 app.use("/api/v1/admin/booking", bookingAdminRoute);
 app.use("/api/v1/admin/graph", graphRoute);
 
-//**************Spare Route API************************ */
+//**************Extra Route API************************ */
 
-const spareFileUploadRoute = require("./extras/spareFileUploadRoute.js");
+const extraRoute = require("./extras/extra.route.js");
 
-app.use("/api/v1/spare-file", spareFileUploadRoute);
+app.use("/api/v1/extra", extraRoute);
+
 
 //**************User Route API************************ */
 

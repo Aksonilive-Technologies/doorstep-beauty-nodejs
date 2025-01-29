@@ -3,6 +3,7 @@ const router = express.Router();
 const app = express();
 const {
   register,
+  registerSuperadmin,
   login,
   allAdmin,
   deleteAdmin,
@@ -15,6 +16,7 @@ const {
 const verifyToken = require("../../../../middleware/verifyToken");
 
 router.post("/register", register);
+router.post("/register-superadmin", registerSuperadmin);
 router.post("/login", login);
 
 router.get("/all", verifyToken, allAdmin);

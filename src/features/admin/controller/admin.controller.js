@@ -71,6 +71,57 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.registerSuperadmin = async (req, res) => {
+  const { name, username, password, email} = req.body;
+
+    const requiredFields = { name, username, password, email};
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return res.status(400).json({
+          success: false,
+          message: `${key} is required`,
+        });
+      }
+    }
+
+    try{
+    const [existingAdminUser, existingAdminEmail] = await Promise.all([
+      Admin.findOne({ username }),
+      Admin.findOne({ email }),
+    ]);
+
+    if (existingAdminUser || existingAdminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: existingAdminUser
+          ? "Username already exists"
+          : "Email already exists",
+      });
+    }
+
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    const newAdmin = new Admin({
+      name,
+      username,
+      password: hashedPassword,
+      email,
+      role: 'all',
+    });
+
+    await newAdmin.save();
+    return res.status(201).json({
+      success: true,
+      message: "Admin registered successfully",
+    });
+  } catch (error) {
+    console.error("Error while registering superadmin:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error occurred while registering superadmin",
+    });
+  }
+};
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
