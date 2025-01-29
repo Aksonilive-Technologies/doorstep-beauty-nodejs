@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const app = express();
 app.use(express.json());
-const AppError = require("../utility/appError");
+const AppError = require("../utility/appError.js");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "100mb" }));
@@ -28,44 +28,45 @@ db.once("open", () => {
   console.log("Connected to MongoDB");
 });
 
-const authorizationRoute = require("./authorizationRoute");
+const authorizationRoute = require("./authorizationRoute.js");
 const bookingRoute = require("./bookingRoute.js");
-const partnerBookingRoute = require("./partnerBookingRoute");
+const partnerBookingRoute = require("./partnerBookingRoute.js");
 const bookingAdminRoute = require("./bookingAdminRoute.js");
-const productRoute = require("./productRoute");
-const partnerRoute = require("./partnerRoute");
-const adminPartnerRoute = require("./adminPartnerRoute");
-const adminCustomerRoute = require("./adminCustomerRoute");
-const slotCustomerRoute = require("./slotCustomerRoute");
-const slotRoute = require("./slotRoutes");
-const appVersionRoute = require("./appVersionRoute");
-const customerRoute = require("./customerRoute");
-const cartRoute = require("./cartRoute");
-const bannerRoute = require("./bannerRoute");
-const membershipRoute = require("./membershipRoute");
-const feedbackRoute = require("./feedbackRoute");
-const customerAddressRoute = require("./customerAddressRoute");
-const offerRoute = require("./offerRoute");
-const stockRoute = require("./stockRoute");
-const adminRoute = require("./adminRoute");
-const notificationRoute = require("./notificationRoutes");
-const productAdminRoute = require("./productAdminRoute");
-const packageAdminRoute = require("./packageAdminRoute");
-const adminComplainRoute = require("./adminComplainRoute");
-const packageAppRoute = require("./packageAppRoute");
-const bannerAppRoute = require("./bannerAppRoute");
-const categoryAppRoute = require("./categoryAppRoute");
-const categoryAdminRoute = require("./categoryAdminRoute");
-const feedbackCustomerRoute = require("./feedbackCustomerRoute");
-const customerComplaintRoute = require("./customerComplaintRoute");
-const membershipCustomerRoute = require("./membershipCustomerRoute");
-const firebaseTokenRoute = require("./firebaseTokenRoute");
-const partnerWalletRoute = require("./partnerWalletRoute");
-const partnerStockRoute = require("./partnerStockRoute");
+const productRoute = require("./productRoute.js");
+const partnerRoute = require("./partnerRoute.js");
+const adminPartnerRoute = require("./adminPartnerRoute.js");
+const adminCustomerRoute = require("./adminCustomerRoute.js");
+const slotCustomerRoute = require("./slotCustomerRoute.js");
+const slotRoute = require("./slotRoutes.js");
+const appVersionRoute = require("./appVersionRoute.js");
+const customerRoute = require("./customerRoute.js");
+const cartRoute = require("./cartRoute.js");
+const bannerRoute = require("./bannerRoute.js");
+const membershipRoute = require("./membershipRoute.js");
+const feedbackRoute = require("./feedbackRoute.js");
+const customerAddressRoute = require("./customerAddressRoute.js");
+const offerRoute = require("./offerRoute.js");
+const stockRoute = require("./stockRoute.js");
+const adminRoute = require("./adminRoute.js");
+const notificationRoute = require("./notificationRoutes.js");
+const productAdminRoute = require("./productAdminRoute.js");
+const packageAdminRoute = require("./packageAdminRoute.js");
+const adminComplainRoute = require("./adminComplainRoute.js");
+const packageAppRoute = require("./packageAppRoute.js");
+const bannerAppRoute = require("./bannerAppRoute.js");
+const categoryAppRoute = require("./categoryAppRoute.js");
+const categoryAdminRoute = require("./categoryAdminRoute.js");
+const subcategoryAdminRoute = require("../src/features/subcategory/route/subcategory.admin.route.js");
+const feedbackCustomerRoute = require("./feedbackCustomerRoute.js");
+const customerComplaintRoute = require("./customerComplaintRoute.js");
+const membershipCustomerRoute = require("./membershipCustomerRoute.js");
+const firebaseTokenRoute = require("./firebaseTokenRoute.js");
+const partnerWalletRoute = require("./partnerWalletRoute.js");
+const partnerStockRoute = require("./partnerStockRoute.js");
 const parnterStockBookingRoute = require("./parnterStockBookingRoute.js");
-const partnerCartRoute = require("./partnerCartRoute");
-const graphRoute = require("./graphRoute")
-const spareFileUploadRoute = require("./spareFileUploadRoute.js")
+const partnerCartRoute = require("./partnerCartRoute.js");
+const graphRoute = require("./graphRoute.js");
+const spareFileUploadRoute = require("./spareFileUploadRoute.js");
 
 //***************Customer Route API************************ */
 
@@ -97,6 +98,7 @@ app.use("/api/v1/admin/customer", adminCustomerRoute);
 app.use("/api/v1/admin/partner", adminPartnerRoute);
 app.use("/api/v1/admin/banner", bannerRoute);
 app.use("/api/v1/admin/category", categoryAdminRoute);
+app.use("/api/v1/admin/subcategory", subcategoryAdminRoute);
 app.use("/api/v1/admin/product", productAdminRoute);
 app.use("/api/v1/admin/package", packageAdminRoute);
 app.use("/api/v1/admin/membership", membershipRoute);
@@ -117,7 +119,7 @@ app.use("/api/v1/customer/auth/otp", authorizationRoute);
 app.use("/api/v1/user/auth/otp", authorizationRoute);
 app.use("/api/v1/user/fcm/token", firebaseTokenRoute);
 app.use("/api/v1/user/app/version", appVersionRoute);
- // comment
+// comment
 
 app.all("*", async (request, response, next) => {
   return response.status(404).json({
