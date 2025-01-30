@@ -135,8 +135,10 @@ exports.createNotification = async (req, res) => {
 
     let imageUrl;
     if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "notification",
+        folder: baseFolder + "notification",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -295,8 +297,10 @@ exports.updateNotification = async (req, res) => {
     // Upload image if file is provided
     let imageUrl;
     if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "notification",
+        folder: baseFolder + "notification",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
