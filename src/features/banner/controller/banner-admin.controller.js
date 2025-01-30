@@ -42,7 +42,7 @@ exports.addBanner = async (req, res) => {
     let imageUrl;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "banner",
+        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "banner",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -127,7 +127,7 @@ exports.updateBanner = async (req, res) => {
     let imageUrl;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "banner",
+        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "banner",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });

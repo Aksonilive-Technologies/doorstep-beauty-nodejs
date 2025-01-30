@@ -66,7 +66,7 @@ exports.createProduct = async (req, res) => {
       for (let i = 0; i < files.length; i++) {
         try {
           const result = await cloudinary.uploader.upload(files[i].path, {
-            folder: i === 0 ? "product" : "options", // First image goes to 'product' folder, others to 'options'
+            folder: i === 0 ? process.env.CLOUDINARY_BASE_FOLDER || "" + "product" : process.env.CLOUDINARY_BASE_FOLDER || "" + "options", // First image goes to 'product' folder, others to 'options'
             public_id: `${Date.now()}_${files[i].originalname.split(".")[0]}`,
             overwrite: true,
           });
@@ -318,7 +318,7 @@ exports.updateProduct = async (req, res) => {
       console.log("Uploading file to Cloudinary");
       try {
         const result = await cloudinary.uploader.upload(file.path, {
-          folder: "product",
+          folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "product",
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });

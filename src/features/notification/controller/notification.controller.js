@@ -136,7 +136,7 @@ exports.createNotification = async (req, res) => {
     let imageUrl;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "notification",
+        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "notification",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -296,7 +296,7 @@ exports.updateNotification = async (req, res) => {
     let imageUrl;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "notification",
+        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "notification",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
