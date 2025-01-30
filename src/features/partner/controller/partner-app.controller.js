@@ -375,8 +375,10 @@ exports.updatePartner = async (req, res) => {
     if (file) {
       console.log("Uploading file to Cloudinary:", file.filename);
       try {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
         const result = await cloudinary.uploader.upload(file.path, {
-          folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "partners",
+          folder: baseFolder + "partners",
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });

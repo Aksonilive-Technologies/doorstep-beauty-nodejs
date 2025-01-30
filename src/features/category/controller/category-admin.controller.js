@@ -39,8 +39,10 @@ exports.createCategory = async (req, res) => {
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
     if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "category",
+        folder: baseFolder + "category",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -116,8 +118,10 @@ exports.updateCategory = async (req, res) => {
 
     // If there's a new image, upload it and add the URL to the updates
     if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "category",
+        folder: baseFolder + "category",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });

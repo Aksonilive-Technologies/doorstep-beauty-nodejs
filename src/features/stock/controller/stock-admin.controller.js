@@ -28,8 +28,10 @@ exports.createStock = async (req, res) => {
   let imageUrl = null;
   if (req.file) {
     try {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "Stock",
+        folder: baseFolder + "Stock",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -153,8 +155,10 @@ exports.updateStock = async (req, res) => {
     let imageUrl = stock.image; // Retain the existing image
     if (file) {
       try {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
         const result = await cloudinary.uploader.upload(file.path, {
-          folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "Stock",
+          folder: baseFolder + "Stock",
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });

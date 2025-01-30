@@ -76,8 +76,10 @@ exports.register = async (req, res) => {
     // Upload the image to Cloudinary if present
     let imageUrl = undefined;
     if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "partners",
+        folder: baseFolder + "partners",
         public_id: `${Date.now()}_${name}`,
         overwrite: true,
       });
