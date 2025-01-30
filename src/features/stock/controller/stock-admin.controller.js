@@ -29,7 +29,7 @@ exports.createStock = async (req, res) => {
   if (req.file) {
     try {
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "Stock",
+        folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "Stock",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -154,7 +154,7 @@ exports.updateStock = async (req, res) => {
     if (file) {
       try {
         const result = await cloudinary.uploader.upload(file.path, {
-          folder: "Stock",
+          folder: process.env.CLOUDINARY_BASE_FOLDER || "" + "Stock",
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });
