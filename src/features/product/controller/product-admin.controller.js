@@ -464,7 +464,7 @@ exports.getAllProducts = async (req, res) => {
     // Fetch products with pagination and sorting
     const products = await Product.find()
       .select("-__v")
-      .populate("categoryId", "position")
+      .populate("categoryId")
       // .skip(skip)
       // .limit(parseInt(limit));
 
