@@ -465,11 +465,13 @@ exports.getAllProducts = async (req, res) => {
     const products = await Product.find()
       .select("-__v")
       .populate("categoryId")
+      .sort({ position: 1 }) 
       // .skip(skip)
       // .limit(parseInt(limit));
 
       // Manually sort the products based on category position
     products.sort((a, b) => a.categoryId.position - b.categoryId.position);
+
 
     // Apply pagination after sorting
     const totalProducts = products.length;
