@@ -210,12 +210,12 @@ exports.allAdmin = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    if (admins.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No admins found",
-      });
-    }
+    // if (admins.length === 0) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "No admins found",
+    //   });
+    // }
 
     const totalAdmins = await Admin.countDocuments({ _id: { $ne: adminId } });
 
