@@ -464,6 +464,7 @@ exports.getAllProducts = async (req, res) => {
     // Fetch products with pagination and sorting
     const products = await Product.find()
       .select("-__v")
+      .sort({ categoryId: -1, price: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
