@@ -16,7 +16,8 @@ exports.getAllCategories = async (req, res) => {
         categoryId: category._id,
         isDeleted: false,
         isActive: true,
-      }).select("-__v");
+      }).select("-__v")
+      .sort({ position: 1 });
       category.products = products;
     }
 
