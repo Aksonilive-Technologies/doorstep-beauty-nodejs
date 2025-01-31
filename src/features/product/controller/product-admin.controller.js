@@ -464,23 +464,31 @@ exports.getAllProducts = async (req, res) => {
     // Fetch products with pagination and sorting
     const products = await Product.find()
       .select("-__v")
-      .sort({ categoryId: -1, price: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+      .populate("categoryId", "position")
+      // .skip(skip)
+      // .limit(parseInt(limit));
+
+      // Manually sort the products based on category position
+    products.sort((a, b) => a.categoryId.position - b.categoryId.position);
+
+    // Apply pagination after sorting
+    const totalProducts = products.length;
+    const paginatedProducts = products.slice((page - 1) * limit, page * limit);
+
+      console.log(products);
 
     // Get the total count of products for pagination calculation
-    const totalProducts = await Product.countDocuments();
+    // const totalProducts = await Product.countDocuments();
 
     res.status(200).json({
       success: true,
       message: "All products fetched successfully",
-      data: products,
+      data: paginatedProducts,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalProducts / limit),
         totalProducts,
-      },
-    });
+      },});
   } catch (error) {
     res.status(500).json({
       success: false,
