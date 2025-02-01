@@ -1,5 +1,5 @@
 const app = require("./apiRoute");
-const port = 3000;
+const port = process.env.port || 3000;
 const AppError = require("./utility/appError");
 
 app.get("/", (req, res) => {
