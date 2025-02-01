@@ -1,5 +1,5 @@
 const dotenv = require("dotenv");
-dotenv.config();
+dotenv.config({ path: '/var/www/doorstep-beauty-backend/.env' });
 const cron = require("node-cron");
 const { google } = require("googleapis");
 const fs = require("fs");
@@ -11,6 +11,9 @@ const path = require("path");
 const BACKUP_PATH = "./backups"; // Local backup folder
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; // Replace with your Drive folder ID
 const DATABASE = "test"; // Replace with your actual backup database name
+
+// Add MongoDB tools to the PATH only if not already present
+process.env.PATH = process.env.PATH + ':' + "/usr/local/bin/mongodb-database-tools/bin";
 
 // Ensure backup directory exists
 if (!fs.existsSync(BACKUP_PATH)) {
@@ -63,7 +66,7 @@ const uploadToDrive = async (filePath, fileName) => {
             fields: "id",
         });
 
-        console.log(`Backup uploaded to Google Drive: ${response.data.id}`);
+        // console.log(`Backup uploaded to Google Drive: ${response.data.id}`);
 
         // Delete the local backup file after successful upload
         deleteLocalBackup(filePath);
@@ -78,7 +81,7 @@ const deleteLocalBackup = (filePath) => {
         if (err) {
             console.error("Error deleting local backup file:", err.message);
         } else {
-            console.log(`Local backup file deleted: ${filePath}`);
+            // console.log(`Local backup file deleted: ${filePath}`);
         }
     });
 };
@@ -89,5 +92,11 @@ cron.schedule("0 0 * * *", () => {
     console.log("Starting database backup...");
     backupDatabase();
 });
+
+
+// cron.schedule("*/1 * * * *", () => {
+//     console.log("Starting database backup...");
+//     backupDatabase();
+// });
 
 console.log("MongoDB Backup Scheduler is running...");

@@ -22,14 +22,14 @@ exports.createProduct = async (req, res) => {
   const productData = req.body;
   const files = req.files;
 
-  console.log("Received product data:", productData);
-  console.log("Received files:", files);
+  // console.log("Received product data:", productData);
+  // console.log("Received files:", files);
 
   if (productData.options) {
     try {
       productData.options = JSON.parse(productData.options);
     } catch (error) {
-      console.log("Error parsing options:", error.message);
+      console.error("Error parsing options:", error);
       return res.status(400).json({
         success: false,
         message: "Invalid options format. It should be a valid JSON array.",
@@ -40,16 +40,16 @@ exports.createProduct = async (req, res) => {
   // Validate product input
   const validationError = validateProductInput(productData);
   if (validationError) {
-    console.log("Validation error:", validationError);
+    console.error("Validation error:", validationError);
     return res.status(400).json({ success: false, message: validationError });
   }
 
   try {
-    // console.log("Checking for existing product with name:", productData.name);
+    // // console.log("Checking for existing product with name:", productData.name);
     // const existingProduct = await Product.findOne({ name: productData.name });
 
     // if (existingProduct) {
-    //   console.log("Product already exists:", existingProduct);
+    //   // console.log("Product already exists:", existingProduct);
     //   return res.status(400).json({
     //     success: false,
     //     message: `Product with name ${productData.name} already exists`,
@@ -62,7 +62,7 @@ exports.createProduct = async (req, res) => {
 
     if (files && files.length > 0) {
       // Upload the first image to 'product' folder and the rest to 'options' folder
-      console.log("Uploading files to Cloudinary");
+      // console.log("Uploading files to Cloudinary");
       for (let i = 0; i < files.length; i++) {
         try {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
@@ -75,13 +75,13 @@ exports.createProduct = async (req, res) => {
 
           if (i === 0) {
             imageUrl = result.secure_url; // First image is for the product
-            console.log("Product image uploaded successfully:", imageUrl);
+            // console.log("Product image uploaded successfully:", imageUrl);
           } else {
             optionsImages.push(result.secure_url); // Other images are for the options
-            console.log(
-              `Option image ${i} uploaded successfully:`,
-              result.secure_url
-            );
+            // console.log(
+            //   `Option image ${i} uploaded successfully:`,
+            //   result.secure_url
+            // );
           }
         } catch (error) {
           console.error(
@@ -96,7 +96,7 @@ exports.createProduct = async (req, res) => {
         }
       }
     } else {
-      console.log("No files provided, skipping image upload.");
+      // console.log("No files provided, skipping image upload.");
     }
 
     // Assign images to the respective options
@@ -114,18 +114,11 @@ exports.createProduct = async (req, res) => {
 
     // Create a new product with the image URL if available
     const product = new Product({ ...productData, image: imageUrl });
-    console.log("Creating new product:", product);
+    // console.log("Creating new product:", product);
 
     const savedProduct = await product.save();
 
-    if (!savedProduct) {
-      console.log("Error saving product to the database.");
-      return res
-        .status(500)
-        .json({ success: false, message: "Error creating product" });
-    }
-
-    console.log("Product created successfully:", savedProduct);
+    // console.log("Product created successfully:", savedProduct);
     res.status(201).json({
       success: true,
       message: "Product created successfully",
@@ -161,7 +154,7 @@ exports.createProduct = async (req, res) => {
 //       try {
 //         productData.options = JSON.parse(productData.options);
 //       } catch (error) {
-//         console.log("Error parsing options:", error.message);
+//         // console.log("Error parsing options:", error.message);
 //         return res.status(400).json({
 //           success: false,
 //           message: "Invalid options format. It should be a valid JSON array.",
@@ -186,14 +179,14 @@ exports.createProduct = async (req, res) => {
 //       }
 //     }
 
-//     console.log("updatedFields :", updatedFields);
+//     // console.log("updatedFields :", updatedFields);
 
 //     // Upload the image to Cloudinary if a file is present
 //     let optionsImages = [];
 
 //     if (files && files.length > 0) {
 //       // Upload the first image to 'product' folder and the rest to 'options' folder
-//       console.log("Uploading files to Cloudinary");
+//       // console.log("Uploading files to Cloudinary");
 //       for (let i = 0; i < files.length; i++) {
 //         try {
 //           const result = await cloudinary.uploader.upload(files[i].path, {
@@ -216,10 +209,10 @@ exports.createProduct = async (req, res) => {
 //         }
 //       }
 //     } else {
-//       console.log("No files provided, skipping image upload.");
+//       // console.log("No files provided, skipping image upload.");
 //     }
 
-//     console.log(updatedFields);
+//     // console.log(updatedFields);
 
 //     if (updatedFields.options && optionsImages.length > 0) {
 //       let imageIndex = 0;
@@ -229,7 +222,7 @@ exports.createProduct = async (req, res) => {
 //           imageIndex++;
 //         }
 //         if (!option._id) {
-//           console.log(option);
+//           // console.log(option);
 
 //           product.options.push(option); // This will add a new option to the product
 //         } else {
@@ -288,7 +281,7 @@ exports.updateProduct = async (req, res) => {
     //   try {
     //     productData.options = JSON.parse(productData.options);
     //   } catch (error) {
-    //     console.log("Error parsing options:", error.message);
+    //     // console.log("Error parsing options:", error.message);
     //     return res.status(400).json({
     //       success: false,
     //       message: "Invalid options format. It should be a valid JSON array.",
@@ -313,11 +306,11 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    console.log("updatedFields:", updatedFields);
+    // console.log("updatedFields:", updatedFields);
 
     // Upload single image to Cloudinary if a file is present
     if (file) {
-      console.log("Uploading file to Cloudinary");
+      // console.log("Uploading file to Cloudinary");
       try {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
@@ -335,10 +328,10 @@ exports.updateProduct = async (req, res) => {
         });
       }
     } else {
-      console.log("No file provided, skipping image upload.");
+      // console.log("No file provided, skipping image upload.");
     }
 
-    console.log(updatedFields);
+    // console.log(updatedFields);
 
     // Update the product in the database
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -476,8 +469,6 @@ exports.getAllProducts = async (req, res) => {
     // Apply pagination after sorting
     const totalProducts = products.length;
     const paginatedProducts = products.slice((page - 1) * limit, page * limit);
-
-      console.log(products);
 
     // Get the total count of products for pagination calculation
     // const totalProducts = await Product.countDocuments();

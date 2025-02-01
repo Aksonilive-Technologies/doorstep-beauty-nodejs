@@ -7,7 +7,7 @@ const XLSX = require("xlsx");
 // Create a new category
 exports.createCategory = async (req, res) => {
   const { name, image, position } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
 
   try {
     // Check for missing fields
@@ -159,7 +159,7 @@ exports.deleteCategory = async (req, res) => {
   //yaha pe query likhna hai params ke jagah pe
   // const { id } = req.params;
   const { id } = req.query;
-  console.log("id : ", id);
+  // console.log("id : ", id);
   try {
     const category = await Category.findById(id);
     // if (!category || category.isDeleted || !category.isActive) {

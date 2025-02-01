@@ -100,13 +100,13 @@ exports.updateCustomer = async (req, res) => {
   const { id, name, email, mobile } = req.body;
   const file = req.file; // Accessing the file from req.file
 
-  console.log("Request received with body:", req.body);
-  console.log("File received:", file);
+  // console.log("Request received with body:", req.body);
+  // console.log("File received:", file);
 
   try {
     // Validate required fields
     if (!id) {
-      console.log("Customer ID is missing");
+      // console.log("Customer ID is missing");
       return res.status(400).json({
         success: false,
         message: "Customer ID is required",
@@ -114,11 +114,11 @@ exports.updateCustomer = async (req, res) => {
     }
 
     // Fetch the current customer details
-    console.log("Fetching customer with ID:", id);
+    // console.log("Fetching customer with ID:", id);
     const customer = await Customer.findById(id);
 
     if (!customer) {
-      console.log("Customer not found for ID:", id);
+      // console.log("Customer not found for ID:", id);
       return res.status(404).json({
         success: false,
         message: "Customer not found",
@@ -127,7 +127,7 @@ exports.updateCustomer = async (req, res) => {
 
     // Check if the customer account is suspended or deactivated
     if (customer.isActive === false) {
-      console.log("Customer account is suspended:", id);
+      // console.log("Customer account is suspended:", id);
       return res.status(403).json({
         success: false,
         message: "Your account is suspended for now",
@@ -135,7 +135,7 @@ exports.updateCustomer = async (req, res) => {
     }
 
     if (customer.isDeleted === true) {
-      console.log("Customer account is deactivated:", id);
+      // console.log("Customer account is deactivated:", id);
       return res.status(403).json({
         success: false,
         message: "Your account is deactivated, please contact the support team",
@@ -150,7 +150,7 @@ exports.updateCustomer = async (req, res) => {
 
     // Upload the image to Cloudinary if a file is present
     if (file) {
-      console.log("Uploading file to Cloudinary:", file.filename);
+      // console.log("Uploading file to Cloudinary:", file.filename);
       try {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
@@ -159,7 +159,7 @@ exports.updateCustomer = async (req, res) => {
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });
-        console.log("Image uploaded successfully:", result.secure_url);
+        // console.log("Image uploaded successfully:", result.secure_url);
         updateFields.image = result.secure_url; // Add the image URL to the updateFields object
       } catch (error) {
         console.error("Error uploading image to Cloudinary:", error.message);
@@ -172,21 +172,21 @@ exports.updateCustomer = async (req, res) => {
     }
 
     // Update the customer details
-    console.log("Updating customer details for ID:", id);
+    // console.log("Updating customer details for ID:", id);
     const customerUpdated = await Customer.findByIdAndUpdate(id, updateFields, {
       new: true,
       runValidators: true,
     });
 
     if (!customerUpdated) {
-      console.log("Failed to update customer:", id);
+      // console.log("Failed to update customer:", id);
       return res.status(500).json({
         success: false,
         message: "Error updating customer",
       });
     }
 
-    console.log("Customer updated successfully:", customerUpdated);
+    // console.log("Customer updated successfully:", customerUpdated);
     res.status(200).json({
       success: true,
       message: "Customer updated successfully",
@@ -259,7 +259,7 @@ exports.checkExistance = async (req, res) => {
         message: "Mobile number is required",
       });
     }
-    console.log(mobile);
+    // console.log(mobile);
     const customer = await Customer.findOne({ mobile: mobile })
       .select("-password")
       .select("-__v");

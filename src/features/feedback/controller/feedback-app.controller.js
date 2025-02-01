@@ -22,7 +22,7 @@ const createFeedback = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    console.log("customer", customer);
+    // console.log("customer", customer);
     // Validate required fields
     if (!rating && !suggestedImprovement && !review) {
       return res.status(400).json({
