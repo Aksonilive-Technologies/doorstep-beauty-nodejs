@@ -83,21 +83,21 @@ const scheduleNotification = (notification) => {
 
   const timeDiff = scheduledTimeUTC.diff(currentTimeUTC, "minutes"); // Difference in minutes
 
-  console.log(
+  // console.log(
     `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
-  );
+  // );
 
   // Schedule the notification in IST timezone using cron
   const cronExpression = `${scheduledTimeIST.minutes()} ${scheduledTimeIST.hours()} ${scheduledTimeIST.date()} ${
     scheduledTimeIST.month() + 1
   } *`;
 
-  console.log("Cron Expression: ", cronExpression);
+  // console.log("Cron Expression: ", cronExpression);
 
   nodeCron.schedule(
     cronExpression,
     async () => {
-      console.log("Sending notification: ", notification.title);
+      // console.log("Sending notification: ", notification.title);
       await sendNotification(notification);
     },
     {
@@ -105,7 +105,7 @@ const scheduleNotification = (notification) => {
     }
   );
 
-  console.log(`Notification scheduled for: ${scheduledTimeIST.format()} IST`);
+  // console.log(`Notification scheduled for: ${scheduledTimeIST.format()} IST`);
 };
 
 // Create a new notification
@@ -219,7 +219,7 @@ exports.getNotifications = async (req, res) => {
           notification.targetAudience.map(async (id) => {
             // Check if id is a valid ObjectId
             if (!mongoose.Types.ObjectId.isValid(id)) {
-              console.log(`Invalid ObjectId: ${id}`); // Log invalid IDs
+              // console.log(`Invalid ObjectId: ${id}`); // Log invalid IDs
               return null; // Skip invalid ObjectId
             }
 
@@ -233,11 +233,11 @@ exports.getNotifications = async (req, res) => {
 
             // Log whether audience was found
             if (!audience) {
-              console.log(
-                `No audience found for ID: ${id} (Type: ${notification.audienceType})`
-              );
+              // console.log(
+              //   `No audience found for ID: ${id} (Type: ${notification.audienceType})`
+              // );
             } else {
-              console.log(`Audience found for ID ${id}:`, audience);
+              // console.log(`Audience found for ID ${id}:`, audience);
             }
 
             return audience
@@ -251,10 +251,10 @@ exports.getNotifications = async (req, res) => {
         );
 
         // Log populated audience before filtering
-        console.log(
-          `Populated audience for notification ${notification._id}:`,
-          populatedAudience
-        );
+        // console.log(
+        //   `Populated audience for notification ${notification._id}:`,
+        //   populatedAudience
+        // );
 
         return {
           ...notification.toObject(),

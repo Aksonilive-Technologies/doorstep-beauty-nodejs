@@ -61,7 +61,7 @@ exports.buyMembershipPlan = async (req, res) => {
       });
     }
 
-    console.log(membership);
+    // console.log(membership);
 
     const orderId = await createOrder(Number(membership.discountedPrice) * 100);
 
@@ -99,7 +99,7 @@ exports.getAllMembership = async (req, res) => {
   const { customerId } = req.body; // Assuming customerId is passed as a route parameter
   const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
-  // console.log(customerId, typeof customerId);
+  // // console.log(customerId, typeof customerId);
 
   try {
     // Calculate the number of documents to skip
@@ -126,12 +126,12 @@ exports.getAllMembership = async (req, res) => {
       isActive: true,
       isDeleted: false,
     });
-    console.log("29", plan);
+    // console.log("29", plan);
 
     if (plan !== null) {
       for (let i = 0; i < memberships.length; i++) {
-        console.log("43", memberships[i]._id),
-          console.log("44", plan.membership);
+        // console.log("43", memberships[i]._id),
+          // console.log("44", plan.membership);
         if (plan.membership.toString() === memberships[i]._id.toString()) {
           memberships[i].isActivePlan = true;
         } else {

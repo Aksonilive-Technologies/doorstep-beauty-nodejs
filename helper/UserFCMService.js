@@ -14,7 +14,7 @@ exports.sendNotificationToUser = (token, title, body) => {
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent message:", response);
+      // console.log("Successfully sent message:", response);
       return response;
     })
     .catch((error) => {

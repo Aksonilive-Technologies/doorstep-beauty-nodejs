@@ -144,7 +144,7 @@ exports.updateBanner = async (req, res) => {
     if (imageUrl) {
       updateData.image = imageUrl;
     }
-    console.log(imageUrl);
+    // console.log(imageUrl);
 
     // Attempt to update the banner
     const updatedBanner = await Banner.findByIdAndUpdate(id, updateData, {

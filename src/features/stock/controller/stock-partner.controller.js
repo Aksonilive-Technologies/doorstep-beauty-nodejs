@@ -39,7 +39,7 @@ exports.getProductByBarcode = async (req, res) => {
   try {
     const { barcode } = req.query;
 
-    console.log(barcode);
+    // console.log(barcode);
 
     // Fetch stock by barcode
     const stock = await Stock.findOne({ barcodeNumber: barcode }).select(
