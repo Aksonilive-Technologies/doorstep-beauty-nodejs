@@ -7,6 +7,9 @@ const { exec } = require("child_process");
 const moment = require("moment");
 const path = require("path");
 
+console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+console.log(process.env.GOOGLE_DRIVE_FOLDER_ID);
+
 // MongoDB Connection Config
 const BACKUP_PATH = "./backups"; // Local backup folder
 const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; // Replace with your Drive folder ID
@@ -85,7 +88,7 @@ const deleteLocalBackup = (filePath) => {
 
 
 // Schedule Backup Job to Run Every Day at Midnight
-cron.schedule("0 0 * * *", () => {
+cron.schedule("*/1 * * * *", () => {
     console.log("Starting database backup...");
     backupDatabase();
 });
