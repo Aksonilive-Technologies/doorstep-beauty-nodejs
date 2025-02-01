@@ -25,7 +25,7 @@ exports.sendPartnerNotification = (token, title, body) => {
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent notification to partner:", response);
+      // console.log("Successfully sent notification to partner:", response);
       return response;
     })
     .catch((error) => {
@@ -48,7 +48,7 @@ exports.sendNewBookingMessage = (token) => {
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent message to partner:", response);
+      // console.log("Successfully sent message to partner:", response);
       return response;
     })
     .catch((error) => {
@@ -71,7 +71,7 @@ exports.sendBookingConfirmationMessage = (token) => {
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent confirmation to partner:", response);
+      // console.log("Successfully sent confirmation to partner:", response);
       return response;
     })
     .catch((error) => {
@@ -94,7 +94,7 @@ exports.sendBookingCancellationMessage = (token) => {
     .messaging()
     .send(message)
     .then((response) => {
-      console.log("Successfully sent cancellation to partner:", response);
+      // console.log("Successfully sent cancellation to partner:", response);
       return response;
     })
     .catch((error) => {

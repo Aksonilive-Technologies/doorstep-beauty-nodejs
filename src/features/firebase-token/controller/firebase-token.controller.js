@@ -17,7 +17,7 @@ exports.updateFirebaseToken = async (req, res) => {
       const customer = await Customer.findById(userId);
 
       if (!customer) {
-        console.log("Customer not found for ID:", userId);
+        // console.log("Customer not found for ID:", userId);
         return res.status(404).json({
           success: false,
           message: "Customer not found",

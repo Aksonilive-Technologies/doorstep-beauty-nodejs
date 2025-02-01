@@ -278,7 +278,7 @@ exports.checkExistance = async (req, res) => {
         message: "Mobile number is required",
       });
     }
-    console.log(mobile);
+    // console.log(mobile);
     const partner = await Partner.findOne({ phone: mobile }).select("-__v");
     if (!partner) {
       return res.status(404).json({
@@ -323,13 +323,13 @@ exports.updatePartner = async (req, res) => {
   const { id } = req.body;
   const file = req.file; // Accessing the file from req.file
 
-  console.log("Request received with body:", req.body);
-  console.log("File received:", file);
+  // console.log("Request received with body:", req.body);
+  // console.log("File received:", file);
 
   try {
     // Validate required fields
     if (!id) {
-      console.log("Partner ID is missing");
+      // console.log("Partner ID is missing");
       return res.status(400).json({
         success: false,
         message: "Partner ID is required",
@@ -337,11 +337,11 @@ exports.updatePartner = async (req, res) => {
     }
 
     // Fetch the current partner details
-    console.log("Fetching partner with ID:", id);
+    // console.log("Fetching partner with ID:", id);
     const partner = await Partner.findById(id);
 
     if (!partner) {
-      console.log("Partner not found for ID:", id);
+      // console.log("Partner not found for ID:", id);
       return res.status(404).json({
         success: false,
         message: "Partner not found",
@@ -350,7 +350,7 @@ exports.updatePartner = async (req, res) => {
 
     // Check if the partner account is suspended or deactivated
     if (partner.isActive === false) {
-      console.log("Partner account is suspended:", id);
+      // console.log("Partner account is suspended:", id);
       return res.status(403).json({
         success: false,
         message: "Your account is suspended for now",
@@ -358,7 +358,7 @@ exports.updatePartner = async (req, res) => {
     }
 
     if (partner.isDeleted === true) {
-      console.log("Partner account is deactivated:", id);
+      // console.log("Partner account is deactivated:", id);
       return res.status(403).json({
         success: false,
         message: "Your account is deactivated, please contact the support team",
@@ -373,7 +373,7 @@ exports.updatePartner = async (req, res) => {
 
     // Upload the image to Cloudinary if a file is present
     if (file) {
-      console.log("Uploading file to Cloudinary:", file.filename);
+      // console.log("Uploading file to Cloudinary:", file.filename);
       try {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
@@ -382,7 +382,7 @@ exports.updatePartner = async (req, res) => {
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
           overwrite: true,
         });
-        console.log("Image uploaded successfully:", result.secure_url);
+        // console.log("Image uploaded successfully:", result.secure_url);
         updateFields.image = result.secure_url; // Add the image URL to the updateFields object
       } catch (error) {
         console.error("Error uploading image to Cloudinary:", error.message);
@@ -395,21 +395,21 @@ exports.updatePartner = async (req, res) => {
     }
 
     // Update the partner details
-    console.log("Updating partner details for ID:", id);
+    // console.log("Updating partner details for ID:", id);
     const partnerUpdated = await Partner.findByIdAndUpdate(id, updateFields, {
       new: true,
       runValidators: true,
     });
 
     if (!partnerUpdated) {
-      console.log("Failed to update partner:", id);
+      // console.log("Failed to update partner:", id);
       return res.status(500).json({
         success: false,
         message: "Error updating partner",
       });
     }
 
-    console.log("Partner updated successfully:", partnerUpdated);
+    // console.log("Partner updated successfully:", partnerUpdated);
     res.status(200).json({
       success: true,
       message: "Partner updated successfully",

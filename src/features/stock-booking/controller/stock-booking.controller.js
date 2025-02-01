@@ -138,7 +138,7 @@ exports.fetchAllStockBookings = async (req, res) => {
   try {
     // Check if partner ID is provided
     if (!partnerId) {
-      console.log("Partner ID is missing");
+      // console.log("Partner ID is missing");
       return res.status(400).json({
         success: false,
         message: "Partner ID is required",

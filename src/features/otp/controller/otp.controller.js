@@ -30,7 +30,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
 
   const existingMasterOTP = await MasterOTP.findOne({ mobileNumber: mobile });
   if (existingMasterOTP) {
-    console.log("Master number found");
+    // console.log("Master number found");
 
     return res.status(200).json({
       success: true,
@@ -39,13 +39,13 @@ exports.sendOTP = catchAsync(async (req, res) => {
     });
   }
 
-  console.log("Generating OTP");
+  // console.log("Generating OTP");
 
   const otp = Math.floor(1000 + Math.random() * 9000);
 
   // Delete any existing OTP for the mobile number
   const deleteResult = await otpModel.deleteOne({ mobile });
-  console.log("Delete result:", deleteResult);
+  // console.log("Delete result:", deleteResult);
 
   // Update or create new OTP
   const newVerification = await otpModel.updateOne(
@@ -54,7 +54,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
     { upsert: true }  // Use upsert to create if not exists
   );
 
-  console.log("Update result:", newVerification);
+  // console.log("Update result:", newVerification);
 
   if (!newVerification) {
     return res.status(500).json({
@@ -67,7 +67,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
   mobile = Number(mobile);
 
   try {
-    console.log("Sending OTP...");
+    // console.log("Sending OTP...");
     // Implement actual OTP sending logic here
     const response = await waMsgService.sendOtp(mobile,otp)
     if(!response){
@@ -78,7 +78,7 @@ exports.sendOTP = catchAsync(async (req, res) => {
       })
     }
 
-    console.log("OTP sent successfully");
+    // console.log("OTP sent successfully");
   } catch (error) {
     console.error("Error sending OTP:", error);
     return res.status(500).json({
