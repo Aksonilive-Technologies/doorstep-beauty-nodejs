@@ -283,7 +283,7 @@ exports.getPackageByCategoryId = async (req, res) => {
       isDeleted: false,
       isActive: true,
     }).select("-__v ");
-    console.log(package, "package");
+    // console.log(package, "package");
     if (!package) {
       return res.status(404).json({
         success: false,

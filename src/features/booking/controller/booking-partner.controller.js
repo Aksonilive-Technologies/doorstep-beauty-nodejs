@@ -31,7 +31,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
 
   try {
     if (!id) {
-      console.log("Partner ID is missing");
+      // console.log("Partner ID is missing");
       return res.status(400).json({
         success: false,
         message: "Partner ID is required",
@@ -39,7 +39,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
     }
 
     // Fetch the current partner details
-    console.log("Fetching partner with ID:", id);
+    // console.log("Fetching partner with ID:", id);
     const partner = await Partner.findOne({
       _id: id,
       isDeleted: false,
@@ -60,7 +60,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
       .select("pincode -_id")
       .lean();
 
-    console.log("Serviceable pincodes:", servicablePincode);
+    // console.log("Serviceable pincodes:", servicablePincode);
 
     // Set the 15-minute threshold
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -128,7 +128,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
     const pincodeArray = new Set(
       servicablePincode.map((pincodeObj) => pincodeObj.pincode.toString())
     );
-    console.log(pincodeArray);
+    // console.log(pincodeArray);
 
     const filteredBookings = bookings.filter((booking) => {
       // Extract the pincode using a regular expression (assuming the pincode is a 6-digit number)
@@ -174,7 +174,7 @@ exports.fetchAllBookings = async (req, res) => {
 
   try {
     if (!id) {
-      console.log("Partner ID is missing");
+      // console.log("Partner ID is missing");
       return res.status(400).json({
         success: false,
         message: "Partner ID is required",
@@ -210,7 +210,7 @@ exports.fetchAllBookings = async (req, res) => {
       .sort({ "scheduleFor.date": 1 })
       .lean();
 
-    console.log("Bookings:", bookings);
+    // console.log("Bookings:", bookings);
 
     // Populate productTool only if serviceStatus is 'ongoing' or 'completed' and productTool is not null
     for (let booking of bookings) {

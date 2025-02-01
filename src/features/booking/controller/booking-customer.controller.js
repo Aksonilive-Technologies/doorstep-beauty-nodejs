@@ -178,7 +178,7 @@ exports.fetchBookings = async (req, res) => {
     }
 
     bookings.forEach((booking) => {
-      console.log("booking", booking.product);
+      // console.log("booking", booking.product);
       booking.product.forEach((productItem) => {
         // Check if there is an option selected for this product
         // console.log("productItem", productItem);
@@ -207,7 +207,7 @@ exports.fetchBookings = async (req, res) => {
           }
         }
       });
-      console.log("booking", booking.product);
+      // console.log("booking", booking.product);
     });
 
     // Current date for comparison
