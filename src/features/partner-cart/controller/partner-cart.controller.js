@@ -2,6 +2,7 @@ const PartnerCart = require("../model/partner-cart.model");
 const StockBooking = require("../../stock-booking/model/stock-booking.model");
 const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model");
 const Partner = require("../../partner/model/partner.model");
+const Stock = require("../../stock/model/stock.model");
 
 // Add item to cart
 exports.addItemToCart = async (req, res) => {
@@ -130,7 +131,7 @@ exports.bookCart = async (req, res) => {
     // Validate required fields
     const missingFields = [];
     if (!partnerId) missingFields.push("partnerId");
-    if (!paymentMode) missingFields.push("transactionId");
+    if (!transactionId) missingFields.push("transactionId");
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -144,6 +145,8 @@ exports.bookCart = async (req, res) => {
       .populate("stockItem")
       .populate("partner")
       .select("-__v");
+
+      console.log(cart);
 
     if (!cart || cart.length === 0) {
       return res.status(404).json({
@@ -202,6 +205,8 @@ exports.bookCart = async (req, res) => {
         message: "Transaction not found with given ID" + transactionId,
       });
     }
+
+    
 
     if (partnertransactionRecord.status !== "pending") {
       return res.status(400).json({
