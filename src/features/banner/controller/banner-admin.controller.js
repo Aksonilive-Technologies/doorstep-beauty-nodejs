@@ -124,10 +124,17 @@ exports.updateBanner = async (req, res) => {
       });
     }
 
+    
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
     if (req.file) {
+      const banner = await Banner.findById(id);
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+      
+      // Delete the existing image from Cloudinary
+      const publicId = banner.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+      await cloudinary.uploader.destroy(`${baseFolder}banner/${publicId.replace(/%20/g, " ")}`);
+          
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder+"banner",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
