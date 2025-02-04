@@ -120,6 +120,10 @@ exports.updateCategory = async (req, res) => {
     if (req.file) {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
+      // Delete the existing image from Cloudinary
+      const publicId = category.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+      await cloudinary.uploader.destroy(`${baseFolder}category/${publicId.replace(/%20/g, " ")}`);
+
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "category",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,

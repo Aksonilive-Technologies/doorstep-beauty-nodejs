@@ -154,6 +154,11 @@ exports.updateCustomer = async (req, res) => {
       try {
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
+      // Delete the existing image from Cloudinary
+      const publicId = customer.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+      await cloudinary.uploader.destroy(`${baseFolder}customers/${publicId.replace(/%20/g, " ")}`);
+
+
         const result = await cloudinary.uploader.upload(file.path, {
           folder: baseFolder + "customers",
           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
