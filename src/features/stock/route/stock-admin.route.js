@@ -10,11 +10,11 @@ const {
   searchStock,
   fetahAllStockBooking,
 } = require("../controller/stock-admin.controller");
-const { uploadSingleImage } = require("../../../../middleware/uploadMiddleware");
+const { uploadSingleImage, uploadMultipleImages } = require("../../../../middleware/uploadMiddleware");
 // Route for creating stock
-router.post("/create", uploadSingleImage, createStock);
+router.post("/create", uploadMultipleImages, createStock);
 router.get("/all", fetchAllStocks);
-router.put("/update", uploadSingleImage, updateStock);
+router.put("/update", uploadMultipleImages, updateStock);
 router.delete("/delete", deleteStock);
 router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
