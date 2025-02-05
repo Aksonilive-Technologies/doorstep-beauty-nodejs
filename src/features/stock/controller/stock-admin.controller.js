@@ -346,10 +346,11 @@ exports.updateStock = async (req, res) => {
     }
 
     const updatedFields = {};
+    const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
     // If new images are uploaded
     if (req.files && req.files.length > 0) {
       try {
-        const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+        
         let uploadedImages = [];
 
         // **Step 1: Upload new images to Cloudinary**
