@@ -113,7 +113,6 @@ exports.createStock = async (req, res) => {
     });
   }
 
-
   let images = [];
   // Upload each image to Cloudinary
   const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
@@ -307,7 +306,20 @@ exports.fetchAllStocks = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   const { id } = req.query; // Assuming stock ID is passed via query params
+  let { oldImages } = req.body;
   const stockData = req.body; // The fields to update
+
+  console.log("Type of oldImages:", typeof oldImages);
+  if (typeof oldImages === "string") {
+    try {
+      oldImages = JSON.parse(oldImages);
+    } catch (error) {
+      console.error("Error parsing oldImages:", error);
+      oldImages = [];
+    }
+  }
+  console.log("Type of oldImages:", typeof oldImages);
+
 
   try {
     // Validate stock ID
@@ -315,6 +327,13 @@ exports.updateStock = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Stock ID is required",
+      });
+    }
+
+    if (!oldImages) {
+      return res.status(400).json({
+        success: false,
+        message: "Old images array is required",
       });
     }
 
@@ -335,15 +354,7 @@ exports.updateStock = async (req, res) => {
         const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
         let uploadedImages = [];
 
-        // **Step 1: Delete old images from Cloudinary**
-        if (stock.image && stock.image.length > 0) {
-          for (let oldImage of stock.image) {
-            const publicId = oldImage.split("/").pop().split(".")[0]; // Extract public_id from URL
-            await cloudinary.uploader.destroy(`${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`);
-          }
-        }
-
-        // **Step 2: Upload new images to Cloudinary**
+        // **Step 1: Upload new images to Cloudinary**
         for (let file of req.files) {
           const result = await cloudinary.uploader.upload(file.path, {
             folder: baseFolder + "Stock",
@@ -352,9 +363,26 @@ exports.updateStock = async (req, res) => {
           });
           uploadedImages.push(result.secure_url);
         }
+        console.log(uploadedImages)
+
+        for (let imageUrl of uploadedImages) {
+          if (oldImages.includes("")) {
+            const index = oldImages.indexOf("");
+            const publicId = stock.image[index].split("/").pop().split(".")[0]; // Extract public_id from URL
+            oldImages[index] = imageUrl;
+
+            console.log("Public ID:", publicId);
+            // **Step 2: Delete old image from Cloudinary**
+            await cloudinary.uploader.destroy(
+              `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
+            );
+          } else {
+            oldImages.push(imageUrl);
+          }
+        }
 
         // Update stock images
-        updatedFields.image = uploadedImages;
+        updatedFields.image = oldImages;
       } catch (error) {
         return res.status(500).json({
           success: false,
