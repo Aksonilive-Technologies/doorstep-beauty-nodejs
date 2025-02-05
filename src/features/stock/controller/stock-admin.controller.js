@@ -389,13 +389,15 @@ exports.updateStock = async (req, res) => {
     if(oldImages.length <= stock.image.length) {
       for (let imageUrl of stock.image) {
           const index = oldImages.indexOf(imageUrl);
-          const publicId = stock.image[index].split("/").pop().split(".")[0]; // Extract public_id from URL
-          oldImages[index] = imageUrl;
-
-          // **Step 2: Delete old image from Cloudinary**
-          await cloudinary.uploader.destroy(
-            `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
-          );
+          if(imageUrl !== oldImages[index]) {
+            const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
+            oldImages[index] = imageUrl;
+  
+            // **Step 2: Delete old image from Cloudinary**
+            await cloudinary.uploader.destroy(
+              `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
+            );
+          }
       }
     }
 
