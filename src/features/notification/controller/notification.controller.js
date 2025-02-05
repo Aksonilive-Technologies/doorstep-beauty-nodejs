@@ -297,7 +297,13 @@ exports.updateNotification = async (req, res) => {
     // Upload image if file is provided
     let imageUrl;
     if (req.file) {
+      const notification = await Notification.findById(id);
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+
+      // Delete the existing image from Cloudinary
+      const publicId = notification.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+      await cloudinary.uploader.destroy(`${baseFolder}notification/${publicId.replace(/%20/g, " ")}`);
+
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "notification",
