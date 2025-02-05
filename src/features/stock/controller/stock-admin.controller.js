@@ -386,21 +386,25 @@ exports.updateStock = async (req, res) => {
         });
       }
     }
-
-    if(oldImages.length <= stock.image.length) {
-      for (let imageUrl of stock.image) {
-          const index = oldImages.indexOf(imageUrl);
-          if(imageUrl !== oldImages[index]) {
-            const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
-            oldImages[index] = imageUrl;
-  
-            // **Step 2: Delete old image from Cloudinary**
-            await cloudinary.uploader.destroy(
-              `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
-            );
-          }
+    else if(oldImages.length < stock.image.length) {
+      let temp = [];
+        for (let imageUrl of stock.image) {
+            const index = oldImages.indexOf(imageUrl);
+            if(!oldImages.includes(imageUrl)) {
+              const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
+    
+              // **Step 2: Delete old image from Cloudinary**
+              await cloudinary.uploader.destroy(
+                `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
+              );
+            }else{
+              temp.push(imageUrl);
+            }
+        }
+        oldImages = temp;
       }
-    }
+
+    
 
     // Update stock images
     updatedFields.image = oldImages;
