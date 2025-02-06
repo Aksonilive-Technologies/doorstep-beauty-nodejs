@@ -12,7 +12,6 @@ const {
   updateTransactionStatus,
   fetchWalletTransactions,
 } = require("../controller/customer-app.controller.js");
-const verifyToken = require("../../../../middleware/verifyToken.js");
 const {
   uploadSingleImage,
 } = require("../../../../middleware/uploadMiddleware.js");

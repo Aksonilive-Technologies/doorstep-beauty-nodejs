@@ -1,12 +1,10 @@
 const Category = require("../model/category.model.js");
 const { cloudinary } = require("../../../../config/cloudinary.js");
-const Product = require("../../product/model/product.model.js");
-const Package = require("../../package/model/package.model.js");
 const XLSX = require("xlsx");
 
 // Create a new category
 exports.createCategory = async (req, res) => {
-  const { name, image, position } = req.body;
+  const { name, position } = req.body;
   // console.log(req.body);
 
   try {
@@ -22,6 +20,13 @@ exports.createCategory = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Position is required",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image is required",
       });
     }
 
@@ -220,7 +225,7 @@ exports.changeStatus = async (req, res) => {
     // Send success response
     res.status(200).json({
       success: true,
-      message: category.isActive
+      message: updatedCategory.isActive
         ? "Your category is activated"
         : "Your category is deactivated",
     });

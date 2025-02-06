@@ -2,14 +2,13 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../controller/product-admin.controller.js");
 const {
-  uploadMultipleImages,
   uploadSingleImage,
 } = require("../../../../middleware/uploadMiddleware.js");
 // Update the path accordingly
 
 // Route to create a new product with image upload
 // router.post("/create", upload.single("file"), Product.createProduct);
-router.post("/create", uploadMultipleImages, Product.createProduct);
+router.post("/create", uploadSingleImage, Product.createProduct);
 
 // Other routes remain unchanged
 // router.put("/update", uploadMultipleImages, Product.updateProduct);
