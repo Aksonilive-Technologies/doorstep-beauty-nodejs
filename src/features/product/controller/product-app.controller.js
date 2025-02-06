@@ -1,55 +1,6 @@
 const Product = require("../model/product.model");
-const mongoose = require("mongoose");
-const { uploadOnCloudinary } = require("../../../../utility/cloudinary");
 
 // Fetch all products
-exports.getAllProducts = async (req, res) => {
-  try {
-    const products = await Product.find({
-      isActive: true,
-      isDeleted: false,
-    })
-      .select("-__v")
-      .sort({ categoryId: 1 })
-      .populate("categoryId", "name");
-
-    // Step to group products by category
-    const groupedProducts = products.reduce((acc, product) => {
-      // Get the category name from the populated `categoryId` field
-      const categoryName = product.categoryId.name;
-
-      // Find if the category already exists in the accumulator
-      const categoryIndex = acc.findIndex(
-        (item) => item.category === categoryName
-      );
-
-      if (categoryIndex !== -1) {
-        // If the category already exists, push the product into its products array
-        acc[categoryIndex].products.push(product);
-      } else {
-        // If the category doesn't exist, create a new entry for this category
-        acc.push({
-          category: categoryName,
-          products: [product],
-        });
-      }
-
-      return acc;
-    }, []);
-    res.status(200).json({
-      success: true,
-      message: "All products fetched successfully",
-      data: groupedProducts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching products",
-      errorMessage: error.message,
-    });
-  }
-};
-
 exports.getAllNewProducts = async (req, res) => {
   try {
     const products = await Product.find({
@@ -74,51 +25,83 @@ exports.getAllNewProducts = async (req, res) => {
   }
 };
 
-// Get product by ID
-exports.getProductById = async (req, res) => {
-  const { id } = req.query;
-
-  if (!id) {
-    return res.status(400).json({
-      success: false,
-      message: "Product ID is required",
-    });
-  }
-
+exports.getAllProducts = async (req, res) => {
   try {
-    const product = await Product.findById(id).select("-__v");
+    const products = await Product.find({
+      isActive: true,
+      isDeleted: false,
+    })
+      .populate("categoryId")
+      .populate("subcategoryId")
+      .select("-__v");
 
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+    // Group products by category and subcategory
+    const groupedData = {};
 
-    if (product.isDeleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+    products.forEach((product) => {
+      const categoryId = product.categoryId._id.toString();
+      const subcategoryId = product.subcategoryId
+        ? product.subcategoryId._id.toString()
+        : null;
 
-    if (!product.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
+      // Initialize category if not present
+      if (!groupedData[categoryId]) {
+        groupedData[categoryId] = {
+          ...product.categoryId.toObject(),
+          subcategory: [],
+          products: [],
+        };
+      }
+
+      // If subcategory exists, add to subcategory array
+      if (subcategoryId) {
+        let subcategory = groupedData[categoryId].subcategory.find(
+          (sub) => sub._id.toString() === subcategoryId
+        );
+
+        if (!subcategory) {
+          subcategory = {
+            ...product.subcategoryId.toObject(),
+            products: [],
+          };
+          groupedData[categoryId].subcategory.push(subcategory);
+        }
+
+        subcategory.products.push(product.toObject());
+      } else {
+        // If no subcategory, push the product directly under the category
+        groupedData[categoryId].products.push(product.toObject());
+      }
+    });
+
+    // Convert grouped data into an array and sort categories by position
+    // Convert grouped data into an array and sort categories, subcategories, and products
+    const formattedData = Object.values(groupedData)
+      .map((category) => ({
+        ...category,
+        subcategory: category.subcategory
+          .map((sub) => ({
+            ...sub,
+            products: sub.products.sort((a, b) => a.position - b.position), // Sort products inside subcategory
+          }))
+          .sort((a, b) => a.position - b.position), // Sort subcategories
+        products: category.products.sort((a, b) => a.position - b.position), // Sort products directly under category
+      }))
+      .sort((a, b) => a.position - b.position); // Sort categories
 
     res.status(200).json({
       success: true,
-      message: "Product fetched successfully",
-      data: product,
+      message: "All products fetched and grouped successfully",
+      data: formattedData,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching product",
+      message: "Error fetching products",
       errorMessage: error.message,
     });
   }
 };
+
+
+
