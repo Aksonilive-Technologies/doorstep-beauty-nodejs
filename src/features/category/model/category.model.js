@@ -8,9 +8,7 @@ const categoriesSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      default:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoWwwz1wz7ps1CwKr4BKfEWFY4CCJ91o0lwQ&s",
-      // required: true,
+      required: true,
     },
     position: {
       type: Number,

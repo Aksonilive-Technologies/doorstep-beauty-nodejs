@@ -27,26 +27,10 @@ const productSchema = new mongoose.Schema(
             ref: "Categories",
             required: true,
         },
-        options: [
-            {
-            option: {
-                type: String,
-              },
-            price: {
-                type: Number,
-            },
-            image: {
-                type: String,
-            },
-            details: {
-                type: String,
-            },
-            isActive: {
-                type: Boolean,
-                default: true,
-            },
+        subcategoryId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Subcategories"
         },
-    ],
         details: {
             type: String,
             required: true,
