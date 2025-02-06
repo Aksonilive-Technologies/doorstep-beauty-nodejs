@@ -39,7 +39,6 @@ const customerBookingRoute = require("./src/features/booking/route/booking-custo
 const customerCartRoute = require("./src/features/cart/route/cart.route.js");
 const customerAddressRoute = require("./src/features/customer-address/route/customer-address.route.js");
 const customerBannerRoute = require("./src/features/banner/route/banner-app.route.js");
-const customerPackageRoute = require("./src/features/package/route/package-app.route.js");
 const customerFeedbackRoute = require("./src/features/feedback/route/feedback-app.route.js");
 const customerComplaintRoute = require("./src/features/complaint/route/complaint-app.route.js");
 const customerMembershipRoute = require("./src/features/membership/route/membership-app.route.js");
@@ -51,7 +50,6 @@ app.use("/api/v1/customer/booking", customerBookingRoute);
 app.use("/api/v1/customer/cart", customerCartRoute);
 app.use("/api/v1/customer/address", customerAddressRoute);
 app.use("/api/v1/customer/banner", customerBannerRoute);
-app.use("/api/v1/customer/package", customerPackageRoute);
 app.use("/api/v1/customer/feedback", customerFeedbackRoute);
 app.use("/api/v1/customer/complain", customerComplaintRoute);
 app.use("/api/v1/customer/membership", customerMembershipRoute);
@@ -80,7 +78,6 @@ const bannerRoute = require("./src/features/banner/route/banner-admin.route.js")
 const categoryAdminRoute = require("./src/features/category/route/category-admin.route.js");
 const subcategoryAdminRoute = require("./src/features/subcategory/route/subcategory-admin.route.js");
 const productAdminRoute = require("./src/features/product/route/product-admin.route.js");
-const packageAdminRoute = require("./src/features/package/route/package-admin.route.js");
 const membershipRoute = require("./src/features/membership/route/membership-admin.route.js");
 const adminComplainRoute = require("./src/features/complaint/route/complaint-admin.route.js");
 const feedbackRoute = require("./src/features/feedback/route/feedback-admin.route.js");
@@ -97,7 +94,6 @@ app.use("/api/v1/admin/banner", bannerRoute);
 app.use("/api/v1/admin/category", categoryAdminRoute);
 app.use("/api/v1/admin/subcategory", subcategoryAdminRoute);
 app.use("/api/v1/admin/product", productAdminRoute);
-app.use("/api/v1/admin/package", packageAdminRoute);
 app.use("/api/v1/admin/membership", membershipRoute);
 app.use("/api/v1/admin/complain", adminComplainRoute);
 app.use("/api/v1/admin/feedback", feedbackRoute);
@@ -125,7 +121,7 @@ app.use("/api/v1/user/fcm/token", firebaseTokenRoute);
 app.use("/api/v1/user/app/version", appVersionRoute);
 // comment
 
-app.all("*", async (request, response, next) => {
+app.all("*", async (request, response ) => {
   return response.status(404).json({
     success: false,
     message: "Can't find " + request.originalUrl + " on this server",
@@ -133,7 +129,7 @@ app.all("*", async (request, response, next) => {
 });
 
 // Error handling middleware
-app.use((error, req, res, next) => {
+app.use((error, req, res) => {
   res.status(500);
   res.json({
     error: {

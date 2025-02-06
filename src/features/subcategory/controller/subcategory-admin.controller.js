@@ -4,7 +4,7 @@ const XLSX = require("xlsx");
 
 // Create a new Subcategory
 exports.createSubcategory = async (req, res) => {
-  const { name, image, position, parentCategory } = req.body;
+  const { name, position, parentCategory } = req.body;
 
   const requiredFields = { name, position, parentCategory };
 
@@ -15,6 +15,13 @@ exports.createSubcategory = async (req, res) => {
         message: `${key} is required`,
       });
     }
+  }
+
+  if(!req.file){
+    return res.status(400).json({
+      success: false,
+      message: "Image is required"
+    });
   }
 
   try {
@@ -209,7 +216,7 @@ exports.changeStatus = async (req, res) => {
     // Send success response
     res.status(200).json({
       success: true,
-      message: subcategory.isActive
+      message: updatedSubcategory.isActive
         ? "Your subcategory is activated"
         : "Your subcategory is deactivated",
     });
