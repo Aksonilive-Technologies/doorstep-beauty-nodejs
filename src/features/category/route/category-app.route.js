@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const categoryAppController = require("../controller/category-app.controller");
+const productAppController = require("../../product/controller/product-app.controller");
 
-router.get("/fetch/all", categoryAppController.getAllCategories);
+router.get("/fetch/all", productAppController.getAllCategoryProducts);
 
 module.exports = router;
