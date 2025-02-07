@@ -17,15 +17,14 @@ exports.createSubcategory = async (req, res) => {
     }
   }
 
-  if(!req.file){
+  if (!req.file) {
     return res.status(400).json({
       success: false,
-      message: "Image is required"
+      message: "Image is required",
     });
   }
 
   try {
-
     // Check for existing subcategory
     const existingSubcategory = await Subcategory.findOne({ name });
 
@@ -49,7 +48,12 @@ exports.createSubcategory = async (req, res) => {
       });
       imageUrl = result.secure_url;
     }
-    const subcategory = new Subcategory({ name, image: imageUrl, position, parentCategory });
+    const subcategory = new Subcategory({
+      name,
+      image: imageUrl,
+      position,
+      parentCategory,
+    });
     await subcategory.save();
 
     res.status(201).json({
@@ -104,7 +108,6 @@ exports.getAllSubcategories = async (req, res) => {
 
 // Get subcategory by category
 exports.getSubcategoryByCategory = async (req, res) => {
-
   const { categoryId } = req.query;
 
   if (!categoryId) {
@@ -120,9 +123,10 @@ exports.getSubcategoryByCategory = async (req, res) => {
       .sort({ position: 1 });
 
     if (subcategories.length === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "No subcategories found for this category",
+        data: [],
       });
     }
 
@@ -162,8 +166,9 @@ exports.updateSubcategory = async (req, res) => {
 
       // Delete the existing image from Cloudinary
       const publicId = subcategory.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`);
-
+      await cloudinary.uploader.destroy(
+        `${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`
+      );
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "subcategory",
@@ -173,9 +178,13 @@ exports.updateSubcategory = async (req, res) => {
       updates.image = result.secure_url; // Add the image URL to the updates
     }
 
-    const updatedSubcategory = await Subcategory.findByIdAndUpdate(id, updates, {
-      new: true,
-    });
+    const updatedSubcategory = await Subcategory.findByIdAndUpdate(
+      id,
+      updates,
+      {
+        new: true,
+      }
+    );
 
     if (!updatedSubcategory) {
       return res.status(500).json({
@@ -273,7 +282,10 @@ exports.changeStatus = async (req, res) => {
 exports.downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
-    const subcategories = await Subcategory.find().populate("parentCategory", "name");
+    const subcategories = await Subcategory.find().populate(
+      "parentCategory",
+      "name"
+    );
 
     // Step 2: Prepare the data for Excel
     const data = subcategories.map((subcategory) => ({
@@ -354,7 +366,9 @@ exports.searchSubcategory = async (req, res) => {
       });
     }
 
-    const totalSubcategories = await Subcategory.countDocuments(searchCondition);
+    const totalSubcategories = await Subcategory.countDocuments(
+      searchCondition
+    );
 
     // Return the search results along with pagination details
     res.status(200).json({
