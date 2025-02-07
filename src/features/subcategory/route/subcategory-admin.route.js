@@ -8,11 +8,14 @@ const {
 router.post(
   "/create",
   uploadSingleImage,
-  subcategoryAdminController.createSubcategory
+  subcategoryAdminController.createSubcategory,
 );
 
 // Get all Subcategories
 router.get("/fetch/all", subcategoryAdminController.getAllSubcategories);
+
+// Get subcategories by category
+router.get("/fetch/by-category", subcategoryAdminController.getSubcategoryByCategory);
 
 // Update a Subcategory by ID
 router.put(

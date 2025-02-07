@@ -102,6 +102,45 @@ exports.getAllSubcategories = async (req, res) => {
   }
 };
 
+// Get subcategory by category
+exports.getSubcategoryByCategory = async (req, res) => {
+
+  const { categoryId } = req.query;
+
+  if (!categoryId) {
+    return res.status(400).json({
+      success: false,
+      message: "Category ID is required",
+    });
+  }
+
+  try {
+    const subcategories = await Subcategory.find({ parentCategory: categoryId })
+      .select("-__v")
+      .sort({ position: 1 });
+
+    if (subcategories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No subcategories found for this category",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Subcategories retrieved successfully",
+      data: subcategories,
+    });
+  } catch (error) {
+    console.error("Error fetching subcategories by parent category:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching subcategories by parent category",
+      errorMessage: error.message,
+    });
+  }
+};
+
 // Update a Subcategory by ID
 exports.updateSubcategory = async (req, res) => {
   const { id } = req.query; // Using query parameters instead of params
