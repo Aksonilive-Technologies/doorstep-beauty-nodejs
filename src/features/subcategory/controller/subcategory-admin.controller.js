@@ -18,10 +18,8 @@ export const createSubcategory = async (req, res) => {
   }
 
   if (!req.file) {
-  if (!req.file) {
     return res.status(400).json({
       success: false,
-      message: "Image is required",
       message: "Image is required",
     });
   }
@@ -50,12 +48,6 @@ export const createSubcategory = async (req, res) => {
       });
       imageUrl = result.secure_url;
     }
-    const subcategory = new Subcategory({
-      name,
-      image: imageUrl,
-      position,
-      parentCategory,
-    });
     const subcategory = new Subcategory({
       name,
       image: imageUrl,
@@ -177,9 +169,6 @@ export const updateSubcategory = async (req, res) => {
       await cloudinary.uploader.destroy(
         `${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`
       );
-      await cloudinary.uploader.destroy(
-        `${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`
-      );
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "subcategory",
@@ -189,13 +178,6 @@ export const updateSubcategory = async (req, res) => {
       updates.image = result.secure_url; // Add the image URL to the updates
     }
 
-    const updatedSubcategory = await Subcategory.findByIdAndUpdate(
-      id,
-      updates,
-      {
-        new: true,
-      }
-    );
     const updatedSubcategory = await Subcategory.findByIdAndUpdate(
       id,
       updates,
@@ -300,10 +282,6 @@ export const changeStatus = async (req, res) => {
 export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
-    const subcategories = await Subcategory.find().populate(
-      "parentCategory",
-      "name"
-    );
     const subcategories = await Subcategory.find().populate(
       "parentCategory",
       "name"
