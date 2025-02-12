@@ -1,9 +1,10 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
+
+// dotenv.config();
 const app = express();
 app.use(express.json());
 import "./utility/appError.js";
@@ -29,6 +30,7 @@ db.once("open", () => {
 });
 
 import graphRoute from "./extras/graphRoute.js";
+
 
 //***************Customer Route API************************ */
 
