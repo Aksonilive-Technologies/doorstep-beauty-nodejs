@@ -1,10 +1,10 @@
-const Admin = require("../../admin/model/admin.model.js");
-const Complaint = require("../model/complaint.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const mongoose = require("mongoose");
-// const { validationResult } = require("express-validator");
+import Admin from "../../admin/model/admin.model.js";
+import Complaint from "../model/complaint.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import mongoose from "mongoose";
+// import { validationResult } from "express-validator";
 
-const createComplaint = async (req, res) => {
+export const createComplaint = async (req, res) => {
   try {
     const { customerId, description, complaintCategory } = req.body;
 
@@ -103,7 +103,7 @@ const createComplaint = async (req, res) => {
   }
 };
 
-const getAllComplaintWithCustomerId = async (req, res) => {
+export const getAllComplaintWithCustomerId = async (req, res) => {
   try {
     // Get the customerId from query parameters
     const { customerId } = req.query;
@@ -148,7 +148,7 @@ const getAllComplaintWithCustomerId = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   createComplaint,
   getAllComplaintWithCustomerId,
 };

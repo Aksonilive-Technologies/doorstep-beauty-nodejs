@@ -1,12 +1,12 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   getProductByBarcode,
   fetchAllStocks,
-} = require("../controller/stock-partner.controller");
-const { uploadSingleImage } = require("../../../../middleware/uploadMiddleware");
+} from "../controller/stock-partner.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 // Route for creating stock
 router.get("/fetch/product-by-barcode", getProductByBarcode);
 router.get("/fetch/all", fetchAllStocks);
 
-module.exports = router;
+export default router;

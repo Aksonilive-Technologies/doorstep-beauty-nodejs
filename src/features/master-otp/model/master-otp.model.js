@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const masterOTPSchema = new mongoose.Schema(
   {
@@ -9,20 +9,20 @@ const masterOTPSchema = new mongoose.Schema(
         validator: function (v) {
           return /^\d{10}$/.test(v);
         },
-        message: 'Mobile number must be exactly 10 digits long.',
+        message: "Mobile number must be exactly 10 digits long.",
       },
     },
     otp: {
       type: String,
       required: true,
-      maxlength:4
+      maxlength: 4,
     },
   },
-  { 
-    timestamps: true 
-  },
+  {
+    timestamps: true,
+  }
 );
 
-const MasterOTP = mongoose.model('MasterOTP', masterOTPSchema);
+const MasterOTP = mongoose.model("MasterOTP", masterOTPSchema);
 
-module.exports = MasterOTP;
+export default MasterOTP;

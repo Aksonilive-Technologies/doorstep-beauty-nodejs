@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const planSchema = new mongoose.Schema(
   {
@@ -77,4 +77,4 @@ planSchema.post("save", function (doc, next) {
 
 const Plan = mongoose.model("Plan", planSchema);
 
-module.exports = Plan;
+export default Plan;

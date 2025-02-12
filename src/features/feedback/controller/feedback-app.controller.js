@@ -1,8 +1,8 @@
-const { default: mongoose } = require("mongoose");
-const Feedback = require("../model/feedback.model");
-const Customer = require("../../customer/model/customer.model");
+import mongoose from "mongoose";
+import Feedback from "../model/feedback.model.js";
+import Customer from "../../customer/model/customer.model.js";
 
-const createFeedback = async (req, res) => {
+export const createFeedback = async (req, res) => {
   const { rating, review, suggestedImprovement, productId } = req.body;
   const { id } = req.query;
 
@@ -60,6 +60,6 @@ const createFeedback = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   createFeedback,
 };

@@ -1,4 +1,4 @@
-const admin2 = require("firebase-admin");
+import admin2 from "firebase-admin";
 const partnerServiceAccount = JSON.parse(
   process.env.PartnerFCMServiceAccountKey
 );
@@ -12,7 +12,7 @@ const partnerApp = admin2.initializeApp(
 ); // Alias for partner app
 
 // Send a notification message to the partner
-exports.sendPartnerNotification = (token, title, body) => {
+export const sendPartnerNotification = (token, title, body) => {
   const message = {
     notification: {
       title,
@@ -35,7 +35,7 @@ exports.sendPartnerNotification = (token, title, body) => {
 };
 
 // Send notification for new booking to partner
-exports.sendNewBookingMessage = (token) => {
+export const sendNewBookingMessage = (token) => {
   const message = {
     notification: {
       title: "New Booking",
@@ -58,7 +58,7 @@ exports.sendNewBookingMessage = (token) => {
 };
 
 // Send booking confirmation message to partner
-exports.sendBookingConfirmationMessage = (token) => {
+export const sendBookingConfirmationMessage = (token) => {
   const message = {
     notification: {
       title: "Booking Confirmed",
@@ -81,7 +81,7 @@ exports.sendBookingConfirmationMessage = (token) => {
 };
 
 // Send booking cancellation message to partner
-exports.sendBookingCancellationMessage = (token) => {
+export const sendBookingCancellationMessage = (token) => {
   const message = {
     notification: {
       title: "Booking Cancelled",

@@ -1,16 +1,10 @@
-const Partner = require("../model/partner.model.js");
-const jwt = require("jsonwebtoken");
-const generateCode = require("../../../../helper/generateCode.js");
-const generateRandomCode = require("../../../../helper/generateCode.js");
-const { cloudinary } = require("../../../../config/cloudinary");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const ServicablePincode = require("../../servicable-pincode/model/servicable-pincode.model.js");
-
-const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model.js");
-const { createOrder } = require("../../../../helper/razorpayHelper.js");
+import Partner from "../model/partner.model.js";
+import { cloudinary } from "../../../../config/cloudinary.js"
+import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
+import { createOrder } from "../../../../helper/razorpayHelper.js";
 
 // Add money to wallet
-exports.addMoneyToWallet = async (req, res) => {
+export const addMoneyToWallet = async (req, res) => {
   const { id, amount, paymentGateway } = req.body;
 
   if (!id || !amount || !paymentGateway) {
@@ -63,7 +57,7 @@ exports.addMoneyToWallet = async (req, res) => {
   }
 };
 
-exports.getWalletBalance = async (req, res) => {
+export const getWalletBalance = async (req, res) => {
   try {
     const { id } = req.body;
 
@@ -96,7 +90,7 @@ exports.getWalletBalance = async (req, res) => {
   }
 };
 
-exports.updateTransactionStatus = async (req, res) => {
+export const updateTransactionStatus = async (req, res) => {
   const { transactionId, status, paymentGatewayId } = req.body;
 
   if (!transactionId || !status) {
@@ -179,7 +173,7 @@ exports.updateTransactionStatus = async (req, res) => {
   }
 };
 
-exports.fetchWalletTransactions = async (req, res) => {
+export const fetchWalletTransactions = async (req, res) => {
   const { id } = req.body;
 
   if (!id) {
@@ -223,7 +217,7 @@ exports.fetchWalletTransactions = async (req, res) => {
 
 //Create Register
 
-exports.partnerById = async (req, res) => {
+export const partnerById = async (req, res) => {
   const { id } = req.query;
   try {
     if (!id) {
@@ -268,7 +262,7 @@ exports.partnerById = async (req, res) => {
   }
 };
 
-exports.checkExistance = async (req, res) => {
+export const checkExistance = async (req, res) => {
   const { mobile } = req.query;
 
   try {
@@ -319,7 +313,7 @@ exports.checkExistance = async (req, res) => {
   }
 };
 
-exports.updatePartner = async (req, res) => {
+export const updatePartner = async (req, res) => {
   const { id } = req.body;
   const file = req.file; // Accessing the file from req.file
 
@@ -375,12 +369,13 @@ exports.updatePartner = async (req, res) => {
     if (file) {
       // console.log("Uploading file to Cloudinary:", file.filename);
       try {
-      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+        const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
-      // Delete the existing image from Cloudinary
-      const publicId = partner.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}partners/${publicId.replace(/%20/g, " ")}`);
-
+        // Delete the existing image from Cloudinary
+        const publicId = partner.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+        await cloudinary.uploader.destroy(
+          `${baseFolder}partners/${publicId.replace(/%20/g, " ")}`
+        );
 
         const result = await cloudinary.uploader.upload(file.path, {
           folder: baseFolder + "partners",

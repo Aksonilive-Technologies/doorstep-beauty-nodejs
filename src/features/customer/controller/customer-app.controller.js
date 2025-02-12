@@ -1,16 +1,16 @@
-const Customer = require("../model/customer.model.js");
-const jwt = require("jsonwebtoken");
-const generateCode = require("../../../../helper/generateCode.js");
-const generateRandomCode = require("../../../../helper/generateCode.js");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const Plan = require("../../customer-membership-plan/model/customer-membership-plan.model.js");
-const Membership = require("../../membership/model/membership.model.js");
-const CustomerAddress = require("../../customer-address/model/customer-address.model.js");
-const XLSX = require("xlsx");
-const Booking = require("../../booking/model/booking.model.js");
-const waMsgService = require("../../../../utility/waMsgService.js");
-const { createOrder } = require("../../../../helper/razorpayHelper.js");
+import Customer from "../model/customer.model.js";
+import jwt from "jsonwebtoken";
+import generateCode from "../../../../helper/generateCode.js";
+import generateRandomCode from "../../../../helper/generateCode.js";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import Transaction from "../../transaction/model/transaction.model.js";
+import Plan from "../../customer-membership-plan/model/customer-membership-plan.model.js";
+import Membership from "../../membership/model/membership.model.js";
+import CustomerAddress from "../../customer-address/model/customer-address.model.js";
+import XLSX from "xlsx";
+import Booking from "../../booking/model/booking.model.js";
+import waMsgService from "../../../../utility/waMsgService.js";
+import { createOrder } from "../../../../helper/razorpayHelper.js";
 
 //Create Register
 const validateUserInput = (name, email, mobile) => {
@@ -25,7 +25,7 @@ const validateUserInput = (name, email, mobile) => {
   return null;
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   const { name, email, mobile } = req.body;
 
   // Validate user input
@@ -96,7 +96,7 @@ exports.register = async (req, res) => {
 };
 
 //update customer
-exports.updateCustomer = async (req, res) => {
+export const updateCustomer = async (req, res) => {
   const { id, name, email, mobile } = req.body;
   const file = req.file; // Accessing the file from req.file
 
@@ -152,12 +152,13 @@ exports.updateCustomer = async (req, res) => {
     if (file) {
       // console.log("Uploading file to Cloudinary:", file.filename);
       try {
-      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+        const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
 
-      // Delete the existing image from Cloudinary
-      const publicId = customer.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}customers/${publicId.replace(/%20/g, " ")}`);
-
+        // Delete the existing image from Cloudinary
+        const publicId = customer.image.split("/").pop().split(".")[0]; // Extract public_id from URL
+        await cloudinary.uploader.destroy(
+          `${baseFolder}customers/${publicId.replace(/%20/g, " ")}`
+        );
 
         const result = await cloudinary.uploader.upload(file.path, {
           folder: baseFolder + "customers",
@@ -207,7 +208,7 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-exports.customerById = async (req, res) => {
+export const customerById = async (req, res) => {
   const { id } = req.query;
   try {
     if (!id) {
@@ -254,7 +255,7 @@ exports.customerById = async (req, res) => {
   }
 };
 
-exports.checkExistance = async (req, res) => {
+export const checkExistance = async (req, res) => {
   const { mobile } = req.query;
 
   try {
@@ -308,7 +309,7 @@ exports.checkExistance = async (req, res) => {
 };
 
 // Add money to wallet
-exports.addMoneyToWallet = async (req, res) => {
+export const addMoneyToWallet = async (req, res) => {
   const { id, amount, paymentGateway } = req.body;
 
   if (!id || !amount || !paymentGateway) {
@@ -363,7 +364,7 @@ exports.addMoneyToWallet = async (req, res) => {
 };
 
 // Debit money from wallet
-exports.debitMoneyFromWallet = async (req, res) => {
+export const debitMoneyFromWallet = async (req, res) => {
   const { id, amount } = req.body;
 
   if (!id || !amount) {
@@ -411,7 +412,7 @@ exports.debitMoneyFromWallet = async (req, res) => {
   }
 };
 
-exports.getWalletBalance = async (req, res) => {
+export const getWalletBalance = async (req, res) => {
   try {
     const { id } = req.body;
 
@@ -444,7 +445,7 @@ exports.getWalletBalance = async (req, res) => {
   }
 };
 
-exports.updateTransactionStatus = async (req, res) => {
+export const updateTransactionStatus = async (req, res) => {
   const { transactionId, status, paymentGatewayId } = req.body;
 
   if (!transactionId || !status) {
@@ -527,7 +528,7 @@ exports.updateTransactionStatus = async (req, res) => {
   }
 };
 
-exports.fetchWalletTransactions = async (req, res) => {
+export const fetchWalletTransactions = async (req, res) => {
   const { id } = req.body;
 
   if (!id) {

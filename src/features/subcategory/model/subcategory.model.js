@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const subcategoriesSchema = new mongoose.Schema(
   {
@@ -11,9 +11,9 @@ const subcategoriesSchema = new mongoose.Schema(
       required: true,
     },
     parentCategory: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Categories",
-        required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Categories",
+      required: true,
     },
     position: {
       type: Number,
@@ -34,4 +34,4 @@ const subcategoriesSchema = new mongoose.Schema(
 );
 const Subcategories = mongoose.model("Subcategories", subcategoriesSchema);
 
-module.exports = Subcategories;
+export default Subcategories;

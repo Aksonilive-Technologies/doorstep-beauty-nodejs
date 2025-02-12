@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema(
   {
@@ -32,7 +32,7 @@ const BookingSchema = new mongoose.Schema(
         productTool: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Stock",
-        }
+        },
       },
     ],
     totalPrice: {
@@ -48,17 +48,17 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
     partner: [
-     { 
-      _id: false, 
-      partner : {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Partner"
-                 },
-       rating : {
-         type: Number,
-         default: 0
-       }
-      ,}
+      {
+        _id: false,
+        partner: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Partner",
+        },
+        rating: {
+          type: Number,
+          default: 0,
+        },
+      },
     ],
     discountType: {
       type: String,
@@ -75,7 +75,7 @@ const BookingSchema = new mongoose.Schema(
     },
     offerRefId: {
       type: mongoose.Schema.Types.ObjectId,
-      refpath : "offerType"
+      refpath: "offerType",
     },
     transaction: {
       type: mongoose.Schema.Types.ObjectId,
@@ -83,59 +83,66 @@ const BookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "processing", "completed","failed","refunded","cancelled"],
+      enum: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
       default: "pending",
     },
     customerAddress: {
-      type:String,
-      default : "NA"
+      type: String,
+      default: "NA",
     },
-     rating : {
-       type: Number,
-       default: 0
-     },
-     serviceStatus : {
-       type: String,
-       enum : ["ongoing", "completed", "cancelled","scheduled","pending"],
-       default : "pending"
-     },
-     paymentStatus : {
-       type: String,
-       enum : ["pending", "completed","failed"],
-       default : "pending"
-     },
-     scheduleFor : {
-      date:{
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    serviceStatus: {
+      type: String,
+      enum: ["ongoing", "completed", "cancelled", "scheduled", "pending"],
+      default: "pending",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "completed", "failed"],
+      default: "pending",
+    },
+    scheduleFor: {
+      date: {
         type: Date,
       },
-      time:{
-        type: String
-      },
-      format : {
+      time: {
         type: String,
-        enum:["AM","PM"]
-      }
-     },
-     startTime : {
-       type: Date
-     },
-     endTime : {
-       type: Date
-     },
-     cancelledBy : {
+      },
+      format: {
         type: String,
-        enum : ["customer","partner"]
+        enum: ["AM", "PM"],
       },
-      serviceStartedAt : {
-        type: Date
-      },
-      serviceEndedAt : {
-        type: Date
-      },
-      childBooking : {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Booking"
-      },
+    },
+    startTime: {
+      type: Date,
+    },
+    endTime: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: String,
+      enum: ["customer", "partner"],
+    },
+    serviceStartedAt: {
+      type: Date,
+    },
+    serviceEndedAt: {
+      type: Date,
+    },
+    childBooking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -152,4 +159,4 @@ const BookingSchema = new mongoose.Schema(
 
 const Booking = mongoose.model("Booking", BookingSchema);
 
-module.exports = Booking;
+export default Booking;

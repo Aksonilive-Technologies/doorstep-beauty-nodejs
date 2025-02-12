@@ -1,8 +1,8 @@
-const CustomerAddress = require("../model/customer-address.model"); // Adjust the path based on your directory structure
-const Customer = require("../../customer/model/customer.model");
+import CustomerAddress from "../model/customer-address.model.js"; // Adjust the path based on your directory structure
+import Customer from "../../customer/model/customer.model.js";
 
 // Create a new customer address
-exports.createAddress = async (req, res) => {
+export const createAddress = async (req, res) => {
   const { customerId, address, addressType, isPrimary } = req.body;
 
   try {
@@ -73,7 +73,7 @@ exports.createAddress = async (req, res) => {
 };
 
 // Get all addresses for a customer
-exports.getAddressesByCustomer = async (req, res) => {
+export const getAddressesByCustomer = async (req, res) => {
   const { customerId } = req.query;
   try {
     const addresses = await CustomerAddress.find({
@@ -105,7 +105,7 @@ exports.getAddressesByCustomer = async (req, res) => {
 };
 
 // Get a single customer address by ID
-exports.getAddressById = async (req, res) => {
+export const getAddressById = async (req, res) => {
   const { addressId } = req.query;
 
   try {
@@ -134,7 +134,7 @@ exports.getAddressById = async (req, res) => {
 };
 
 // Update a customer address
-exports.updateAddress = async (req, res) => {
+export const updateAddress = async (req, res) => {
   const { addressId, address, addressType, isPrimary } = req.body;
 
   try {
@@ -208,7 +208,7 @@ exports.updateAddress = async (req, res) => {
 };
 
 // Delete (soft delete) a customer address
-exports.deleteAddress = async (req, res) => {
+export const deleteAddress = async (req, res) => {
   const { addressId } = req.query;
 
   try {
@@ -256,7 +256,7 @@ exports.deleteAddress = async (req, res) => {
   }
 };
 
-exports.getPrimaryAddress = async (req, res) => {
+export const getPrimaryAddress = async (req, res) => {
   const { customerId } = req.query;
 
   try {

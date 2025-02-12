@@ -1,11 +1,11 @@
 // customersRoute.js
-const express = require("express");
-const {
+import express from "express";
+import {
   buyMembershipPlan,
   getAllMembership,
   updateMembershipTransactionStatus,
   getActivePlan,
-} = require("../controller/membership-app.controller.js");
+} from "../controller/membership-app.controller.js";
 
 const router = express.Router();
 
@@ -14,4 +14,4 @@ router.post("/fetch/all", getAllMembership);
 router.post("/update-transaction-status", updateMembershipTransactionStatus);
 router.get("/fetch/active-plan", getActivePlan);
 
-module.exports = router;
+export default router;

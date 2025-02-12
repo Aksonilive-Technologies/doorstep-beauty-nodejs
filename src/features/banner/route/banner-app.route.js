@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const bannerController = require("../controller/banner-app.controller");
+import * as bannerController from "../controller/banner-app.controller.js";
 
 router.get("/all", bannerController.getBannerForApp);
 
-module.exports = router;
+export default router;

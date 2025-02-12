@@ -1,10 +1,10 @@
-const Stock = require("../model/stock.model.js");
-const StockBooking = require("../../stock-booking/model/stock-booking.model.js");
-const mongoose = require("mongoose");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const XLSX = require("xlsx");
+import Stock from "../model/stock.model.js";
+import StockBooking from "../../stock-booking/model/stock-booking.model.js";
+import mongoose from "mongoose";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import XLSX from "xlsx";
 
-// exports.createStock = async (req, res) => {
+// export const createStock = async (req, res) => {
 //   const requiredFields = [
 //     "name",
 //     // "brand",
@@ -85,7 +85,7 @@ const XLSX = require("xlsx");
 //   }
 // };
 
-exports.createStock = async (req, res) => {
+export const createStock = async (req, res) => {
   const requiredFields = [
     "name",
     // "brand",
@@ -173,7 +173,7 @@ exports.createStock = async (req, res) => {
   }
 };
 
-exports.fetchAllStocks = async (req, res) => {
+export const fetchAllStocks = async (req, res) => {
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
@@ -215,7 +215,7 @@ exports.fetchAllStocks = async (req, res) => {
 };
 
 // update stocks
-// exports.updateStock = async (req, res) => {
+// export const updateStock = async (req, res) => {
 //   const { id } = req.query; // Assuming stock ID is passed via query params
 //   const stockData = req.body; // The fields to update
 //   const file = req.file; // Image file, if provided
@@ -304,7 +304,7 @@ exports.fetchAllStocks = async (req, res) => {
 //   }
 // };
 
-exports.updateStock = async (req, res) => {
+export const updateStock = async (req, res) => {
   const { id } = req.query; // Assuming stock ID is passed via query params
   let { oldImages } = req.body;
   const stockData = req.body; // The fields to update
@@ -317,7 +317,6 @@ exports.updateStock = async (req, res) => {
       oldImages = [];
     }
   }
-
 
   try {
     // Validate stock ID
@@ -350,7 +349,6 @@ exports.updateStock = async (req, res) => {
     // If new images are uploaded
     if (req.files && req.files.length > 0) {
       try {
-        
         let uploadedImages = [];
 
         // **Step 1: Upload new images to Cloudinary**
@@ -377,7 +375,6 @@ exports.updateStock = async (req, res) => {
             oldImages.push(imageUrl);
           }
         }
-
       } catch (error) {
         return res.status(500).json({
           success: false,
@@ -385,26 +382,23 @@ exports.updateStock = async (req, res) => {
           details: error.message,
         });
       }
-    }
-    else if(oldImages.length < stock.image.length) {
+    } else if (oldImages.length < stock.image.length) {
       let temp = [];
-        for (let imageUrl of stock.image) {
-            const index = oldImages.indexOf(imageUrl);
-            if(!oldImages.includes(imageUrl)) {
-              const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
-    
-              // **Step 2: Delete old image from Cloudinary**
-              await cloudinary.uploader.destroy(
-                `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
-              );
-            }else{
-              temp.push(imageUrl);
-            }
-        }
-        oldImages = temp;
-      }
+      for (let imageUrl of stock.image) {
+        const index = oldImages.indexOf(imageUrl);
+        if (!oldImages.includes(imageUrl)) {
+          const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
 
-    
+          // **Step 2: Delete old image from Cloudinary**
+          await cloudinary.uploader.destroy(
+            `${baseFolder}Stock/${publicId.replace(/%20/g, " ")}`
+          );
+        } else {
+          temp.push(imageUrl);
+        }
+      }
+      oldImages = temp;
+    }
 
     // Update stock images
     updatedFields.image = oldImages;
@@ -450,7 +444,7 @@ exports.updateStock = async (req, res) => {
 };
 
 //delete stocks
-exports.deleteStock = async (req, res) => {
+export const deleteStock = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -500,7 +494,7 @@ exports.deleteStock = async (req, res) => {
   }
 };
 
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -545,7 +539,7 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch the stock data from MongoDB
     const stocks = await Stock.find({ isDeleted: false });
@@ -592,7 +586,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchStock = async (req, res) => {
+export const searchStock = async (req, res) => {
   try {
     const { query } = req.query;
 
@@ -647,7 +641,7 @@ exports.searchStock = async (req, res) => {
   }
 };
 
-exports.fetahAllStockBooking = async (req, res) => {
+export const fetahAllStockBooking = async (req, res) => {
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;

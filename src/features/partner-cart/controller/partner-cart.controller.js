@@ -1,11 +1,11 @@
-const PartnerCart = require("../model/partner-cart.model");
-const StockBooking = require("../../stock-booking/model/stock-booking.model");
-const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model");
-const Partner = require("../../partner/model/partner.model");
-const Stock = require("../../stock/model/stock.model");
+import PartnerCart from "../model/partner-cart.model.js";
+import StockBooking from "../../stock-booking/model/stock-booking.model.js";
+import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
+import Partner from "../../partner/model/partner.model.js";
+import Stock from "../../stock/model/stock.model.js";
 
 // Add item to cart
-exports.addItemToCart = async (req, res) => {
+export const addItemToCart = async (req, res) => {
   const { partnerId, itemId } = req.body;
 
   try {
@@ -47,7 +47,7 @@ exports.addItemToCart = async (req, res) => {
   }
 };
 
-exports.createCartBookingTransaction = async (req, res) => {
+export const createCartBookingTransaction = async (req, res) => {
   let { partnerId, paymentMode } = req.body;
 
   try {
@@ -124,7 +124,7 @@ exports.createCartBookingTransaction = async (req, res) => {
   }
 };
 
-exports.bookCart = async (req, res) => {
+export const bookCart = async (req, res) => {
   let { partnerId, transactionId, paymentGatewayId } = req.body;
 
   try {
@@ -146,7 +146,7 @@ exports.bookCart = async (req, res) => {
       .populate("partner")
       .select("-__v");
 
-      console.log(cart);
+    console.log(cart);
 
     if (!cart || cart.length === 0) {
       return res.status(404).json({
@@ -205,8 +205,6 @@ exports.bookCart = async (req, res) => {
         message: "Transaction not found with given ID" + transactionId,
       });
     }
-
-    
 
     if (partnertransactionRecord.status !== "pending") {
       return res.status(400).json({
@@ -269,7 +267,7 @@ exports.bookCart = async (req, res) => {
 };
 
 // Fetch cart by customer ID
-exports.getCartByPartnerId = async (req, res) => {
+export const getCartByPartnerId = async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -308,7 +306,7 @@ exports.getCartByPartnerId = async (req, res) => {
 };
 
 // Remove item from cart
-exports.removeItemFromCart = async (req, res) => {
+export const removeItemFromCart = async (req, res) => {
   const { cartItemId } = req.body;
 
   try {
@@ -341,7 +339,7 @@ exports.removeItemFromCart = async (req, res) => {
   }
 };
 
-exports.incrementItemQuantity = async (req, res) => {
+export const incrementItemQuantity = async (req, res) => {
   const { cartItemId } = req.body;
   try {
     if (!cartItemId) {
@@ -376,7 +374,7 @@ exports.incrementItemQuantity = async (req, res) => {
 };
 
 // Decrement Item Quantity in Cart
-exports.decrementItemQuantity = async (req, res) => {
+export const decrementItemQuantity = async (req, res) => {
   const { cartItemId } = req.body;
   try {
     if (!cartItemId) {

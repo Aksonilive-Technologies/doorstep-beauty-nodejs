@@ -1,8 +1,8 @@
-const { default: mongoose } = require("mongoose");
-const Feedback = require("../model/feedback.model");
-const Customer = require("../../customer/model/customer.model");
+import mongoose from "mongoose";
+import Feedback from "../model/feedback.model.js";
+import Customer from "../../customer/model/customer.model.js";
 
-const getAllFeedback = async (req, res) => {
+export const getAllFeedback = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
 
   try {
@@ -34,7 +34,7 @@ const getAllFeedback = async (req, res) => {
   }
 };
 
-const searchFeedback = async (req, res) => {
+export const searchFeedback = async (req, res) => {
   const { query } = req.query;
   const { page = 1, limit = 10 } = req.query;
 
@@ -92,7 +92,7 @@ const searchFeedback = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getAllFeedback,
   searchFeedback,
 };

@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 const app = express();
-const {
+import {
   register,
   registerSuperadmin,
   login,
@@ -12,8 +12,8 @@ const {
   changeStatus,
   downloadExcelSheet,
   searchAdmin,
-} = require("../controller/admin.controller");
-const verifyToken = require("../../../../middleware/verifyToken");
+} from "../controller/admin.controller.js";
+import verifyToken from "../../../../middleware/verifyToken.js";
 
 router.post("/register", register);
 router.post("/register-superadmin", registerSuperadmin);
@@ -27,4 +27,4 @@ router.post("/update/role", verifyToken, updateAdminRole);
 router.get("/download-excel", verifyToken, downloadExcelSheet);
 router.get("/searchAdmin", verifyToken, searchAdmin);
 
-module.exports = router;
+export default router;

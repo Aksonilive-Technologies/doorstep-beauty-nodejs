@@ -1,8 +1,8 @@
-const { default: mongoose } = require("mongoose");
-const Banner = require("../model/banner.model.js");
-const { cloudinary } = require("../../../../config/cloudinary.js");
+import mongoose from "mongoose";
+import Banner from "../model/banner.model.js";
+import { cloudinary } from "../../../../config/cloudinary.js";
 
-exports.addBanner = async (req, res) => {
+export const addBanner = async (req, res) => {
   const { redirectUrl, bannerImage, position } = req.body; // Required fields to check
 
   const requiredFields = [
@@ -73,7 +73,7 @@ exports.addBanner = async (req, res) => {
 };
 
 //fetch all banner
-exports.getBanner = async (req, res) => {
+export const getBanner = async (req, res) => {
   try {
     const totalDocuments = await Banner.countDocuments(); // Total number of banners
     const limit = parseInt(req.query.limit) || 10; // Limit of banners per page
@@ -104,7 +104,7 @@ exports.getBanner = async (req, res) => {
 };
 
 //update banner
-exports.updateBanner = async (req, res) => {
+export const updateBanner = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -124,19 +124,20 @@ exports.updateBanner = async (req, res) => {
       });
     }
 
-    
     // Upload the image to Cloudinary if a file is present
     let imageUrl;
     if (req.file) {
       const banner = await Banner.findById(id);
       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
-      
+
       // Delete the existing image from Cloudinary
       const publicId = banner.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}banner/${publicId.replace(/%20/g, " ")}`);
-          
+      await cloudinary.uploader.destroy(
+        `${baseFolder}banner/${publicId.replace(/%20/g, " ")}`
+      );
+
       const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: baseFolder+"banner",
+        folder: baseFolder + "banner",
         public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
         overwrite: true,
       });
@@ -184,7 +185,7 @@ exports.updateBanner = async (req, res) => {
 };
 
 //update status
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -238,7 +239,7 @@ exports.changeStatus = async (req, res) => {
 };
 
 //delete Banner
-exports.deleteBanner = async (req, res) => {
+export const deleteBanner = async (req, res) => {
   try {
     const { id } = req.query;
 

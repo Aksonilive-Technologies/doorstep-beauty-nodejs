@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const customersSchema = new mongoose.Schema(
   {
@@ -26,7 +26,7 @@ const customersSchema = new mongoose.Schema(
     },
     referredBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer", 
+      ref: "Customer",
       required: false, // Optional if not all customers are referred by someone
     },
     walletBalance: {
@@ -47,4 +47,4 @@ const customersSchema = new mongoose.Schema(
   }
 );
 const Customer = mongoose.model("Customer", customersSchema);
-module.exports = Customer;
+export default Customer;

@@ -1,10 +1,10 @@
-const Membership = require("../model/membership.model.js");
-const PlanPurchaseHistory = require("../../plan-purchase-history/model/plan-purchase-history.model.js");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const { createOrder } = require("../../../../helper/razorpayHelper.js");
+import Membership from "../model/membership.model.js";
+import PlanPurchaseHistory from "../../plan-purchase-history/model/plan-purchase-history.model.js";
+import Transaction from "../../transaction/model/transaction.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import { createOrder } from "../../../../helper/razorpayHelper.js";
 
-exports.buyMembershipPlan = async (req, res) => {
+export const buyMembershipPlan = async (req, res) => {
   // const { customerId } = req.query;
   const { customerId } = req.body;
 
@@ -95,7 +95,7 @@ exports.buyMembershipPlan = async (req, res) => {
   }
 };
 
-exports.getAllMembership = async (req, res) => {
+export const getAllMembership = async (req, res) => {
   const { customerId } = req.body; // Assuming customerId is passed as a route parameter
   const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
@@ -131,7 +131,7 @@ exports.getAllMembership = async (req, res) => {
     if (plan !== null) {
       for (let i = 0; i < memberships.length; i++) {
         // console.log("43", memberships[i]._id),
-          // console.log("44", plan.membership);
+        // console.log("44", plan.membership);
         if (plan.membership.toString() === memberships[i]._id.toString()) {
           memberships[i].isActivePlan = true;
         } else {
@@ -159,7 +159,7 @@ exports.getAllMembership = async (req, res) => {
   }
 };
 
-exports.updateMembershipTransactionStatus = async (req, res) => {
+export const updateMembershipTransactionStatus = async (req, res) => {
   const { transactionId, status, paymentGatewayId, membershipId } = req.body;
 
   if (!transactionId || !status || !membershipId) {
@@ -235,7 +235,7 @@ exports.updateMembershipTransactionStatus = async (req, res) => {
   }
 };
 
-exports.getActivePlan = async (req, res) => {
+export const getActivePlan = async (req, res) => {
   const { customerId } = req.query;
 
   try {

@@ -1,4 +1,4 @@
-const calculatePartnerCommission = (finalPrice) => {
+export const calculatePartnerCommission = (finalPrice) => {
     const commissionTiers = [
       { min: 0, max: 800, commission: 9 },
       { min: 800, max: 900, commission: 10 },
@@ -21,6 +21,3 @@ const calculatePartnerCommission = (finalPrice) => {
     const tier = commissionTiers.find(t => finalPrice >= t.min && finalPrice < t.max);
     return tier ? tier.commission : 0;
 };
-
-// Export the function so other files can use it
-module.exports = { calculatePartnerCommission };

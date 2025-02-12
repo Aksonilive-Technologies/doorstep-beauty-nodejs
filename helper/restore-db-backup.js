@@ -1,7 +1,7 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 dotenv.config();
-const { exec } = require("child_process");
-const path = require("path");
+import { exec } from "child_process";
+import path from "path";
 
 // MongoDB Connection Config
 const DATABASE = "test"; // Replace with your actual backup database name
@@ -13,27 +13,25 @@ const NEW_DATABASE = "test2";
 const BACKUP_FILE = "test_2025-02-01_10-55-00.gz"; // Replace with the actual backup file name
 
 const restoreDatabase = () => {
-    const backupFilePath = path.join(__dirname, "../backups");
+  const backupFilePath = path.join(__dirname, "../backups");
 
-    // this we need to use when we want to restore the database with the same name
-    // const mongorestoreCommand = `mongorestore --uri="${MONGO_URI}" --archive=${backupFilePath}/${BACKUP_FILE} --gzip --nsInclude=${DATABASE}.*`;
-    
-    // this we need to use when we want to restore the database with the different name
-    const mongorestoreCommand = `mongorestore --uri="${process.env.db_url}" --archive=${backupFilePath}/${BACKUP_FILE} --gzip --nsFrom=${DATABASE}.* --nsTo=${NEW_DATABASE}.*`;
+  // this we need to use when we want to restore the database with the same name
+  // const mongorestoreCommand = `mongorestore --uri="${MONGO_URI}" --archive=${backupFilePath}/${BACKUP_FILE} --gzip --nsInclude=${DATABASE}.*`;
 
+  // this we need to use when we want to restore the database with the different name
+  const mongorestoreCommand = `mongorestore --uri="${process.env.db_url}" --archive=${backupFilePath}/${BACKUP_FILE} --gzip --nsFrom=${DATABASE}.* --nsTo=${NEW_DATABASE}.*`;
 
-    exec(mongorestoreCommand, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Restore failed: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`Restore STDERR: ${stderr}`);
-            return;
-        }
-        console.log("Database restore successful!");
-    });
+  exec(mongorestoreCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Restore failed: ${error.message}`);
+      return;
+    }
+    if (stderr) {
+      console.error(`Restore STDERR: ${stderr}`);
+      return;
+    }
+    console.log("Database restore successful!");
+  });
 };
-
 
 restoreDatabase();

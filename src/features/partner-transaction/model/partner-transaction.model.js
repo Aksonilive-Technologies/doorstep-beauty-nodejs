@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const partnerTransactionSchema = new mongoose.Schema(
   {
@@ -26,7 +26,7 @@ const partnerTransactionSchema = new mongoose.Schema(
     },
     paymentGateway: {
       type: String,
-      enum: ["cashfree", "razorpay", "wallet","cash"],
+      enum: ["cashfree", "razorpay", "wallet", "cash"],
       required: true,
     },
     transactionRefId: {
@@ -48,6 +48,9 @@ const partnerTransactionSchema = new mongoose.Schema(
   }
 );
 
-const PartnerTransaction = mongoose.model("PartnerTransaction", partnerTransactionSchema);
+const PartnerTransaction = mongoose.model(
+  "PartnerTransaction",
+  partnerTransactionSchema
+);
 
-module.exports = PartnerTransaction;
+export default PartnerTransaction;

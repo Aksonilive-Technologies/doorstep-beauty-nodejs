@@ -1,7 +1,7 @@
-const Product = require("../model/product.model");
+import * as Product from "../model/product.model.js";
 
 // Fetch all products
-exports.getAllNewProducts = async (req, res) => {
+export const getAllNewProducts = async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
@@ -25,7 +25,7 @@ exports.getAllNewProducts = async (req, res) => {
   }
 };
 
-exports.getAllCategoryProducts = async (req, res) => {
+export const getAllCategoryProducts = async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
@@ -103,7 +103,7 @@ exports.getAllCategoryProducts = async (req, res) => {
   }
 };
 
-exports.getAllProducts = async (req, res) => {
+export const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,

@@ -1,11 +1,11 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const StockBookingSchema = new mongoose.Schema(
   {
     partner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Partner",
-      required: true
+      required: true,
     },
     product: [
       {
@@ -63,4 +63,4 @@ const StockBookingSchema = new mongoose.Schema(
 
 const StockBooking = mongoose.model("StockBooking", StockBookingSchema);
 
-module.exports = StockBooking;
+export default StockBooking;

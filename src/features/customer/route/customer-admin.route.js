@@ -1,12 +1,12 @@
 // customersRoute.js
-const express = require("express");
-const {
+import express from "express";
+import {
   getAllCustomers,
   downloadExcelSheet,
   searchCustomer,
   deleteCustomer,
   changeStatusDeletedCustomer,
-} = require("../controller/customer-admin.controller");
+} from "../controller/customer-admin.controller.js";
 const router = express.Router();
 
 router.get("/all", getAllCustomers);
@@ -15,4 +15,4 @@ router.put("/change-status", changeStatusDeletedCustomer);
 router.get("/download-excel", downloadExcelSheet);
 router.get("/searchCustomer", searchCustomer);
 
-module.exports = router;
+export default router;

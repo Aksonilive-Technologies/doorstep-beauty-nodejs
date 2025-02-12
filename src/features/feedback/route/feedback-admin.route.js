@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 const app = express();
-const {
+import {
   getAllFeedback,
   searchFeedback,
-} = require("../controller/feedback-admin.controller");
+} from "../controller/feedback-admin.controller.js";
 
 // router.post("/create", createFeedback);
 
 router.get("/fetch/all", getAllFeedback);
 router.get("/search-feedback", searchFeedback);
 
-module.exports = router;
+export default router;

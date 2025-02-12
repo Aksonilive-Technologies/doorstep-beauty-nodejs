@@ -1,9 +1,9 @@
-const Subcategory = require("../model/subcategory.model.js");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const XLSX = require("xlsx");
+import Subcategory from "../model/subcategory.model.js";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import XLSX from "xlsx";
 
 // Create a new Subcategory
-exports.createSubcategory = async (req, res) => {
+export const createSubcategory = async (req, res) => {
   const { name, position, parentCategory } = req.body;
 
   const requiredFields = { name, position, parentCategory };
@@ -18,8 +18,10 @@ exports.createSubcategory = async (req, res) => {
   }
 
   if (!req.file) {
+  if (!req.file) {
     return res.status(400).json({
       success: false,
+      message: "Image is required",
       message: "Image is required",
     });
   }
@@ -54,6 +56,12 @@ exports.createSubcategory = async (req, res) => {
       position,
       parentCategory,
     });
+    const subcategory = new Subcategory({
+      name,
+      image: imageUrl,
+      position,
+      parentCategory,
+    });
     await subcategory.save();
 
     res.status(201).json({
@@ -71,7 +79,7 @@ exports.createSubcategory = async (req, res) => {
 };
 
 // Get all Subcategories
-exports.getAllSubcategories = async (req, res) => {
+export const getAllSubcategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -107,7 +115,7 @@ exports.getAllSubcategories = async (req, res) => {
 };
 
 // Get subcategory by category
-exports.getSubcategoryByCategory = async (req, res) => {
+export const getSubcategoryByCategory = async (req, res) => {
   const { categoryId } = req.query;
 
   if (!categoryId) {
@@ -146,7 +154,7 @@ exports.getSubcategoryByCategory = async (req, res) => {
 };
 
 // Update a Subcategory by ID
-exports.updateSubcategory = async (req, res) => {
+export const updateSubcategory = async (req, res) => {
   const { id } = req.query; // Using query parameters instead of params
   const updates = req.body;
 
@@ -169,6 +177,9 @@ exports.updateSubcategory = async (req, res) => {
       await cloudinary.uploader.destroy(
         `${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`
       );
+      await cloudinary.uploader.destroy(
+        `${baseFolder}subcategory/${publicId.replace(/%20/g, " ")}`
+      );
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "subcategory",
@@ -178,6 +189,13 @@ exports.updateSubcategory = async (req, res) => {
       updates.image = result.secure_url; // Add the image URL to the updates
     }
 
+    const updatedSubcategory = await Subcategory.findByIdAndUpdate(
+      id,
+      updates,
+      {
+        new: true,
+      }
+    );
     const updatedSubcategory = await Subcategory.findByIdAndUpdate(
       id,
       updates,
@@ -209,7 +227,7 @@ exports.updateSubcategory = async (req, res) => {
 };
 
 // Soft delete a Subcategory by ID
-exports.deleteSubcategory = async (req, res) => {
+export const deleteSubcategory = async (req, res) => {
   //yaha pe query likhna hai params ke jagah pe
   // const { id } = req.params;
   const { id } = req.query;
@@ -242,7 +260,7 @@ exports.deleteSubcategory = async (req, res) => {
 };
 
 //change status of active
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -279,9 +297,13 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
+    const subcategories = await Subcategory.find().populate(
+      "parentCategory",
+      "name"
+    );
     const subcategories = await Subcategory.find().populate(
       "parentCategory",
       "name"
@@ -329,7 +351,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchSubcategory = async (req, res) => {
+export const searchSubcategory = async (req, res) => {
   try {
     const { query } = req.query;
 

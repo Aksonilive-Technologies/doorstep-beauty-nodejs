@@ -1,7 +1,6 @@
-const Slot = require("../model/slot.model");
+import Slot from "../model/slot.model.js";
 
-
-exports.getSlotsCustomer = async (req, res) => {
+export const getSlotsCustomer = async (req, res) => {
   try {
     // Retrieve all slots
     const slots = await Slot.find({

@@ -1,4 +1,4 @@
-const BookingCancellationFees = require("../src/features/booking-cancellation-fees/model/booking-cancellation-fees.model.js");
+import BookingCancellationFees from '../src/features/booking-cancellation-fees/model/booking-cancellation-fees.model.js';
 
 /**
  * Creates a new BookingCancellationFees record.
@@ -7,7 +7,7 @@ const BookingCancellationFees = require("../src/features/booking-cancellation-fe
  * @param {Number} charges - The amount of cancellation charges to be applied.
  * @param {String} status - The status of the cancellation fee (e.g., 'pending', 'paid', etc.).
  */
-const addCancellationChargesRecord = async (booking, userType, charges, status) => {
+export const addCancellationChargesRecord = async (booking, userType, charges, status) => {
   try {
     let userId;
     if (userType === 'customer') {
@@ -31,8 +31,4 @@ const addCancellationChargesRecord = async (booking, userType, charges, status) 
     console.error('Error creating cancellation fee record:', error);
     throw new Error('Failed to create cancellation fee record');
   }
-};
-
-module.exports = {
-  addCancellationChargesRecord,
 };

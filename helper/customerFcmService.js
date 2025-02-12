@@ -1,4 +1,4 @@
-const admin1 = require("firebase-admin");
+import admin1 from "firebase-admin";
 const customerServiceAccount = JSON.parse(
   process.env.CustomerFCMServiceAccountKey
 );
@@ -12,7 +12,7 @@ const customerApp = admin1.initializeApp(
 ); // Alias for customer app
 
 // Send a notification message to the customer
-exports.sendCustomerNotification = (token, title, body, image) => {
+export const sendCustomerNotification = (token, title, body, image) => {
   const message = {
     notification: {
       title,
@@ -36,7 +36,7 @@ exports.sendCustomerNotification = (token, title, body, image) => {
 };
 
 // Send booking confirmation message to customer
-exports.sendBookingConfirmationMessage = (token) => {
+export const sendBookingConfirmationMessage = (token) => {
   const message = {
     notification: {
       title: "Booking Confirmed",
@@ -59,7 +59,7 @@ exports.sendBookingConfirmationMessage = (token) => {
 };
 
 // Send partner allocation message to customer
-exports.sendPartnerAllocationConfirmationMessage = (token) => {
+export const sendPartnerAllocationConfirmationMessage = (token) => {
   const message = {
     notification: {
       title: "Partner Allocated",
@@ -82,7 +82,7 @@ exports.sendPartnerAllocationConfirmationMessage = (token) => {
 };
 
 // Send booking cancellation message to customer
-exports.sendBookingCancellationMessage = (token) => {
+export const sendBookingCancellationMessage = (token) => {
   const message = {
     notification: {
       title: "Booking Cancelled",
@@ -105,7 +105,7 @@ exports.sendBookingCancellationMessage = (token) => {
 };
 
 // Send booking refund message to customer
-exports.sendBookingRefundMessage = (token) => {
+export const sendBookingRefundMessage = (token) => {
   const message = {
     notification: {
       title: "Booking Refund",

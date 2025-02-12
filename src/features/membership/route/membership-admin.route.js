@@ -1,13 +1,13 @@
 // customersRoute.js
-const express = require("express");
-const {
+import express from "express";
+import {
   createMembership,
   updateMembership,
   changeMembershipStatus,
   fetchAllMemberships,
   deleteMembership,
   searchMembership,
-} = require("../controller/membership-admin.controller.js");
+} from "../controller/membership-admin.controller.js";
 
 const router = express.Router();
 
@@ -18,4 +18,4 @@ router.put("/change-status", changeMembershipStatus);
 router.put("/delete", deleteMembership);
 router.get("/search-membership", searchMembership);
 
-module.exports = router;
+export default router;
