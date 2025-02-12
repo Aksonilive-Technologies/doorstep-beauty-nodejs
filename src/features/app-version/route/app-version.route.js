@@ -1,10 +1,8 @@
-const express = require("express");
-const {
-  updateAppVersion,
-} = require("../controller/app-version.controller");
+import express from "express";
+import { updateAppVersion } from "../controller/app-version.controller.js";
 const router = express.Router();
 const app = express();
 
 router.post("/update", updateAppVersion);
 
-module.exports = router;
+export default router;

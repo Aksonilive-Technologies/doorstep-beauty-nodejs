@@ -1,6 +1,6 @@
-const Stock = require("../model/stock.model.js");
+import Stock from "../model/stock.model.js";
 
-exports.fetchAllStocks = async (req, res) => {
+export const fetchAllStocks = async (req, res) => {
   try {
     // Fetch stocks with pagination, filtering by isActive and isDeleted
     const stocks = await Stock.find({
@@ -35,7 +35,7 @@ exports.fetchAllStocks = async (req, res) => {
   }
 };
 
-exports.getProductByBarcode = async (req, res) => {
+export const getProductByBarcode = async (req, res) => {
   try {
     const { barcode } = req.query;
 

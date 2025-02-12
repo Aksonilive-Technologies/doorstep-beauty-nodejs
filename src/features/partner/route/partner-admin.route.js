@@ -1,7 +1,7 @@
-const express = require("express");
-router = express.Router();
+import express from "express";
+const router = express.Router();
 
-const {
+import {
   register,
   getPartners,
   updatePartner,
@@ -9,11 +9,8 @@ const {
   changeStatus,
   downloadExcelSheet,
   searchPartners,
-} = require("../controller/partner-admin.controller.js");
-const verifyToken = require("../../../../middleware/verifyToken.js");
-const {
-  uploadSingleImage,
-} = require("../../../../middleware/uploadMiddleware.js");
+} from "../controller/partner-admin.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 
 // need to approve
 router.post("/register", uploadSingleImage, register);
@@ -24,4 +21,4 @@ router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
 router.get("/searchPartner", searchPartners);
 
-module.exports = router;
+export default router;

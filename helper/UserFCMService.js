@@ -1,7 +1,7 @@
-const admin = require("firebase-admin");
+import admin from "firebase-admin";
 
 // Send notification for created notifications to users
-exports.sendNotificationToUser = (token, title, body) => {
+export const sendNotificationToUser = (token, title, body) => {
   const message = {
     notification: {
       title: title,

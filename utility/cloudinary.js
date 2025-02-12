@@ -1,6 +1,6 @@
 const cloudinary = require("cloudinary").v2;
-const fs = require("fs/promises");
-const dotenv = require("dotenv");
+import fs from "fs/promises";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -26,7 +26,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     try {
       await fs.unlink(localFilePath);
       // console.log("Local file deleted after failed upload", {
-        // path: localFilePath,
+      // path: localFilePath,
       // });
     } catch (unlinkError) {
       console.error("Error deleting local file", {
@@ -37,4 +37,4 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-module.exports = { uploadOnCloudinary };
+export default { uploadOnCloudinary };

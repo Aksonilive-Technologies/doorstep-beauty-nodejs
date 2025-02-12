@@ -1,15 +1,15 @@
-const express = require("express");
-const {
+import express from "express";
+import {
   getCustomerStats,
   getTopCustomerByBookings,
-} = require("../src/features/customer/controller/customer-admin.controller");
-const {
+} from "../src/features/customer/controller/customer-admin.controller.js";
+import {
   getComplaintStatsByCategory,
   getResolvedComplaintStatsByCategory,
-} = require("../src/features/complaint/controller/complaint-admin.controller");
-const {
+} from "../src/features/complaint/controller/complaint-admin.controller.js";
+import {
   getTopPartnerByServiceCount,
-} = require("../src/features/booking/controller/booking-partner.controller");
+} from "../src/features/booking/controller/booking-partner.controller.js";
 const router = express.Router();
 
 // Define the endpoint for fetching customer stats
@@ -19,4 +19,4 @@ router.get("/service-provided-partner", getTopPartnerByServiceCount);
 router.get("/total-complaints-stats", getComplaintStatsByCategory);
 router.get("/resolved-complaints-stats", getResolvedComplaintStatsByCategory);
 
-module.exports = router;
+export default router;

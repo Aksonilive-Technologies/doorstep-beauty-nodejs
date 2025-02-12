@@ -1,8 +1,8 @@
-const { default: mongoose } = require("mongoose");
-const Membership = require("../model/membership.model.js");
+import mongoose from "mongoose";
+import Membership from "../model/membership.model.js";
 // const logger = require("../utility/logger.js");
 
-const createMembership = async (req, res) => {
+export const createMembership = async (req, res) => {
   try {
     const requiredFields = ["tenure", "tenureType", "price"];
     const missingFields = requiredFields.filter(
@@ -36,7 +36,7 @@ const createMembership = async (req, res) => {
   }
 };
 
-const updateMembership = async (req, res) => {
+export const updateMembership = async (req, res) => {
   const { id } = req.query; // Use req.params to extract ID from URL
   try {
     // Validate ID format with Mongoose
@@ -85,7 +85,7 @@ const updateMembership = async (req, res) => {
   }
 };
 
-const fetchAllMemberships = async (req, res) => {
+export const fetchAllMemberships = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
@@ -114,7 +114,7 @@ const fetchAllMemberships = async (req, res) => {
   }
 };
 
-const changeMembershipStatus = async (req, res) => {
+export const changeMembershipStatus = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -165,7 +165,7 @@ const changeMembershipStatus = async (req, res) => {
   }
 };
 
-const deleteMembership = async (req, res) => {
+export const deleteMembership = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -213,7 +213,7 @@ const deleteMembership = async (req, res) => {
   }
 };
 
-const searchMembership = async (req, res) => {
+export const searchMembership = async (req, res) => {
   try {
     const { query } = req.query;
 
@@ -271,7 +271,7 @@ const searchMembership = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   createMembership,
   updateMembership,
   fetchAllMemberships,

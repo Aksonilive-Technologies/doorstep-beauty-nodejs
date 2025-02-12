@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const stockSchema = new Schema(
@@ -40,7 +40,7 @@ const stockSchema = new Schema(
     },
     image: {
       type: [String],
-      required: true
+      required: true,
     },
     barcodeNumber: {
       type: String,
@@ -62,4 +62,4 @@ const stockSchema = new Schema(
 
 const Stock = mongoose.model("Stock", stockSchema);
 
-module.exports = Stock;
+export default Stock;

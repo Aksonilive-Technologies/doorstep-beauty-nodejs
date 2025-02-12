@@ -1,9 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const categoryAdminController = require("../controller/category-admin.controller");
-const {
-  uploadSingleImage,
-} = require("../../../../middleware/uploadMiddleware");
+import * as categoryAdminController from "../controller/category-admin.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 // Create a new category
 router.post(
   "/create",
@@ -30,4 +28,4 @@ router.get("/download-excel", categoryAdminController.downloadExcelSheet);
 
 router.get("/search-category", categoryAdminController.searchCategory);
 
-module.exports = router;
+export default router;

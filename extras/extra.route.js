@@ -1,10 +1,10 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { uploadSingleImage } = require("../middleware/uploadMiddleware");
-const {
+import { uploadSingleImage } from "../middleware/uploadMiddleware.js";
+import {
   uploadProfileImage,
-} = require("./spareFileUploadController");
+} from "./spareFileUploadController.js";
 
 router.post("/profile-image/upload", uploadSingleImage, uploadProfileImage);
 
-module.exports = router;
+export default router;

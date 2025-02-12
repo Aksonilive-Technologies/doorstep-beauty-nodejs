@@ -1,15 +1,13 @@
-const Partner = require("../src/features/partner/model/partner.model.js");
-const {
-  calculatePartnerCommission,
-} = require("../helper/calculatePartnerCommission.js");
-const PartnerTransaction = require("../src/features/partner-transaction/model/partner-transaction.model.js");
+import Partner from "../src/features/partner/model/partner.model.js";
+import { calculatePartnerCommission } from "../helper/calculatePartnerCommission.js";
+import PartnerTransaction from "../src/features/partner-transaction/model/partner-transaction.model.js";
 /**
  * Process a refund for wallet-based transactions and update the customer's wallet balance.
  * @param {Object} booking - The booking object containing necessary information.
  * @param {Number} cancellationCharges - The cancellation charges to be deducted.
  * @returns {String} - The updated status of the cancellation fee (either 'paid' or 'pending').
  */
-const processPartnerRefund = async (
+export const processPartnerRefund = async (
   booking,
   customerCancellationCharges,
   partnerCancellationCharges
@@ -47,8 +45,4 @@ const processPartnerRefund = async (
     console.error("Error processing wallet refund:", error);
     throw new Error("Failed to process wallet refund");
   }
-};
-
-module.exports = {
-  processPartnerRefund,
 };

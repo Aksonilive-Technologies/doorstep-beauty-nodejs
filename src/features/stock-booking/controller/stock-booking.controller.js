@@ -1,9 +1,9 @@
-const StockBooking = require("../model/stock-booking.model");
-const Partner = require("../../partner/model/partner.model");
-const Stock = require("../../stock/model/stock.model");
-const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model");
+import StockBooking from "../model/stock-booking.model.js";
+import Partner from "../../partner/model/partner.model.js";
+import Stock from "../../stock/model/stock.model.js";
+import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
 
-exports.createStockBooking = async (req, res) => {
+export const createStockBooking = async (req, res) => {
   const { partnerId, stockItemId, deliveryAddress, status, paymentMode } =
     req.body;
 
@@ -132,7 +132,7 @@ exports.createStockBooking = async (req, res) => {
   }
 };
 
-exports.fetchAllStockBookings = async (req, res) => {
+export const fetchAllStockBookings = async (req, res) => {
   const { partnerId } = req.query;
 
   try {
@@ -213,7 +213,7 @@ exports.fetchAllStockBookings = async (req, res) => {
   }
 };
 
-exports.cancelBooking = async (req, res) => {
+export const cancelBooking = async (req, res) => {
   const { bookingId } = req.body;
 
   try {

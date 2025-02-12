@@ -1,7 +1,7 @@
-const Offer = require("../model/offers.model.js");
+import Offer from "../model/offers.model.js";
 
 // Create Offer
-const createOffer = async (req, res) => {
+export const createOffer = async (req, res) => {
   try {
     const {
       offerName,
@@ -48,7 +48,7 @@ const createOffer = async (req, res) => {
 };
 
 // Get All Offers
-const getOffers = async (req, res) => {
+export const getOffers = async (req, res) => {
   try {
     // Get page and limit from query parameters, or set defaults
     const page = parseInt(req.query.page) || 1;
@@ -84,7 +84,7 @@ const getOffers = async (req, res) => {
 };
 
 // Delete Offer by ID
-const deleteOffer = async (req, res) => {
+export const deleteOffer = async (req, res) => {
   try {
     const { id } = req.query;
     const offer = await Offer.findById(id);
@@ -117,7 +117,7 @@ const deleteOffer = async (req, res) => {
 };
 
 // Change Offer Status
-const changeOfferStatus = async (req, res) => {
+export const changeOfferStatus = async (req, res) => {
   try {
     const { id } = req.query;
     const offer = await Offer.findById(id);
@@ -145,7 +145,7 @@ const changeOfferStatus = async (req, res) => {
   }
 };
 
-const searchOffers = async (req, res) => {
+export const searchOffers = async (req, res) => {
   const { query, page = 1, limit = 10 } = req.query;
 
   try {
@@ -200,7 +200,7 @@ const searchOffers = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   createOffer,
   getOffers,
   deleteOffer,

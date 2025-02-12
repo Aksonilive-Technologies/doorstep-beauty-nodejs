@@ -1,5 +1,5 @@
 // need to be approve
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const firebaseTokenSchema = new mongoose.Schema(
   {
@@ -36,4 +36,4 @@ const firebaseTokenSchema = new mongoose.Schema(
 
 const FirebaseToken = mongoose.model("FirebaseToken", firebaseTokenSchema);
 
-module.exports = FirebaseToken;
+export default FirebaseToken;

@@ -1,4 +1,4 @@
-const Razorpay = require('razorpay');
+import Razorpay from "razorpay";
 
 // Initialize Razorpay instance
 const instance = new Razorpay({
@@ -7,7 +7,7 @@ const instance = new Razorpay({
 });
 
 // Function to create an order
-exports.createOrder = async (amount) => {
+export const createOrder = async (amount) => {
   const options = {
     amount, // Amount in paise (e.g., ₹500 is 50000)
     currency: "INR",

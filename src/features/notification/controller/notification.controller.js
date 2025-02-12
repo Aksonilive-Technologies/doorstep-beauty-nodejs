@@ -1,17 +1,17 @@
-const { default: mongoose } = require("mongoose");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const Notification = require("../model/notification.model.js");
-const Partner = require("../../partner/model/partner.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const FirebaseToken = require("../../firebase-token/model/firebase-token.model.js");
-const nodeCron = require("node-cron");
-const moment = require("moment-timezone");
-const {
+import mongoose from "mongoose";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import Notification from "../model/notification.model.js";
+import Partner from "../../partner/model/partner.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import FirebaseToken from "../../firebase-token/model/firebase-token.model.js";
+import nodeCron from "node-cron";
+import moment from "moment-timezone";
+import {
   sendPartnerNotification,
-} = require("../../../../helper/partnerFcmService.js");
-const {
+} from "../../../../helper/partnerFcmService.js";
+import {
   sendCustomerNotification,
-} = require("../../../../helper/customerFcmService.js");
+} from "../../../../helper/customerFcmService.js";
 
 // Function to send notifications
 const sendNotification = async (notification) => {
@@ -84,7 +84,7 @@ const scheduleNotification = (notification) => {
   const timeDiff = scheduledTimeUTC.diff(currentTimeUTC, "minutes"); // Difference in minutes
 
   // console.log(
-    `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`
+  `Scheduled Time (IST): ${scheduledTimeIST.format()}, Time Diff: ${timeDiff} minutes`;
   // );
 
   // Schedule the notification in IST timezone using cron
@@ -109,7 +109,7 @@ const scheduleNotification = (notification) => {
 };
 
 // Create a new notification
-exports.createNotification = async (req, res) => {
+export const createNotification = async (req, res) => {
   try {
     const {
       title,
@@ -178,7 +178,7 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-exports.getNotifications = async (req, res) => {
+export const getNotifications = async (req, res) => {
   try {
     const { page = 1, limit = 10, showAll = false } = req.query;
 
@@ -281,7 +281,7 @@ exports.getNotifications = async (req, res) => {
   }
 };
 
-exports.updateNotification = async (req, res) => {
+export const updateNotification = async (req, res) => {
   try {
     const { id } = req.query;
     const { title, body, targetAudience, notificationDate, notificationTime } =
@@ -302,8 +302,9 @@ exports.updateNotification = async (req, res) => {
 
       // Delete the existing image from Cloudinary
       const publicId = notification.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}notification/${publicId.replace(/%20/g, " ")}`);
-
+      await cloudinary.uploader.destroy(
+        `${baseFolder}notification/${publicId.replace(/%20/g, " ")}`
+      );
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "notification",
@@ -355,7 +356,7 @@ exports.updateNotification = async (req, res) => {
   }
 };
 
-exports.deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -396,7 +397,7 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
-exports.searchNotification = async (req, res) => {
+export const searchNotification = async (req, res) => {
   try {
     const { query } = req.query;
 

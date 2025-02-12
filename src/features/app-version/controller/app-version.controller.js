@@ -1,8 +1,8 @@
-const AppVersion = require("../model/app-version.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const Partner = require("../../partner/model/partner.model.js");
+import AppVersion from "../model/app-version.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import Partner from "../../partner/model/partner.model.js";
 
-exports.updateAppVersion = async (req, res) => {
+export const updateAppVersion = async (req, res) => {
   const { userId, appVersion, userType, deviceType } = req.body;
 
   try {

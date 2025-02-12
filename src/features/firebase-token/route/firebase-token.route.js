@@ -1,10 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const {
-  updateFirebaseToken,
-} = require("../controller/firebase-token.controller");
+import { updateFirebaseToken } from "../controller/firebase-token.controller.js";
 
 router.post("/update", updateFirebaseToken);
 
-module.exports = router;
+export default router;

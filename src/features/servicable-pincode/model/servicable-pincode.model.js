@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const serviceablePincodeSchema = new mongoose.Schema(
   {
@@ -27,5 +27,8 @@ const serviceablePincodeSchema = new mongoose.Schema(
   }
 );
 
-const ServiceablePincode = mongoose.model("ServiceablePincode", serviceablePincodeSchema);
-module.exports = ServiceablePincode
+const ServiceablePincode = mongoose.model(
+  "ServiceablePincode",
+  serviceablePincodeSchema
+);
+export default ServiceablePincode;

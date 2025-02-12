@@ -1,11 +1,9 @@
-const Admin = require("../../admin/model/admin.model.js");
-const Complaint = require("../model/complaint.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const mongoose = require("mongoose");
-// const { validationResult } = require("express-validator");
+import Admin from "../../admin/model/admin.model.js";
+import Complaint from "../model/complaint.model.js";
+import Customer from "../../customer/model/customer.model.js";
+// import { validationResult } from "express-validator";
 
-
-const getAllComplaints = async (req, res) => {
+export const getAllComplaints = async (req, res) => {
   try {
     // Get pagination parameters from query, with default values
     const page = parseInt(req.query.page) || 1;
@@ -41,7 +39,7 @@ const getAllComplaints = async (req, res) => {
   }
 };
 
-const resolvedComplaint = async (req, res) => {
+export const resolvedComplaint = async (req, res) => {
   try {
     const { complaintId } = req.query;
     const { adminId, closingRemark } = req.body;
@@ -119,7 +117,7 @@ const resolvedComplaint = async (req, res) => {
   }
 };
 
-const searchComplaints = async (req, res) => {
+export const searchComplaints = async (req, res) => {
   const { query, page = 1, limit = 10 } = req.query;
 
   try {
@@ -196,7 +194,7 @@ const searchComplaints = async (req, res) => {
   }
 };
 
-const getComplaintStatsByCategory = async (req, res) => {
+export const getComplaintStatsByCategory = async (req, res) => {
   try {
     // Aggregate complaints grouped by complaintCategory and count each category
     const complaintStats = await Complaint.aggregate([
@@ -245,7 +243,7 @@ const getComplaintStatsByCategory = async (req, res) => {
   }
 };
 
-const getResolvedComplaintStatsByCategory = async (req, res) => {
+export const getResolvedComplaintStatsByCategory = async (req, res) => {
   try {
     // Get count of resolved complaints grouped by category
     const resolvedComplaintStats = await Complaint.aggregate([
@@ -300,7 +298,7 @@ const getResolvedComplaintStatsByCategory = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getAllComplaints,
   resolvedComplaint,
   searchComplaints,

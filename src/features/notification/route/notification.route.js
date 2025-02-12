@@ -1,15 +1,13 @@
-const express = require("express");
-const {
+import express from "express";
+import {
   createNotification,
   getNotifications,
   //   getNotificationById,
   updateNotification,
   deleteNotification,
   searchNotification,
-} = require("../controller/notification.controller");
-const {
-  uploadSingleImage,
-} = require("../../../../middleware/uploadMiddleware");
+} from "../controller/notification.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -20,4 +18,4 @@ router.put("/update", uploadSingleImage, updateNotification);
 router.put("/delete", deleteNotification);
 router.get("/search-notification", searchNotification);
 
-module.exports = router;
+export default router;

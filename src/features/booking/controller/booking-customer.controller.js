@@ -1,24 +1,22 @@
-const CustomerAddress = require("../../customer-address/model/customer-address.model.js");
-const Booking = require("../model/booking.model.js");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const moment = require("moment");
-const Product = require("../../product/model/product.model.js");
-const MostBookedProduct = require("../../most-booked-product/model/most-booked-product.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const CustomerFCMService = require("../../../../helper/customerFcmService.js");
-const PartnerFCMService = require("../../../../helper/partnerFcmService.js");
-const FirebaseTokens = require("../../firebase-token/model/firebase-token.model.js");
-const { calculateCancellationCharge } = require("../../../../helper/refundCalculator.js");
-const {
-  addCancellationChargesRecord,
-} = require("../../../../helper/addCancellationChargesRecord.js");
-const { processPartnerRefund } = require("../../../../helper/processPartnerRefund.js");
-const { processCustomerRefund } = require("../../../../helper/processCustomerRefund.js");
-const XLSX = require("xlsx");
-const waMsgService = require("../../../../utility/waMsgService.js");
-const { createOrder } = require("../../../../helper/razorpayHelper.js");
+import CustomerAddress from "../../customer-address/model/customer-address.model.js";
+import Booking from "../model/booking.model.js";
+import Transaction from "../../transaction/model/transaction.model.js";
+import moment from "moment";
+import * as Product from "../../product/model/product.model.js";
+import MostBookedProduct from "../../most-booked-product/model/most-booked-product.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import * as CustomerFCMService from "../../../../helper/customerFcmService.js";
+import * as PartnerFCMService from "../../../../helper/partnerFcmService.js";
+import FirebaseTokens from "../../firebase-token/model/firebase-token.model.js";
+import { calculateCancellationCharge } from "../../../../helper/refundCalculator.js";
+import { addCancellationChargesRecord } from "../../../../helper/addCancellationChargesRecord.js";
+import { processPartnerRefund } from "../../../../helper/processPartnerRefund.js";
+import { processCustomerRefund } from "../../../../helper/processCustomerRefund.js";
+import XLSX from "xlsx";
+import waMsgService from "../../../../utility/waMsgService.js";
+import { createOrder } from "../../../../helper/razorpayHelper.js";
 
-exports.bookProduct = async (req, res) => {
+export const bookProduct = async (req, res) => {
   const {
     customerId,
     products,
@@ -133,7 +131,7 @@ exports.bookProduct = async (req, res) => {
   }
 };
 
-exports.fetchBookings = async (req, res) => {
+export const fetchBookings = async (req, res) => {
   const { customerId } = req.query;
 
   try {
@@ -261,7 +259,7 @@ exports.fetchBookings = async (req, res) => {
   }
 };
 
-exports.cancelBooking = async (req, res) => {
+export const cancelBooking = async (req, res) => {
   const { bookingId } = req.body;
 
   try {
@@ -393,7 +391,7 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
-exports.fetchRecentBookedProducts = async (req, res) => {
+export const fetchRecentBookedProducts = async (req, res) => {
   const { customerId } = req.query;
 
   try {
@@ -474,7 +472,7 @@ exports.fetchRecentBookedProducts = async (req, res) => {
   }
 };
 
-exports.ratePartner = async (req, res) => {
+export const ratePartner = async (req, res) => {
   const { partnerId, bookingId, rating } = req.body;
 
   try {
@@ -530,7 +528,7 @@ exports.ratePartner = async (req, res) => {
   }
 };
 
-exports.rateBooking = async (req, res) => {
+export const rateBooking = async (req, res) => {
   try {
     const { bookingId, rating } = req.body;
 
@@ -583,7 +581,7 @@ exports.rateBooking = async (req, res) => {
   }
 };
 
-exports.updateTransaction = async (req, res) => {
+export const updateTransaction = async (req, res) => {
   try {
     const { bookingId, transactionStatus, paymentGatewayId } = req.body;
 
@@ -694,7 +692,7 @@ exports.updateTransaction = async (req, res) => {
   }
 };
 
-exports.initiatePayment = async (req, res) => {
+export const initiatePayment = async (req, res) => {
   const { bookingId, paymentMode } = req.body;
   try {
     // Find the booking based on bookingId
@@ -822,7 +820,7 @@ exports.initiatePayment = async (req, res) => {
   }
 };
 
-exports.getMostBookedProducts = async (req, res) => {
+export const getMostBookedProducts = async (req, res) => {
   try {
     const mostBookedProducts = await MostBookedProduct.find({
       isActive: true,

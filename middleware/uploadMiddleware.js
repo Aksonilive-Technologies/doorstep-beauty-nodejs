@@ -1,5 +1,5 @@
-const multer = require("multer");
-const path = require("path");
+import multer from "multer";
+import path from "path";
 
 // Configure storage for multer
 const storage = multer.diskStorage({
@@ -19,7 +19,9 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|webp/;
     const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
 
     if (mimetype && extname) {
       return cb(null, true);
@@ -30,7 +32,7 @@ const upload = multer({
 });
 
 // Export the middleware to handle single image upload
-exports.uploadSingleImage = upload.single("image");
+export const uploadSingleImage = upload.single("image");
 
 // Export the middleware to handle multiple image upload
-exports.uploadMultipleImages = upload.array("images", 10);
+export const uploadMultipleImages = upload.array("images", 10);

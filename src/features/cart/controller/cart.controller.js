@@ -1,10 +1,10 @@
-const Cart = require("../model/cart.model");
-const CustomerAddress = require("../../customer-address/model/customer-address.model");
-const Booking = require("../../booking/model/booking.model");
-const MostBookedProduct = require("../../most-booked-product/model/most-booked-product.model");
+import * as Cart from "../model/cart.model.js";
+import CustomerAddress from "../../customer-address/model/customer-address.model.js";
+import Booking from "../../booking/model/booking.model.js";
+import MostBookedProduct from "../../most-booked-product/model/most-booked-product.model.js";
 
 // Add item to cart
-exports.addItemToCart = async (req, res) => {
+export const addItemToCart = async (req, res) => {
   const { customerId, itemId, optionId, price } = req.body;
 
   try {
@@ -56,7 +56,7 @@ exports.addItemToCart = async (req, res) => {
   }
 };
 
-exports.bookCart = async (req, res) => {
+export const bookCart = async (req, res) => {
   const {
     customerId,
     discountType,
@@ -195,7 +195,7 @@ exports.bookCart = async (req, res) => {
 };
 
 // Fetch cart by customer ID
-exports.getCartByCustomerId = async (req, res) => {
+export const getCartByCustomerId = async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -268,7 +268,7 @@ exports.getCartByCustomerId = async (req, res) => {
 };
 
 // Remove item from cart
-exports.removeItemFromCart = async (req, res) => {
+export const removeItemFromCart = async (req, res) => {
   const { cartItemId } = req.body;
 
   try {
@@ -302,7 +302,7 @@ exports.removeItemFromCart = async (req, res) => {
 };
 
 // Empty cart
-exports.emptyCart = async (req, res) => {
+export const emptyCart = async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -336,7 +336,7 @@ exports.emptyCart = async (req, res) => {
   }
 };
 
-exports.incrementItemQuantity = async (req, res) => {
+export const incrementItemQuantity = async (req, res) => {
   const { cartItemId } = req.body;
   try {
     if (!cartItemId) {
@@ -371,7 +371,7 @@ exports.incrementItemQuantity = async (req, res) => {
 };
 
 // Decrement Item Quantity in Cart
-exports.decrementItemQuantity = async (req, res) => {
+export const decrementItemQuantity = async (req, res) => {
   const { cartItemId } = req.body;
   try {
     if (!cartItemId) {

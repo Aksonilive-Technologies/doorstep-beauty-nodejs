@@ -1,6 +1,6 @@
-const app = require("./apiRoute");
+import app from "./apiRoute.js";
 const port = process.env.port || 3000;
-const AppError = require("./utility/appError");
+import "./utility/appError.js";
 
 app.get("/", (req, res) => {
   return res.send("Hello Beauty!");

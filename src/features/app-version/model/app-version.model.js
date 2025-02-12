@@ -1,5 +1,5 @@
 // need to be approve
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const AppVersionSchema = new mongoose.Schema(
   {
@@ -36,4 +36,4 @@ const AppVersionSchema = new mongoose.Schema(
 
 const AppVersion = mongoose.model("AppVersion", AppVersionSchema);
 
-module.exports = AppVersion;
+export default AppVersion;
