@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const {
+import {
   sendOTP,
   verifyOTP,
   registerMasterOTP,
-} = require("../controller/otp.controller");
+} from "../controller/otp.controller.js";
 
 router.get("/send", sendOTP);
 router.post("/verify", verifyOTP);
 router.post("/register-master-otp", registerMasterOTP);
 
-module.exports = router;
+export default router;

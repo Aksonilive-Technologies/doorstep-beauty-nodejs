@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   createStock,
   fetchAllStocks,
   deleteStock,
@@ -9,8 +9,11 @@ const {
   downloadExcelSheet,
   searchStock,
   fetahAllStockBooking,
-} = require("../controller/stock-admin.controller");
-const { uploadSingleImage, uploadMultipleImages } = require("../../../../middleware/uploadMiddleware");
+} from "../controller/stock-admin.controller.js";
+import {
+  uploadSingleImage,
+  uploadMultipleImages,
+} from "../../../../middleware/uploadMiddleware.js";
 // Route for creating stock
 router.post("/create", uploadMultipleImages, createStock);
 router.get("/all", fetchAllStocks);
@@ -21,4 +24,4 @@ router.get("/download-excel", downloadExcelSheet);
 router.get("/searchStock", searchStock);
 router.get("/booking/fetch/all", fetahAllStockBooking);
 
-module.exports = router;
+export default router;

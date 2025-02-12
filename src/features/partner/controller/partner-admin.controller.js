@@ -1,7 +1,7 @@
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const Partner = require("../model/partner.model.js");
-const ServiceablePincode = require("../../servicable-pincode/model/servicable-pincode.model.js");
-const XLSX = require("xlsx");
+import { cloudinary } from "../../../../config/cloudinary.js";
+import Partner from "../model/partner.model.js";
+import ServiceablePincode from "../../servicable-pincode/model/servicable-pincode.model.js";
+import XLSX from "xlsx";
 
 //register the partner
 const validationRules = {
@@ -43,7 +43,7 @@ const validateUserInput = (input) => {
   return null;
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   const { name, email, phone, address, pincode } = req.body;
 
   // Validate user input
@@ -124,7 +124,7 @@ exports.register = async (req, res) => {
 };
 
 //fetching all the partners
-exports.getPartners = async (req, res) => {
+export const getPartners = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
 
@@ -163,7 +163,7 @@ exports.getPartners = async (req, res) => {
   }
 };
 
-exports.updatePartner = async (req, res) => {
+export const updatePartner = async (req, res) => {
   const { id } = req.query;
   const { name, email, phone, address, pincode } = req.body;
 
@@ -295,7 +295,7 @@ exports.updatePartner = async (req, res) => {
   }
 };
 //delete
-exports.deletePartner = async (req, res) => {
+export const deletePartner = async (req, res) => {
   const { id } = req.query;
 
   // Validate the presence of 'id'
@@ -361,7 +361,7 @@ exports.deletePartner = async (req, res) => {
   }
 };
 
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -399,7 +399,7 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
     const partners = await Partner.find({ isDeleted: false });
@@ -446,7 +446,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchPartners = async (req, res) => {
+export const searchPartners = async (req, res) => {
   try {
     const { query } = req.query;
 

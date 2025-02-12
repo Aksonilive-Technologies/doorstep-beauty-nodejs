@@ -1,72 +1,74 @@
-const moongoose = require("mongoose");
+import moongoose from "mongoose";
 
 const customerAddressSchema = new moongoose.Schema(
-    {
-        customer: {
-            type: moongoose.Schema.Types.ObjectId,
-            ref: "Customer",
-            required: true,
-        },
-        address: {
-            houseNo: {
-                type: String,
-                required: true,
-            },
-            floorNo: {
-                type: String,
-                default: "NA",
-            },
-            buildingName: {
-                type: String,
-            },
-            street: {
-                type: String,
-                default: "NA",
-            },
-            city: {
-                type: String,
-                required: true,
-            },
-            locality: {
-                type: String,
-                default: "NA",
-            },
-            landmark: {
-                type: String,
-                default: "NA",
-            },
-            state: {
-                type: String,
-                required: true,
-            },
-            pincode: {
-                type: String,
-                required: true,
-            },
-            country: {
-                type: String,
-                default: "India",
-            },
-        },
-        addressType: {
-            type: String,
-            required: true,
-        },
-        isPrimary:{
-            type: Boolean,
-            default: false,
-        },   
-        isActive: {
-            type: Boolean,
-            default: true,
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false,
-        },
+  {
+    customer: {
+      type: moongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
     },
-    {   timestamps: true,
-    }
+    address: {
+      houseNo: {
+        type: String,
+        required: true,
+      },
+      floorNo: {
+        type: String,
+        default: "NA",
+      },
+      buildingName: {
+        type: String,
+      },
+      street: {
+        type: String,
+        default: "NA",
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      locality: {
+        type: String,
+        default: "NA",
+      },
+      landmark: {
+        type: String,
+        default: "NA",
+      },
+      state: {
+        type: String,
+        required: true,
+      },
+      pincode: {
+        type: String,
+        required: true,
+      },
+      country: {
+        type: String,
+        default: "India",
+      },
+    },
+    addressType: {
+      type: String,
+      required: true,
+    },
+    isPrimary: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
 );
-const CustomerAddress = moongoose.model("CustomerAddress", customerAddressSchema);
-module.exports = CustomerAddress
+const CustomerAddress = moongoose.model(
+  "CustomerAddress",
+  customerAddressSchema
+);
+export default CustomerAddress;

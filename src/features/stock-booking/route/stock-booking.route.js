@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Bookings = require("../controller/stock-booking.controller");
+import * as Bookings from "../controller/stock-booking.controller.js";
 
 router.post("/create", Bookings.createStockBooking);
 router.get("/fetch/all", Bookings.fetchAllStockBookings);
 router.post("/cancel", Bookings.cancelBooking);
 
-module.exports = router;
+export default router;

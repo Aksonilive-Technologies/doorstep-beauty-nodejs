@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Order = require("../controller/booking-customer.controller");
+import * as Order from "../controller/booking-customer.controller.js";
 
 router.post("/create", Order.bookProduct);
 // router.put("/update", Order.updateOrder);
@@ -14,4 +14,4 @@ router.post("/update-transaction", Order.updateTransaction);
 router.post("/create-transaction", Order.initiatePayment);
 router.get("/most-booked", Order.getMostBookedProducts);
 
-module.exports = router;
+export default router;

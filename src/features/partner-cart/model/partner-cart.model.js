@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const PartnerCartSchema = new mongoose.Schema(
   {
@@ -22,4 +22,4 @@ const PartnerCartSchema = new mongoose.Schema(
 
 const PartnerCart = mongoose.model("PartnerCart", PartnerCartSchema);
 
-module.exports = PartnerCart;
+export default PartnerCart;

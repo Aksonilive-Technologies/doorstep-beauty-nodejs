@@ -1,15 +1,15 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const bookingCancellationFeesSchema = new mongoose.Schema(
   {
     booking: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Booking",
-        required: true,
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: true,
+    },
     userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
     },
     userType: {
       type: String,
@@ -21,15 +21,18 @@ const bookingCancellationFeesSchema = new mongoose.Schema(
       required: true,
     },
     status: {
-        type: String,
-        enum: ["pending", "paid"],
-      },
+      type: String,
+      enum: ["pending", "paid"],
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const BookingCancellationFees = mongoose.model("BookingCancellationFees", bookingCancellationFeesSchema);
+const BookingCancellationFees = mongoose.model(
+  "BookingCancellationFees",
+  bookingCancellationFeesSchema
+);
 
-module.exports = BookingCancellationFees;
+export default BookingCancellationFees;

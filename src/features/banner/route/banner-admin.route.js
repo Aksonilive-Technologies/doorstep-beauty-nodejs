@@ -1,9 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const bannerController = require("../controller/banner-admin.controller");
-const {
-  uploadSingleImage,
-} = require("../../../../middleware/uploadMiddleware");
+import * as bannerController from "../controller/banner-admin.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 
 // Route to create a new banner
 router.post("/create", uploadSingleImage, bannerController.addBanner);
@@ -12,4 +10,4 @@ router.put("/update", uploadSingleImage, bannerController.updateBanner);
 router.get("/change-status", bannerController.changeStatus);
 router.delete("/delete", bannerController.deleteBanner);
 
-module.exports = router;
+export default router;

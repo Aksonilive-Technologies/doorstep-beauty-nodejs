@@ -1,11 +1,11 @@
 // customersRoute.js
-const express = require("express");
-const {
+import express from "express";
+import {
   createComplaint,
   getAllComplaintWithCustomerId,
-} = require("../controller/complaint-app.controller.js");
+} from "../controller/complaint-app.controller.js";
 const router = express.Router();
 
 router.post("/create", createComplaint);
 router.get("/fetch/complain", getAllComplaintWithCustomerId);
-module.exports = router;
+export default router;

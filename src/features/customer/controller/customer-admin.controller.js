@@ -1,18 +1,9 @@
-const Customer = require("../model/customer.model.js");
-const jwt = require("jsonwebtoken");
-const generateCode = require("../../../../helper/generateCode.js");
-const generateRandomCode = require("../../../../helper/generateCode.js");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const Plan = require("../../customer-membership-plan/model/customer-membership-plan.model.js");
-const Membership = require("../../membership/model/membership.model.js");
-const CustomerAddress = require("../../customer-address/model/customer-address.model.js");
-const XLSX = require("xlsx");
-const Booking = require("../../booking/model/booking.model.js");
-const waMsgService = require("../../../../utility/waMsgService.js");
-const { createOrder } = require("../../../../helper/razorpayHelper.js");
+import Customer from "../model/customer.model.js";
+import CustomerAddress from "../../customer-address/model/customer-address.model.js";
+import XLSX from "xlsx";
+import Booking from "../../booking/model/booking.model.js";
 
-exports.getAllCustomers = async (req, res) => {
+export const getAllCustomers = async (req, res) => {
   try {
     const { page = 1 } = req.query; // Get the page number from the query, default to 1
     const limit = 10; // Limit to 10 customers per page
@@ -56,7 +47,7 @@ exports.getAllCustomers = async (req, res) => {
 };
 
 //delete customer
-exports.deleteCustomer = async (req, res) => {
+export const deleteCustomer = async (req, res) => {
   const { id } = req.query;
   try {
     const customer = await Customer.findById(id);
@@ -110,7 +101,7 @@ exports.deleteCustomer = async (req, res) => {
 };
 
 //change status of deleted customer
-exports.changeStatusDeletedCustomer = async (req, res) => {
+export const changeStatusDeletedCustomer = async (req, res) => {
   const { id } = req.query;
   try {
     const customer = await Customer.findById(id);
@@ -146,7 +137,7 @@ exports.changeStatusDeletedCustomer = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
     const customers = await Customer.find({ isDeleted: false }).populate(
@@ -193,7 +184,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchCustomer = async (req, res) => {
+export const searchCustomer = async (req, res) => {
   try {
     const { query } = req.query;
 
@@ -288,7 +279,7 @@ exports.searchCustomer = async (req, res) => {
 };
 
 //need to do changes
-exports.getCustomerStats = async (req, res) => {
+export const getCustomerStats = async (req, res) => {
   try {
     const { range, from, to } = req.body;
     let startDate, endDate;
@@ -480,7 +471,7 @@ exports.getCustomerStats = async (req, res) => {
   }
 };
 
-exports.getTopCustomerByBookings = async (req, res) => {
+export const getTopCustomerByBookings = async (req, res) => {
   try {
     // Aggregate bookings to get count per customer
     const topCustomerBooking = await Booking.aggregate([

@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Cart = require("../controller/cart.controller");
+import * as Cart from "../controller/cart.controller.js";
 
 router.post("/add-item", Cart.addItemToCart);
 router.post("/fetch", Cart.getCartByCustomerId);
@@ -10,4 +10,4 @@ router.post("/item/increment", Cart.incrementItemQuantity);
 router.post("/item/decrement", Cart.decrementItemQuantity);
 router.post("/book", Cart.bookCart);
 
-module.exports = router;
+export default router;

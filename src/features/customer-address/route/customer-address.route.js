@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const customerAddressController = require("../controller/customer-address.controller");
+import * as customerAddressController from "../controller/customer-address.controller.js";
 
 // Route to create a new address
 router.post("/add", customerAddressController.createAddress);
@@ -10,4 +10,4 @@ router.post("/update", customerAddressController.updateAddress);
 router.delete("/delete", customerAddressController.deleteAddress);
 router.get("/fetch/primary", customerAddressController.getPrimaryAddress);
 
-module.exports = router;
+export default router;

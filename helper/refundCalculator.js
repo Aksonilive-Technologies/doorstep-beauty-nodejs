@@ -1,5 +1,4 @@
-const moment = require('moment');
-const {calculateTimeDifference} = require("../helper/calculateTimeDifference.js");
+import { calculateTimeDifference } from "../helper/calculateTimeDifference.js";
 
 /**
  * Function to calculate cancellation charges.
@@ -7,14 +6,13 @@ const {calculateTimeDifference} = require("../helper/calculateTimeDifference.js"
  * @param {String} cancelledBy - Indicates whether the booking is cancelled by 'customer' or 'partner'.
  * @returns {Number} - The cancellation charge based on the case.
  */
-const calculateCancellationCharge = (booking, cancelledBy) => {
-
+export const calculateCancellationCharge = (booking, cancelledBy) => {
   // Convert time difference to hours
   const timeDifferenceInHours = calculateTimeDifference(booking);
 
   let cancellationCharge = 0;
 
-  if (cancelledBy === 'customer') {
+  if (cancelledBy === "customer") {
     if (timeDifferenceInHours <= 1) {
       // Case 1: <= 1 hour left, customer pays 100 Rs
       cancellationCharge = 100;
@@ -22,7 +20,7 @@ const calculateCancellationCharge = (booking, cancelledBy) => {
       // Case 2: > 1 hour left, customer pays 0 Rs
       cancellationCharge = 0;
     }
-  } else if (cancelledBy === 'partner') {
+  } else if (cancelledBy === "partner") {
     if (timeDifferenceInHours <= 1) {
       // Case 3: <= 1 hour left, partner pays 250 Rs
       cancellationCharge = 250;
@@ -38,4 +36,4 @@ const calculateCancellationCharge = (booking, cancelledBy) => {
   return cancellationCharge;
 };
 
-module.exports = { calculateCancellationCharge };
+export default calculateCancellationCharge;

@@ -1,32 +1,20 @@
-const Booking = require("../model/booking.model.js");
-const Partner = require("../../partner/model/partner.model.js");
-const ServicablePincode = require("../../servicable-pincode/model/servicable-pincode.model.js");
-const Transaction = require("../../transaction/model/transaction.model.js");
-const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model.js");
-const mongoose = require("mongoose");
-const CustomerFCMService = require("../../../../helper/customerFcmService.js");
-const PartnerFCMService = require("../../../../helper/partnerFcmService.js");
-const FirebaseTokens = require("../../firebase-token/model/firebase-token.model.js");
-const {
-  calculatePartnerCommission,
-} = require("../../../../helper/calculatePartnerCommission.js");
-const {
-  calculateCancellationCharge,
-} = require("../../../../helper/refundCalculator.js");
-const {
-  addCancellationChargesRecord,
-} = require("../../../../helper/addCancellationChargesRecord.js");
-const {
-  processPartnerRefund,
-} = require("../../../../helper/processPartnerRefund.js");
-const {
-  processCustomerRefund,
-} = require("../../../../helper/processCustomerRefund.js");
-const {
-  calculateTimeDifference,
-} = require("../../../../helper/calculateTimeDifference.js");
+import Booking from "../model/booking.model.js";
+import Partner from "../../partner/model/partner.model.js";
+import ServicablePincode from "../../servicable-pincode/model/servicable-pincode.model.js";
+import Transaction from "../../transaction/model/transaction.model.js";
+import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
+import mongoose from "mongoose";
+import * as CustomerFCMService from "../../../../helper/customerFcmService.js";
+import * as PartnerFCMService from "../../../../helper/partnerFcmService.js";
+import FirebaseTokens from "../../firebase-token/model/firebase-token.model.js";
+import { calculatePartnerCommission } from "../../../../helper/calculatePartnerCommission.js";
+import { calculateCancellationCharge } from "../../../../helper/refundCalculator.js";
+import { addCancellationChargesRecord } from "../../../../helper/addCancellationChargesRecord.js";
+import { processPartnerRefund } from "../../../../helper/processPartnerRefund.js";
+import { processCustomerRefund } from "../../../../helper/processCustomerRefund.js";
+import { calculateTimeDifference } from "../../../../helper/calculateTimeDifference.js";
 
-exports.fetchUnconfirmedBookings = async (req, res) => {
+export const fetchUnconfirmedBookings = async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -169,7 +157,7 @@ exports.fetchUnconfirmedBookings = async (req, res) => {
   }
 };
 
-exports.fetchAllBookings = async (req, res) => {
+export const fetchAllBookings = async (req, res) => {
   const { id } = req.body;
 
   try {
@@ -298,7 +286,7 @@ exports.fetchAllBookings = async (req, res) => {
   }
 };
 
-exports.acceptBooking = async (req, res) => {
+export const acceptBooking = async (req, res) => {
   const { partnerId, bookingId } = req.body;
 
   try {
@@ -411,7 +399,7 @@ exports.acceptBooking = async (req, res) => {
   }
 };
 
-exports.startBooking = async (req, res) => {
+export const startBooking = async (req, res) => {
   const { partnerId, bookingId, stockItems } = req.body;
 
   try {
@@ -465,7 +453,7 @@ exports.startBooking = async (req, res) => {
   }
 };
 
-exports.completeBooking = async (req, res) => {
+export const completeBooking = async (req, res) => {
   const { bookingId } = req.body;
 
   try {
@@ -504,7 +492,7 @@ exports.completeBooking = async (req, res) => {
   }
 };
 
-exports.cancelBooking = async (req, res) => {
+export const cancelBooking = async (req, res) => {
   const { bookingId } = req.body;
 
   try {
@@ -655,7 +643,7 @@ exports.cancelBooking = async (req, res) => {
 };
 
 //need to do changes
-exports.getTopPartnerByServiceCount = async (req, res) => {
+export const getTopPartnerByServiceCount = async (req, res) => {
   try {
     // Aggregation to find the partner with the highest number of completed services provided
     const topPartner = await Booking.aggregate([

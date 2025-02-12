@@ -1,15 +1,13 @@
-const {
-  calculatePartnerCommission,
-} = require("../../../../helper/calculatePartnerCommission.js");
-const Booking = require("../model/booking.model.js");
-const Customer = require("../../customer/model/customer.model.js");
-const FirebaseToken = require("../../firebase-token/model/firebase-token.model.js");
-const CustomerFCMService = require("../../../../helper/customerFcmService.js");
-const Partner = require("../../partner/model/partner.model.js");
-const PartnerTransaction = require("../../partner-transaction/model/partner-transaction.model.js");
-const { default: mongoose } = require("mongoose");
+import { calculatePartnerCommission } from "../../../../helper/calculatePartnerCommission.js";
+import Booking from "../model/booking.model.js";
+import Customer from "../../customer/model/customer.model.js";
+import FirebaseToken from "../../firebase-token/model/firebase-token.model.js";
+import * as CustomerFCMService from "../../../../helper/customerFcmService.js";
+import Partner from "../../partner/model/partner.model.js";
+import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
+import mongoose from "mongoose";
 
-exports.fetchBookings = async (req, res) => {
+export const fetchBookings = async (req, res) => {
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
@@ -57,7 +55,7 @@ exports.fetchBookings = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch the booking data from MongoDB
     const bookings = await Booking.find({ isDeleted: false })
@@ -117,7 +115,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchBookings = async (req, res) => {
+export const searchBookings = async (req, res) => {
   const { query, page = 1, limit = 10 } = req.query;
 
   try {
@@ -193,7 +191,7 @@ exports.searchBookings = async (req, res) => {
   }
 };
 
-exports.assignPartnerToBooking = async (req, res) => {
+export const assignPartnerToBooking = async (req, res) => {
   const { bookingId, partnerId } = req.query;
 
   try {

@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Cart = require("../controller/partner-cart.controller");
-const verifyToken = require("../../../../middleware/verifyToken");
+import * as Cart from "../controller/partner-cart.controller.js";
+import verifyToken from "../../../../middleware/verifyToken.js";
 
 router.post("/add-item", Cart.addItemToCart);
 router.post("/create-transaction", Cart.createCartBookingTransaction);
@@ -11,4 +11,4 @@ router.post("/item/increment", Cart.incrementItemQuantity);
 router.post("/item/decrement", Cart.decrementItemQuantity);
 router.post("/book", Cart.bookCart);
 
-module.exports = router;
+export default router;

@@ -1,9 +1,9 @@
-const Category = require("../model/category.model.js");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const XLSX = require("xlsx");
+import Category from "../model/category.model.js";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import XLSX from "xlsx";
 
 // Create a new category
-exports.createCategory = async (req, res) => {
+export const createCategory = async (req, res) => {
   const { name, position } = req.body;
   // console.log(req.body);
 
@@ -71,7 +71,7 @@ exports.createCategory = async (req, res) => {
 };
 
 // Get all categories
-exports.getAllCategories = async (req, res) => {
+export const getAllCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -107,7 +107,7 @@ exports.getAllCategories = async (req, res) => {
 };
 
 // Update a category by ID
-exports.updateCategory = async (req, res) => {
+export const updateCategory = async (req, res) => {
   const { id } = req.query; // Using query parameters instead of params
   const updates = req.body;
 
@@ -127,7 +127,9 @@ exports.updateCategory = async (req, res) => {
 
       // Delete the existing image from Cloudinary
       const publicId = category.image.split("/").pop().split(".")[0]; // Extract public_id from URL
-      await cloudinary.uploader.destroy(`${baseFolder}category/${publicId.replace(/%20/g, " ")}`);
+      await cloudinary.uploader.destroy(
+        `${baseFolder}category/${publicId.replace(/%20/g, " ")}`
+      );
 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: baseFolder + "category",
@@ -164,7 +166,7 @@ exports.updateCategory = async (req, res) => {
 };
 
 // Soft delete a category by ID
-exports.deleteCategory = async (req, res) => {
+export const deleteCategory = async (req, res) => {
   //yaha pe query likhna hai params ke jagah pe
   // const { id } = req.params;
   const { id } = req.query;
@@ -203,7 +205,7 @@ exports.deleteCategory = async (req, res) => {
 };
 
 //change status of active
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -240,7 +242,7 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
     const categories = await Category.find({});
@@ -287,7 +289,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchCategory = async (req, res) => {
+export const searchCategory = async (req, res) => {
   try {
     const { query } = req.query;
 

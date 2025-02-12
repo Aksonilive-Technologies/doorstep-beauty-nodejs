@@ -1,10 +1,10 @@
-const bcryptjs = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const Admin = require("../model/admin.model.js");
-const mongoose = require("mongoose");
-const XLSX = require("xlsx");
+import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
+import Admin from "../model/admin.model.js";
+import mongoose from "mongoose";
+import XLSX from "xlsx";
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   const { name, username, password, email, role } = req.body;
   const { adminId } = req.query;
 
@@ -71,20 +71,20 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.registerSuperadmin = async (req, res) => {
-  const { name, username, password, email} = req.body;
+export const registerSuperadmin = async (req, res) => {
+  const { name, username, password, email } = req.body;
 
-    const requiredFields = { name, username, password, email};
-    for (const [key, value] of Object.entries(requiredFields)) {
-      if (!value) {
-        return res.status(400).json({
-          success: false,
-          message: `${key} is required`,
-        });
-      }
+  const requiredFields = { name, username, password, email };
+  for (const [key, value] of Object.entries(requiredFields)) {
+    if (!value) {
+      return res.status(400).json({
+        success: false,
+        message: `${key} is required`,
+      });
     }
+  }
 
-    try{
+  try {
     const [existingAdminUser, existingAdminEmail] = await Promise.all([
       Admin.findOne({ username }),
       Admin.findOne({ email }),
@@ -105,7 +105,7 @@ exports.registerSuperadmin = async (req, res) => {
       username,
       password: hashedPassword,
       email,
-      role: 'all',
+      role: "all",
     });
 
     await newAdmin.save();
@@ -122,7 +122,7 @@ exports.registerSuperadmin = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -173,7 +173,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.allAdmin = async (req, res) => {
+export const allAdmin = async (req, res) => {
   const { adminId } = req.query;
 
   try {
@@ -235,7 +235,7 @@ exports.allAdmin = async (req, res) => {
   }
 };
 
-exports.deleteAdmin = async (req, res) => {
+export const deleteAdmin = async (req, res) => {
   try {
     const { superadminId, Id } = req.query;
 
@@ -287,7 +287,7 @@ exports.deleteAdmin = async (req, res) => {
   }
 };
 
-exports.updateAdminPassword = async (req, res) => {
+export const updateAdminPassword = async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -333,7 +333,7 @@ exports.updateAdminPassword = async (req, res) => {
   }
 };
 
-exports.changeStatus = async (req, res) => {
+export const changeStatus = async (req, res) => {
   const { superadminId, Id } = req.query;
 
   if (!superadminId || !Id) {
@@ -381,7 +381,7 @@ exports.changeStatus = async (req, res) => {
   }
 };
 
-exports.updateAdminRole = async (req, res) => {
+export const updateAdminRole = async (req, res) => {
   const { superadminId, Id, role } = req.body;
 
   if (!superadminId || !Id || !role) {
@@ -429,7 +429,7 @@ exports.updateAdminRole = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   const { superadminId } = req.query;
 
   // Validate the presence of superadminId
@@ -499,7 +499,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchAdmin = async (req, res) => {
+export const searchAdmin = async (req, res) => {
   const { adminId, query } = req.query; // 'query' will be the search input from the search bar
 
   try {

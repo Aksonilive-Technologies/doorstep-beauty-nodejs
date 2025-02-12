@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const slotSchema = new mongoose.Schema({
   startTime: {
@@ -36,4 +36,4 @@ slotSchema.pre("save", function (next) {
 
 const Slot = mongoose.model("Slot", slotSchema);
 
-module.exports = Slot;
+export default Slot;

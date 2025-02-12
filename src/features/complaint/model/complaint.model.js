@@ -1,4 +1,4 @@
-const { default: mongoose } = require("mongoose");
+import mongoose from "mongoose";
 
 const customerComplaintSchema = new mongoose.Schema(
   {
@@ -49,4 +49,4 @@ customerComplaintSchema.pre("save", function (next) {
 
 const Complaint = mongoose.model("Complaint", customerComplaintSchema);
 
-module.exports = Complaint;
+export default Complaint;

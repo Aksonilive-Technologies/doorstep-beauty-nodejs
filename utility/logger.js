@@ -26,4 +26,4 @@
 // });
 
 // // Export the logger instance
-// module.exports = logger;
+// export default logger;

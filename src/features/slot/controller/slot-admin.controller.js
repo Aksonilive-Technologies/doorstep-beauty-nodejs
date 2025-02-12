@@ -1,9 +1,9 @@
-const { default: mongoose } = require("mongoose");
-const Slot = require("../model/slot.model");
+import mongoose from "mongoose";
+import Slot from "../model/slot.model.js";
 
 // Create a new slot
 // Enhanced Slot creation function with validation and better error handling
-exports.createSlot = async (req, res) => {
+export const createSlot = async (req, res) => {
   try {
     const { startTime, clockCycle } = req.body;
 
@@ -39,7 +39,7 @@ exports.createSlot = async (req, res) => {
 };
 
 // Update a slot
-exports.updateSlot = async (req, res) => {
+export const updateSlot = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -85,7 +85,7 @@ exports.updateSlot = async (req, res) => {
 };
 
 // Get all slots
-exports.getSlots = async (req, res) => {
+export const getSlots = async (req, res) => {
   try {
     // Retrieve all slots
     const slots = await Slot.find();
@@ -109,7 +109,7 @@ exports.getSlots = async (req, res) => {
 
 // Delete a slot (soft delete)
 // Soft delete a slot
-exports.deleteSlot = async (req, res) => {
+export const deleteSlot = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -156,7 +156,7 @@ exports.deleteSlot = async (req, res) => {
 };
 
 // Change slot status
-exports.changeSlotStatus = async (req, res) => {
+export const changeSlotStatus = async (req, res) => {
   try {
     const { id } = req.query;
 
@@ -200,7 +200,7 @@ exports.changeSlotStatus = async (req, res) => {
   }
 };
 
-exports.searchSlots = async (req, res) => {
+export const searchSlots = async (req, res) => {
   const { query } = req.query;
 
   // Handle pagination parameters

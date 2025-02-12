@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const slotController = require("../controller/slot-admin.controller");
+import * as slotController from "../controller/slot-admin.controller.js";
 
 // Create a new slot
 router.post("/create", slotController.createSlot);
@@ -19,4 +19,4 @@ router.put("/change-status", slotController.changeSlotStatus);
 
 router.get("/search-slot", slotController.searchSlots);
 
-module.exports = router;
+export default router;

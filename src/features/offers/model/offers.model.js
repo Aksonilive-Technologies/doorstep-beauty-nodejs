@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const offerSchema = new mongoose.Schema(
   {
@@ -13,9 +13,15 @@ const offerSchema = new mongoose.Schema(
     applicableOn: {
       type: String,
       required: true,
-      enum: ["wallet_booking", "package_booking", "credit_card", "debit_card", "upi"], 
+      enum: [
+        "wallet_booking",
+        "package_booking",
+        "credit_card",
+        "debit_card",
+        "upi",
+      ],
     },
-    offerValidOn : {
+    offerValidOn: {
       type: Number,
       required: true,
       trim: true,
@@ -23,7 +29,7 @@ const offerSchema = new mongoose.Schema(
     offerType: {
       type: String,
       required: [true, "Offer type is required"],
-      enum: ["percentage", "product", "amount"], 
+      enum: ["percentage", "product", "amount"],
     },
     offerValue: {
       type: Number,
@@ -46,4 +52,4 @@ const offerSchema = new mongoose.Schema(
 );
 
 const Offer = mongoose.model("Offer", offerSchema);
-module.exports = Offer;
+export default Offer;

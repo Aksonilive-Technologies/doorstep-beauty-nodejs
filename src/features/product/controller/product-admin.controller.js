@@ -1,7 +1,7 @@
-const Product = require("../model/product.model.js");
-const mongoose = require("mongoose");
-const { cloudinary } = require("../../../../config/cloudinary.js");
-const XLSX = require("xlsx");
+import * as Product from "../model/product.model.js";
+import mongoose from "mongoose";
+import { cloudinary } from "../../../../config/cloudinary.js";
+import XLSX from "xlsx";
 
 // Helper function for validating product input
 const validateProductInput = (productData) => {
@@ -24,7 +24,7 @@ const validateProductInput = (productData) => {
   return null;
 };
 
-exports.createProduct = async (req, res) => {
+export const createProduct = async (req, res) => {
   const productData = req.body;
 
   // Validate product input
@@ -80,7 +80,7 @@ exports.createProduct = async (req, res) => {
 };
 
 // This one is to update only single image
-exports.updateProduct = async (req, res) => {
+export const updateProduct = async (req, res) => {
   const { id } = req.query;
   const productData = req.body;
 
@@ -175,7 +175,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 // Delete product
-exports.deleteProduct = async (req, res) => {
+export const deleteProduct = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -228,7 +228,7 @@ exports.deleteProduct = async (req, res) => {
 };
 
 //change status by ID
-exports.changeStatusById = async (req, res) => {
+export const changeStatusById = async (req, res) => {
   const { id } = req.query;
 
   try {
@@ -258,7 +258,7 @@ exports.changeStatusById = async (req, res) => {
   }
 };
 
-exports.getAllProducts = async (req, res) => {
+export const getAllProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
@@ -315,7 +315,7 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-exports.getAllNewProducts = async (req, res) => {
+export const getAllNewProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
@@ -354,7 +354,7 @@ exports.getAllNewProducts = async (req, res) => {
   }
 };
 
-exports.downloadExcelSheet = async (req, res) => {
+export const downloadExcelSheet = async (req, res) => {
   try {
     // Step 1: Fetch data from MongoDB
     const products = await Product.find({ isDeleted: false }).populate(
@@ -415,7 +415,7 @@ exports.downloadExcelSheet = async (req, res) => {
   }
 };
 
-exports.searchProduct = async (req, res) => {
+export const searchProduct = async (req, res) => {
   try {
     const { query } = req.query;
 

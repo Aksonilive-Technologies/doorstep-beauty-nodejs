@@ -1,7 +1,7 @@
-const Customer = require("../../customer/model/customer.model.js");
-const FirebaseToken = require("../model/firebase-token.model.js");
+import Customer from "../../customer/model/customer.model.js";
+import FirebaseToken from "../model/firebase-token.model.js";
 
-exports.updateFirebaseToken = async (req, res) => {
+export const updateFirebaseToken = async (req, res) => {
   const { userId, token, userType, deviceType } = req.body;
 
   try {

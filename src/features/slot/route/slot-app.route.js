@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const slotController = require("../controller/slot-app.controller");
+import * as slotController from "../controller/slot-app.controller.js";
 
 // Create a new slot
 
 router.get("/fetch/all", slotController.getSlotsCustomer);
 
-module.exports = router;
+export default router;

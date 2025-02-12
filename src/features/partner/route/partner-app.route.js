@@ -1,7 +1,7 @@
 // partnerRoute.js
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   partnerById,
   checkExistance,
   updatePartner,
@@ -9,9 +9,9 @@ const {
   getWalletBalance,
   updateTransactionStatus,
   fetchWalletTransactions,
-} = require("../controller/partner-app.controller.js");
-const { uploadSingleImage } = require("../../../../middleware/uploadMiddleware.js");
-const verifyToken = require("../../../../middleware/verifyToken.js");
+} from "../controller/partner-app.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
+import verifyToken from "../../../../middleware/verifyToken.js";
 
 router.get("/profile/fetch", partnerById);
 router.get("/check-existence", checkExistance);
@@ -23,4 +23,4 @@ router.post("/wallet/fetch", getWalletBalance);
 router.post("/wallet/update-transaction-status", updateTransactionStatus);
 router.post("/wallet/fetch-transactions", fetchWalletTransactions);
 
-module.exports = router;
+export default router;

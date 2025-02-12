@@ -1,9 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Product = require("../controller/product-admin.controller.js");
-const {
-  uploadSingleImage,
-} = require("../../../../middleware/uploadMiddleware.js");
+import * as Product from "../controller/product-admin.controller.js";
+import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 // Update the path accordingly
 
 // Route to create a new product with image upload
@@ -22,4 +20,4 @@ router.get("/download-excel", Product.downloadExcelSheet);
 router.get("/search-product", Product.searchProduct);
 // router.get("/fetch/new-products", Product.getAllNewProducts);
 
-module.exports = router;
+export default router;

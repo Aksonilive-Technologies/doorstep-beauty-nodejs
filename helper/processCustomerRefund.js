@@ -1,12 +1,12 @@
-const Customer = require("../src/features/customer/model/customer.model");
-const Transaction = require("../src/features/transaction/model/transaction.model");
+import Customer from "../src/features/customer/model/customer.model.js";
+import Transaction from "../src/features/transaction/model/transaction.model.js";
 /**
  * Process a refund for wallet-based transactions and update the customer's wallet balance.
  * @param {Object} booking - The booking object containing necessary information.
  * @param {Number} cancellationCharges - The cancellation charges to be deducted.
  * @returns {String} - The updated status of the cancellation fee (either 'paid' or 'pending').
  */
-let processCustomerRefund = async (
+export const processCustomerRefund = async (
   booking,
   customerCancellationCharges,
   partnerCancellationCharges,
@@ -51,8 +51,4 @@ let processCustomerRefund = async (
     console.error("Error processing wallet refund:", error);
     throw new Error("Failed to process wallet refund");
   }
-};
-
-module.exports = {
-  processCustomerRefund,
 };

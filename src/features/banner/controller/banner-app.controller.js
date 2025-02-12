@@ -1,7 +1,7 @@
-const Banner = require("../model/banner.model.js");
+import Banner from "../model/banner.model.js";
 
 //fetch all banner for App
-exports.getBannerForApp = async (req, res) => {
+export const getBannerForApp = async (req, res) => {
   try {
     const banners = await Banner.find({
       isDeleted: false,
