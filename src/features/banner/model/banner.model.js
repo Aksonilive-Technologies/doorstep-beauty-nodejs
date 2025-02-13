@@ -1,6 +1,6 @@
-import { mongoose, Schema } from "mongoose";
+import mongoose from "mongoose";
 
-const bannerSchema = new Schema(
+const bannerSchema = new mongoose.Schema(
   {
     redirectUrl: {
       type: String,
