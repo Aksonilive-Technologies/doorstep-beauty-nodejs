@@ -263,7 +263,7 @@ export const getAllProducts = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     // Fetch products with pagination and sorting
-    const products = await Product.find()
+    const products = await Product.find({})
       .select("-__v")
       .populate("categoryId")
       .populate("subcategoryId")
