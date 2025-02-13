@@ -1,4 +1,4 @@
-import * as Cart from "../model/cart.model.js";
+import Cart from "../model/cart.model.js";
 import CustomerAddress from "../../customer-address/model/customer-address.model.js";
 import Booking from "../../booking/model/booking.model.js";
 import MostBookedProduct from "../../most-booked-product/model/most-booked-product.model.js";

@@ -2,7 +2,7 @@ import CustomerAddress from "../../customer-address/model/customer-address.model
 import Booking from "../model/booking.model.js";
 import Transaction from "../../transaction/model/transaction.model.js";
 import moment from "moment";
-import * as Product from "../../product/model/product.model.js";
+import Product from "../../product/model/product.model.js";
 import MostBookedProduct from "../../most-booked-product/model/most-booked-product.model.js";
 import Customer from "../../customer/model/customer.model.js";
 import * as CustomerFCMService from "../../../../helper/customerFcmService.js";
