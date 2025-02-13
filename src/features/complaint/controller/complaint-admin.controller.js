@@ -24,11 +24,9 @@ export const getAllComplaints = async (req, res) => {
       success: true,
       message: "Complaints retrieved successfully",
       data, // Data now includes populated customer details
-      pagination: {
-        totalComplaints,
-        currentPage: page,
-        totalPages: Math.ceil(totalComplaints / limit),
-      },
+      totalComplaints,
+      currentPage: page,
+      totalPages: Math.ceil(totalComplaints / limit),
     });
   } catch (error) {
     return res.status(500).json({
