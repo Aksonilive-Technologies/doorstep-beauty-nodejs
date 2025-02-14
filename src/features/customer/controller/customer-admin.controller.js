@@ -207,10 +207,7 @@ export const searchCustomer = async (req, res) => {
     // Find matching addresses in the CustomerAddress model
     const matchingAddresses = await CustomerAddress.find({
       $or: [
-        { "address.houseNo": { $regex: query, $options: "i" } },
-        { "address.floorNo": { $regex: query, $options: "i" } },
-        { "address.buildingName": { $regex: query, $options: "i" } },
-        { "address.street": { $regex: query, $options: "i" } },
+        { "address.fullAddress": { $regex: query, $options: "i" } },
         { "address.city": { $regex: query, $options: "i" } },
         { "address.locality": { $regex: query, $options: "i" } },
         { "address.landmark": { $regex: query, $options: "i" } },
