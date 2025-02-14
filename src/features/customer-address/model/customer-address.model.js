@@ -8,20 +8,9 @@ const customerAddressSchema = new moongoose.Schema(
       required: true,
     },
     address: {
-      houseNo: {
+      fullAddress: {
         type: String,
         required: true,
-      },
-      floorNo: {
-        type: String,
-        default: "NA",
-      },
-      buildingName: {
-        type: String,
-      },
-      street: {
-        type: String,
-        default: "NA",
       },
       city: {
         type: String,
