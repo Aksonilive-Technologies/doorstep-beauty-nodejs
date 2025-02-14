@@ -94,7 +94,7 @@ export const bookCart = async (req, res) => {
       });
     }
 
-    const customerAddress = `${customerAddressData.address.houseNo}, ${customerAddressData.address.buildingName}, ${customerAddressData.address.street}, ${customerAddressData.address.city}, ${customerAddressData.address.state}, ${customerAddressData.address.pincode}, ${customerAddressData.address.country}`;
+    const customerAddress = `${customerAddressData.address.fullAddress}, near${customerAddressData.address.landmark}, ${customerAddressData.address.locality}, ${customerAddressData.address.city}, ${customerAddressData.address.state}, ${customerAddressData.address.pincode}, ${customerAddressData.address.country}`;
 
     // Fetch cart items for the customer
     const cart = await Cart.find({ customer: customerId })
