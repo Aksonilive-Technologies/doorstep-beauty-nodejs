@@ -3,6 +3,7 @@ import StockBooking from "../../stock-booking/model/stock-booking.model.js";
 import PartnerTransaction from "../../partner-transaction/model/partner-transaction.model.js";
 import Partner from "../../partner/model/partner.model.js";
 import Stock from "../../stock/model/stock.model.js";
+import { createOrder } from "../../../../helper/razorpayHelper.js";
 
 // Add item to cart
 export const addItemToCart = async (req, res) => {
@@ -97,7 +98,7 @@ export const createCartBookingTransaction = async (req, res) => {
 
       transactionType = "stock_wallet_booking";
     } else if (paymentMode === "razorpay") {
-      orderId = await createOrder(Number(amount) * 100);
+      orderId = await createOrder(Number(totalAmount) * 100);
     }
 
     // Create new transaction
