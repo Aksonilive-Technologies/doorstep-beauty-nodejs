@@ -1,3 +1,4 @@
+import Categories from "../../category/model/category.model.js";
 import Product from "../model/product.model.js";
 
 // Fetch all products
@@ -34,6 +35,8 @@ export const getAllCategoryProducts = async (req, res) => {
       .populate("categoryId")
       .populate("subcategoryId")
       .select("-__v");
+
+      const packageCategory = await Categories.findOne({position: 8});
 
     // Group products by category and subcategory
     const groupedData = {};
@@ -88,6 +91,8 @@ export const getAllCategoryProducts = async (req, res) => {
         products: category.products.sort((a, b) => a.position - b.position), // Sort products directly under category
       }))
       .sort((a, b) => a.position - b.position); // Sort categories
+
+      formattedData.push(packageCategory);
 
     res.status(200).json({
       success: true,
