@@ -4,7 +4,8 @@ const PartnersSchema = new mongoose.Schema(
   {
     image: {
       type: String,
-      default: "it has been not decided yet where to keep our images",
+      default:
+        "https://res.cloudinary.com/da54w0hbc/image/upload/v1738085572/spare_files/1738085570964_Singup%20girl%20icon.png",
     },
     name: {
       type: String,
