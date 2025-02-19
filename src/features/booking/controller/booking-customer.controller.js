@@ -15,6 +15,7 @@ import { processCustomerRefund } from "../../../../helper/processCustomerRefund.
 import XLSX from "xlsx";
 import waMsgService from "../../../../utility/waMsgService.js";
 import { createOrder } from "../../../../helper/razorpayHelper.js";
+import CartItem from "../../cart/model/cart.model.js";
 
 export const bookProduct = async (req, res) => {
   const {
@@ -420,48 +421,32 @@ export const fetchRecentBookedProducts = async (req, res) => {
       });
     }
 
-    // bookings.forEach(booking => {
-    //   booking.product.forEach(productItem => {
-    //     // Check if there is an option selected for this product
-    //     if (productItem.option && productItem.product.options) {
-    //       const selectedOption = productItem.product.options.find(opt => opt._id.equals(productItem.option));
-
-    //       if (selectedOption) {
-    //         // Store the original product name in a temporary variable
-    //         const originalProductName = productItem.product.name;
-
-    //         // Update product image with option's image
-    //         productItem.product.image = selectedOption.image;
-
-    //         // Update product name by concatenating the option name with the original product name
-    //         productItem.product.name = `${selectedOption.option} ${originalProductName}`;
-
-    //         // Update product price with option price
-    //         productItem.product.price = selectedOption.price;
-
-    //         // Update product details with option's details
-    //         productItem.product.details = selectedOption.details;
-    //       }
-    //     }
-
-    //     // Remove the options field from the product to clean up the response
-    //     delete productItem.product.options;
-    //     delete productItem.option;
-    //   });
-    // });
-
     // Extract recent booked products from the bookings
-    const recentProducts = bookings.flatMap((booking) =>
+    let recentProducts = bookings.flatMap((booking) =>
       booking.product.map((p) => p.product)
     );
 
     // Limit the result to the last 10 products
-    const limitedProducts = recentProducts.slice(0, 10);
+    recentProducts = recentProducts.slice(0, 10);
+
+    const cartProducts = await CartItem.find({ customer: customerId }).select("-__v");
+
+    // Map products and assign cartQuantity
+    recentProducts = recentProducts.map((product) => {
+      const cartItem = cartProducts.find(
+        (cartProduct) => cartProduct.product.toString() === product._id.toString()
+      );
+
+      return {
+        ...product,
+        cartQuantity: cartItem ? cartItem.quantity : 0, // Set cartQuantity to 0 if not in cart
+      };
+    });
 
     res.status(200).json({
       success: true,
       message: "Recent booked products fetched successfully",
-      data: limitedProducts,
+      data: recentProducts,
     });
   } catch (error) {
     res.status(500).json({
@@ -822,13 +807,15 @@ export const initiatePayment = async (req, res) => {
 
 export const getMostBookedProducts = async (req, res) => {
   try {
+    const {customerId} = req.query;
     const mostBookedProducts = await MostBookedProduct.find({
       isActive: true,
       isDeleted: false,
     })
       .sort({ count: -1 }) // Sort by count in descending order
       .limit(10) // Limit the response to 10 products
-      .populate("product");
+      .populate("product")
+      .lean();
 
     if (!mostBookedProducts) {
       return res.status(404).json({
@@ -844,7 +831,24 @@ export const getMostBookedProducts = async (req, res) => {
       });
     }
 
-    const products = mostBookedProducts.map((item) => item.product);
+    let products = mostBookedProducts.map((item) => ({
+      ...item.product, // Ensure we are working with a mutable object
+      cartQuantity: 0, // Default cartQuantity to 0
+    }));
+
+    if (customerId) {
+      const cartProducts = await CartItem.find({ customer: customerId }).select("-__v");
+      // Map products to add cartQuantity
+      products = products.map((product) => {
+        const cartItem = cartProducts.find(
+          (cartProduct) => cartProduct.product.toString() === product._id.toString()
+        );
+
+        return {
+          ...product,
+          cartQuantity: cartItem ? cartItem.quantity : 0, // Assign cart quantity
+        };
+    })}
 
     res.status(200).json({
       success: true,

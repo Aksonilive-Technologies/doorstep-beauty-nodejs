@@ -38,6 +38,7 @@ export const addItemToCart = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Item added to cart successfully",
+      currentQuantity: cart.quantity + 1
     });
   } catch (error) {
     res.status(500).json({
@@ -362,6 +363,7 @@ export const incrementItemQuantity = async (req, res) => {
       res.status(200).json({
         success: true,
         message: "Item quantity incremented successfully",
+        currentQuantity: cart.quantity + 1,
       });
     }
   } catch (error) {
@@ -401,6 +403,7 @@ export const decrementItemQuantity = async (req, res) => {
       res.status(200).json({
         success: true,
         message: "Item quantity decremented successfully",
+        currentQuantity: cart.quantity - 1,
       });
     }
   } catch (error) {
