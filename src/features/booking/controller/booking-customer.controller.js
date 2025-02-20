@@ -440,6 +440,7 @@ export const fetchRecentBookedProducts = async (req, res) => {
       return {
         ...product,
         cartQuantity: cartItem ? cartItem.quantity : 0, // Set cartQuantity to 0 if not in cart
+        cartItemID: cartItem ? cartItem._id : null,
       };
     });
 
@@ -847,6 +848,7 @@ export const getMostBookedProducts = async (req, res) => {
         return {
           ...product,
           cartQuantity: cartItem ? cartItem.quantity : 0, // Assign cart quantity
+          cartItemID: cartItem ? cartItem._id : null,
         };
     })}
 
