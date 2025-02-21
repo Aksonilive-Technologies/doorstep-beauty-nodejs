@@ -96,6 +96,7 @@ export const getAllCategoryProducts = async (req, res) => {
           _id: product.categoryId._id, // Directly access properties
           name: product.categoryId.name,
           position: product.categoryId.position,
+          image: product.categoryId.image,
           subcategory: [],
           products: [],
         };
