@@ -113,6 +113,7 @@ export const getAllCategoryProducts = async (req, res) => {
             _id: product.subcategoryId._id,
             name: product.subcategoryId.name,
             position: product.subcategoryId.position,
+            image: product.subcategoryId.image,
             products: [],
           };
           groupedData[categoryId].subcategory.push(subcategory);
