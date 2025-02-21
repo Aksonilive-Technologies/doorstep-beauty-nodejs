@@ -85,15 +85,17 @@ export const getAllCategoryProducts = async (req, res) => {
     const groupedData = {};
 
     products.forEach((product) => {
-      const categoryId = product.categoryId._id.toString();
-      const subcategoryId = product.subcategoryId
-        ? product.subcategoryId._id.toString()
-        : null;
+      const categoryId = product.categoryId?._id?.toString(); // Ensure categoryId exists
+      const subcategoryId = product.subcategoryId?._id?.toString(); // Ensure subcategoryId exists
+
+      if (!categoryId) return; // Skip products without a valid category
 
       // Initialize category if not present
       if (!groupedData[categoryId]) {
         groupedData[categoryId] = {
-          ...product.categoryId.toObject(),
+          _id: product.categoryId._id, // Directly access properties
+          name: product.categoryId.name,
+          position: product.categoryId.position,
           subcategory: [],
           products: [],
         };
@@ -107,16 +109,18 @@ export const getAllCategoryProducts = async (req, res) => {
 
         if (!subcategory) {
           subcategory = {
-            ...product.subcategoryId.toObject(),
+            _id: product.subcategoryId._id,
+            name: product.subcategoryId.name,
+            position: product.subcategoryId.position,
             products: [],
           };
           groupedData[categoryId].subcategory.push(subcategory);
         }
 
-        subcategory.products.push(product.toObject());
+        subcategory.products.push(product);
       } else {
         // If no subcategory, push the product directly under the category
-        groupedData[categoryId].products.push(product.toObject());
+        groupedData[categoryId].products.push(product);
       }
     });
 
