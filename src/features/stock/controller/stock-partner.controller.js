@@ -1,21 +1,42 @@
+import PartnerCart from "../../partner-cart/model/partner-cart.model.js";
 import Stock from "../model/stock.model.js";
 
 export const fetchAllStocks = async (req, res) => {
   try {
+    const { partnerId } = req.query;
     // Fetch stocks with pagination, filtering by isActive and isDeleted
-    const stocks = await Stock.find({
+    let stocks = await Stock.find({
       currentStock: {
         $gt: 0,
       },
       isActive: true,
       isDeleted: false,
-    }).select("-currentStock -__v -entryStock");
+    }).select("-currentStock -__v -entryStock").lean();
 
     // If no stocks found
     if (stocks.length === 0) {
       return res.status(404).json({
         success: false,
         message: "No item found",
+      });
+    }
+
+    if (partnerId) {
+      const cartProducts = await PartnerCart.find({ partner: partnerId }).select(
+        "-__v"
+      );
+
+      stocks = stocks.map((stock) => {
+        const cartItem = cartProducts.find(
+          (cartProduct) =>
+            cartProduct.stockItem.toString() === stock._id.toString()
+        );
+
+        return {
+          ...stock,
+          cartQuantity: cartItem ? cartItem.quantity : 0, // Set cartQuantity to 0 if not in cart
+          cartItemID: cartItem ? cartItem._id : null,
+        };
       });
     }
 
