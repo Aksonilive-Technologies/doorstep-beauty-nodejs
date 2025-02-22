@@ -165,6 +165,7 @@ export const getAllProducts = async (req, res) => {
       isDeleted: false,
     })
       .populate("categoryId")
+      .populate("subcategoryId")
       .select("-__v")
       .lean(); // Returns plain JavaScript objects
 
@@ -191,23 +192,48 @@ export const getAllProducts = async (req, res) => {
 
     products.forEach((product) => {
       const categoryId = product.categoryId?._id?.toString();
+      const subcategoryId = product.subcategoryId?._id?.toString() || null;
 
       // Initialize category if not present
       if (!groupedData[categoryId]) {
         groupedData[categoryId] = {
           ...product.categoryId, // No need for `toObject()`
+          subcategory: [],
           products: [],
         };
       }
 
+      // If subcategory exists, add to subcategory array
+      if (subcategoryId) {
+        let subcategory = groupedData[categoryId].subcategory.find(
+          (sub) => sub._id.toString() === subcategoryId
+        );
+
+        if (!subcategory) {
+          subcategory = {
+            ...product.subcategoryId, // No need for `toObject()`
+            products: [],
+          };
+          groupedData[categoryId].subcategory.push(subcategory);
+        }
+
+        subcategory.products.push(product); // No need for `toObject()`
+      } else {
         // If no subcategory, push the product directly under the category
         groupedData[categoryId].products.push(product); // No need for `toObject()`
+      }
     });
 
     // Convert grouped data into an array and sort categories, subcategories, and products
     const formattedData = Object.values(groupedData)
       .map((category) => ({
         ...category,
+        subcategory: category.subcategory
+          .map((sub) => ({
+            ...sub,
+            products: sub.products.sort((a, b) => a.position - b.position),
+          }))
+          .sort((a, b) => a.position - b.position),
         products: category.products.sort((a, b) => a.position - b.position),
       }))
       .sort((a, b) => a.position - b.position);
