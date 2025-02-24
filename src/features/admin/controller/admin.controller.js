@@ -381,14 +381,15 @@ export const changeStatus = async (req, res) => {
   }
 };
 
-export const updateAdminRole = async (req, res) => {
-  const { superadminId, Id, role } = req.body;
+export const updateAdmin = async (req, res) => {
+  const { superadminId, adminId} = req.query;
+  const updates = req.body;
 
-  if (!superadminId || !Id || !role) {
+  if (!superadminId || !adminId) {
     return res.status(400).json({
       success: false,
       message: `${
-        !superadminId ? "Superadmin ID" : !Id ? "Admin ID" : "Admin role"
+        !superadminId ? "Superadmin ID" : "Admin ID"
       } is required`,
     });
   }
@@ -404,23 +405,21 @@ export const updateAdminRole = async (req, res) => {
       });
     }
 
-    const admin = await Admin.findById(Id);
-    if (!admin) {
-      return res.status(404).json({
+    const updatedAdmin = await Admin.findByIdAndUpdate(adminId, updates);
+
+    if (!updatedAdmin) {
+      return res.status(500).json({
         success: false,
-        message: "Admin not found",
+        message: "Error updating admin",
       });
     }
 
-    admin.role = role;
-    await admin.save();
-
     return res.status(200).json({
       success: true,
-      message: "Admin role updated successfully",
+      message: "Admin updated successfully",
     });
   } catch (error) {
-    console.error("Error while updating admin role:", error);
+    console.error("Error while updating admin:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
