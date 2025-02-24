@@ -180,7 +180,7 @@ export const fetchAllStocks = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch stocks with pagination
-    const stocks = await Stock.find().skip(skip).limit(limit).sort({ position: 1 });
+    const stocks = await Stock.find({isDeleted: false}).skip(skip).limit(limit).sort({ position: 1 });
 
     // Count the total number of documents for pagination calculation
     const totalStocks = await Stock.countDocuments();
@@ -294,7 +294,7 @@ export const updateStock = async (req, res) => {
     } else if (oldImages.length < stock.image.length) {
       let temp = [];
       for (let imageUrl of stock.image) {
-        const index = oldImages.indexOf(imageUrl);
+        oldImages.indexOf(imageUrl);
         if (!oldImages.includes(imageUrl)) {
           const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
 

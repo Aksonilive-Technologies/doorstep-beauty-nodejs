@@ -9,7 +9,7 @@ export const getAllCustomers = async (req, res) => {
     const limit = 10; // Limit to 10 customers per page
     const skip = (page - 1) * limit; // Calculate how many documents to skip
 
-    const customers = await Customer.find()
+    const customers = await Customer.find({isDeleted: false})
       .select("-__v")
       .skip(skip)
       .limit(limit)

@@ -205,7 +205,7 @@ export const allAdmin = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Retrieve admins excluding the logged-in admin, with pagination
-    const admins = await Admin.find({ _id: { $ne: adminId } })
+    const admins = await Admin.find({ _id: { $ne: adminId }, isDeleted: false })
       .select("-password -__v")
       .skip(skip)
       .limit(limit);
