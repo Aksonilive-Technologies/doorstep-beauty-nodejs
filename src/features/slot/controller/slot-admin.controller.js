@@ -88,7 +88,7 @@ export const updateSlot = async (req, res) => {
 export const getSlots = async (req, res) => {
   try {
     // Retrieve all slots
-    const slots = await Slot.find();
+    const slots = await Slot.find({isDeleted: false});
 
     // Successful response
     res.status(200).json({

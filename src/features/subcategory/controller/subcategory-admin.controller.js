@@ -78,7 +78,7 @@ export const getAllSubcategories = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Find subcategories with pagination
-    const subcategories = await Subcategory.find()
+    const subcategories = await Subcategory.find({isDeleted: false})
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)

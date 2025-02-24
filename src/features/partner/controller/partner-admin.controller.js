@@ -128,7 +128,7 @@ export const getPartners = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query; // Default to page 1, limit 10
 
-    const partners = await Partner.find()
+    const partners = await Partner.find({isDeleted: false})
       .limit(limit * 1) // Convert string to number
       .skip((page - 1) * limit)
       .lean();

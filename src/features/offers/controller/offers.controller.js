@@ -58,7 +58,7 @@ export const getOffers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch the offers with pagination
-    const offers = await Offer.find().skip(skip).limit(limit);
+    const offers = await Offer.find({isDeleted: false}).skip(skip).limit(limit);
 
     // Get the total number of offers to calculate total pages
     const totalOffers = await Offer.countDocuments();
