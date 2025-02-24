@@ -2,9 +2,9 @@ import express from "express";
 const router = express.Router();
 import { uploadSingleImage } from "../middleware/uploadMiddleware.js";
 import {
-  uploadProfileImage,
+  uploadSpareImage,
 } from "./spareFileUploadController.js";
 
-router.post("/profile-image/upload", uploadSingleImage, uploadProfileImage);
+router.post("/spare-image/upload", uploadSingleImage, uploadSpareImage);
 
 export default router;

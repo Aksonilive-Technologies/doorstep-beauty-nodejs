@@ -88,12 +88,9 @@ import XLSX from "xlsx";
 export const createStock = async (req, res) => {
   const requiredFields = [
     "name",
-    // "brand",
     "size",
     "currentStock",
-    // "mrp",
-    // "purchasingRate",
-    // "barcodeNumber",
+    "position"
   ];
 
   // Check for missing fields
@@ -143,6 +140,7 @@ export const createStock = async (req, res) => {
       mrp,
       purchasingRate,
       barcodeNumber,
+      position
     } = req.body;
 
     // Create the stock item
@@ -153,6 +151,7 @@ export const createStock = async (req, res) => {
       entryStock: currentStock,
       currentStock,
       mrp,
+      position,
       purchasingRate,
       barcodeNumber,
       image: images,
@@ -181,7 +180,7 @@ export const fetchAllStocks = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch stocks with pagination
-    const stocks = await Stock.find().skip(skip).limit(limit);
+    const stocks = await Stock.find().skip(skip).limit(limit).sort({ position: 1 });
 
     // Count the total number of documents for pagination calculation
     const totalStocks = await Stock.countDocuments();
@@ -213,96 +212,6 @@ export const fetchAllStocks = async (req, res) => {
     });
   }
 };
-
-// update stocks
-// export const updateStock = async (req, res) => {
-//   const { id } = req.query; // Assuming stock ID is passed via query params
-//   const stockData = req.body; // The fields to update
-//   const file = req.file; // Image file, if provided
-
-//   try {
-//     // Validate stock ID
-//     if (!id) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Stock ID is required",
-//       });
-//     }
-
-//     // Fetch the existing stock record
-//     const stock = await Stock.findById(id);
-
-//     if (!stock) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Stock not found",
-//       });
-//     }
-
-//     // Upload the image if a new file is provided
-//     let imageUrl = stock.image; // Retain the existing image
-//     if (file) {
-//       try {
-//       const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
-
-//         const result = await cloudinary.uploader.upload(file.path, {
-//           folder: baseFolder + "Stock",
-//           public_id: `${Date.now()}_${file.originalname.split(".")[0]}`,
-//           overwrite: true,
-//         });
-//         imageUrl = result.secure_url; // Update the image URL with the new uploaded image
-//       } catch (error) {
-//         return res.status(500).json({
-//           success: false,
-//           message: "Error uploading image",
-//           details: error.message,
-//         });
-//       }
-//     }
-
-//     // Update only the fields that are provided and exclude 'currentStock'
-//     const updatedFields = {};
-//     for (let key in stockData) {
-//       if (stockData[key] !== undefined && key !== "currentStock") {
-//         updatedFields[key] = stockData[key];
-//       }
-//     }
-
-//     // Include the updated image URL
-//     updatedFields["image"] = imageUrl;
-
-//     // Update the stock item in the database
-//     const updatedStock = await Stock.findByIdAndUpdate(
-//       id,
-//       { $set: updatedFields },
-//       { new: true }
-//     );
-
-//     if (!updatedStock) {
-//       return res.status(500).json({
-//         success: false,
-//         message: "Error updating stock",
-//       });
-//     }
-
-//     // Save the updated stock record
-//     updatedStock.save();
-
-//     // Return a success response
-//     res.status(200).json({
-//       success: true,
-//       message: "Stock updated successfully",
-//       data: updatedStock,
-//     });
-//   } catch (error) {
-//     // Handle errors
-//     res.status(500).json({
-//       success: false,
-//       message: "Error updating stock",
-//       details: error.message,
-//     });
-//   }
-// };
 
 export const updateStock = async (req, res) => {
   const { id } = req.query; // Assuming stock ID is passed via query params
