@@ -1,5 +1,5 @@
 import { cloudinary } from "../config/cloudinary.js";
-export const uploadProfileImage = async (req, res) => {
+export const uploadSpareImage = async (req, res) => {
   try {
     let imageUrl = null;
     if (req.file) {

@@ -11,7 +11,7 @@ export const fetchAllStocks = async (req, res) => {
       },
       isActive: true,
       isDeleted: false,
-    }).select("-currentStock -__v -entryStock").lean();
+    }).select("-currentStock -__v -entryStock").sort({ position: 1 }).lean();
 
     // If no stocks found
     if (stocks.length === 0) {
