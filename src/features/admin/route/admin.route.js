@@ -7,7 +7,7 @@ import {
   allAdmin,
   deleteAdmin,
   updateAdminPassword,
-  updateAdminRole,
+  updateAdmin,
   changeStatus,
   downloadExcelSheet,
   searchAdmin,
@@ -22,7 +22,7 @@ router.get("/all", verifyToken, allAdmin);
 router.put("/toggle/status", verifyToken, changeStatus);
 router.put("/delete", verifyToken, deleteAdmin);
 router.post("/update/password", updateAdminPassword);
-router.post("/update/role", verifyToken, updateAdminRole);
+router.put("/update", verifyToken, updateAdmin);
 router.get("/download-excel", verifyToken, downloadExcelSheet);
 router.get("/searchAdmin", verifyToken, searchAdmin);
 
