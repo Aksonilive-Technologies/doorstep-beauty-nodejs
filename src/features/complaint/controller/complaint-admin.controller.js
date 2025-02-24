@@ -11,7 +11,7 @@ export const getAllComplaints = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Retrieve complaints with pagination and populate customer details
-    const data = await Complaint.find()
+    const data = await Complaint.find({isDeleted: false})
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

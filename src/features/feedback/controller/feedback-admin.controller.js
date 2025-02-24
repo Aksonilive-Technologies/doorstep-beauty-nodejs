@@ -6,7 +6,7 @@ export const getAllFeedback = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
 
   try {
-    const feedback = await Feedback.find()
+    const feedback = await Feedback.find({isDeleted: false})
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))

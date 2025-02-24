@@ -38,6 +38,10 @@ const stockSchema = new Schema(
       // required: true,
       min: 0,
     },
+    position: {
+      type: Number,
+      required: true,
+    },
     image: {
       type: [String],
       required: true,

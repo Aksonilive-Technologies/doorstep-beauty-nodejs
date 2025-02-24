@@ -89,7 +89,7 @@ export const fetchAllMemberships = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
-    const memberships = await Membership.find()
+    const memberships = await Membership.find({isDeleted: false})
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 }); // Sort by most recent

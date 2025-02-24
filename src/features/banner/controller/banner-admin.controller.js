@@ -80,7 +80,7 @@ export const getBanner = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // Current page number
     const startIndex = (page - 1) * limit; // Calculate the starting index
 
-    const banners = await Banner.find()
+    const banners = await Banner.find({isDeleted: false})
       .sort({ position: 1 })
       .skip(startIndex)
       .limit(limit);

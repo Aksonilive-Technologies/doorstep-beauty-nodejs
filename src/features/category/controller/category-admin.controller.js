@@ -78,7 +78,7 @@ export const getAllCategories = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Find categories with pagination
-    const categories = await Category.find()
+    const categories = await Category.find({isDeleted: false})
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)

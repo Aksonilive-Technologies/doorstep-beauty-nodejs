@@ -15,7 +15,7 @@ export const fetchBookings = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch bookings with populated fields and pagination
-    const bookings = await Booking.find()
+    const bookings = await Booking.find({isDeleted: false})
       .populate("product.product")
       .populate("partner.partner")
       .populate("customer")
