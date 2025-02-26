@@ -4,6 +4,12 @@ import Booking from "../../booking/model/booking.model.js";
 import MostBookedProduct from "../../most-booked-product/model/most-booked-product.model.js";
 import Transaction from "../../transaction/model/transaction.model.js";
 import Customer from "../../customer/model/customer.model.js";
+import FirebaseToken from "../../firebase-token/model/firebase-token.model.js";
+import * as CustomerFCMService from "../../../../helper/customerFcmService.js";
+import Product from "../../product/model/product.model.js";
+import waMsgService from "../../../../utility/waMsgService.js";
+import moment from "moment";
+
 
 // Add item to cart
 export const addItemToCart = async (req, res) => {
@@ -103,6 +109,7 @@ export const bookCart = async (req, res) => {
 
     // Validate transaction
     const transactionData = await Transaction.findOne({ _id: bookingTransactionId, isDeleted: false });
+    const customer = await Customer.findOne({ _id: customerId, isDeleted: false });
     if (!transactionData) return res.status(404).json({ success: false, message: "Transaction not found" });
     if (["completed", "failed"].includes(transactionData.status.toLowerCase()))
       return res.status(400).json({ success: false, message: `Transaction already marked as ${transactionData.status}` });
@@ -116,7 +123,6 @@ export const bookCart = async (req, res) => {
         if (paymentStatus === "failed") return res.status(400).json({ success: true, message: "Cart booking failed" });
       }
     } else if (transactionData.transactionType === "wallet_booking") {
-      const customer = await Customer.findOne({ _id: customerId, isDeleted: false });
       if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
       if (customer.walletBalance < finalPrice)
         return res.status(400).json({ success: false, message: "Insufficient wallet balance" });
@@ -156,6 +162,31 @@ export const bookCart = async (req, res) => {
 
     // Clear cart
     await Cart.deleteMany({ customer: customerId });
+
+    const customerToken = await FirebaseToken.find({
+      userId: customerId,
+      userType: "customer",
+    });
+    if (customerToken) {
+      for (let i = 0; i < customerToken.length; i++) {
+        CustomerFCMService.sendBookingConfirmationMessage(
+          customerToken[i].token
+        );
+      }
+    }
+    
+    const product = await Product.findById(newBooking.product[0].product);
+
+    await waMsgService.sendCusBoookingConfirmationMessage(
+      customer.mobile,
+      customer.name,
+      product.name,
+      newBooking.product.length,
+      moment(newBooking.scheduleFor.date).format("DD/MM/YYYY"),
+      newBooking.scheduleFor.time + " " + newBooking.scheduleFor.format,
+      newBooking.customerAddress,
+      newBooking.finalPrice
+    );
     res.status(200).json({ success: true, message: "Cart booked successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Error booking cart", errorMessage: error.message });
