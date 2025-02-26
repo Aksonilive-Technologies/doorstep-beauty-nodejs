@@ -13,6 +13,7 @@ const transactionSchema = new mongoose.Schema(
         "recharge_wallet",
         "wallet_booking",
         "gateway_booking",
+        "cash_booking",
         "membership_plan_purchase",
         "booking_refund",
       ],
