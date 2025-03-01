@@ -286,13 +286,13 @@ export const cancelBooking = async (req, res) => {
         message: "Booking not found",
       });
     }
+    let customerCancellationFeeStatus = "";
     if (booking.serviceStatus === "scheduled") {
       //step1: calculate cancellation charges
       const cancellationCharges = calculateCancellationCharge(
         booking,
         "customer"
       );
-      let customerCancellationFeeStatus = "";
 
       //step2: refund back to customer using the same payment mode and also to partner
       //step3: create a transaction record for refund in both customer and partner
@@ -429,12 +429,15 @@ export const fetchRecentBookedProducts = async (req, res) => {
     // Limit the result to the last 10 products
     recentProducts = recentProducts.slice(0, 10);
 
-    const cartProducts = await CartItem.find({ customer: customerId }).select("-__v");
+    const cartProducts = await CartItem.find({ customer: customerId }).select(
+      "-__v"
+    );
 
     // Map products and assign cartQuantity
     recentProducts = recentProducts.map((product) => {
       const cartItem = cartProducts.find(
-        (cartProduct) => cartProduct.product.toString() === product._id.toString()
+        (cartProduct) =>
+          cartProduct.product.toString() === product._id.toString()
       );
 
       return {
@@ -678,101 +681,223 @@ export const updateTransaction = async (req, res) => {
   }
 };
 
+// export const initiatePayment = async (req, res) => {
+//   const { bookingId, paymentMode } = req.body;
+//   try {
+//     // Find the booking based on bookingId
+//     const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+//     if (!booking) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Booking not found" });
+//     }
+
+//     // Get the final price from the booking
+//     const finalPrice = booking.finalPrice;
+
+//     // Initialize transaction object
+//     const transactionData = {
+//       customerId: booking.customer,
+//       amount: finalPrice,
+//       paymentGateway: paymentMode,
+//     };
+
+//     if (paymentMode === "wallet") {
+//       // Deduct from wallet and create a debit transaction
+//       const customer = await Customer.findOne({
+//         _id: booking.customer,
+//         isDeleted: false,
+//       });
+//       if (!customer) {
+//         return res
+//           .status(404)
+//           .json({ success: false, message: "Customer not found" });
+//       }
+
+//       if (customer.walletBalance < finalPrice) {
+//         return res
+//           .status(400)
+//           .json({ success: false, message: "Insufficient wallet balance" });
+//       }
+
+//       customer.walletBalance -= finalPrice;
+//       await customer.save();
+
+//       transactionData.transactionType = "wallet_booking";
+//       transactionData.status = "completed";
+
+//       const transaction = new Transaction(transactionData);
+//       await transaction.save();
+
+//       booking.paymentStatus = "completed";
+//       booking.serviceStatus = "scheduled";
+//       booking.transaction = transaction._id;
+//       await booking.save();
+
+//       const customerToken = await FirebaseTokens.find({
+//         userId: booking.customer,
+//         userType: "customer",
+//       });
+//       const partnerToken = await FirebaseTokens.find({
+//         userId: booking.partner[0].partner,
+//         userType: "partner",
+//       });
+//       if (customerToken) {
+//         for (let i = 0; i < customerToken.length; i++) {
+//           CustomerFCMService.sendBookingConfirmationMessage(
+//             customerToken[i].token
+//           );
+//         }
+//       }
+//       if (partnerToken) {
+//         for (let i = 0; i < partnerToken.length; i++) {
+//           PartnerFCMService.sendBookingConfirmationMessage(
+//             partnerToken[i].token
+//           );
+//         }
+//       }
+//       const product = await Product.findById(booking.product[0].product);
+
+//       await waMsgService.sendCusBoookingConfirmationMessage(
+//         customer.mobile,
+//         customer.name,
+//         product.name,
+//         booking.product.length,
+//         moment(booking.scheduleFor.date).format("DD/MM/YYYY"),
+//         booking.scheduleFor.time + " " + booking.scheduleFor.format,
+//         booking.customerAddress,
+//         booking.finalPrice
+//       );
+
+//       return res.status(200).json({
+//         success: true,
+//         message:
+//           "Payment processed successfully via wallet and booking updated",
+//         // data: {Booking: booking, OrderId: orderId}
+//       });
+//     } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
+//       // Create a pending transaction for gateway payments
+//       transactionData.transactionType = "gateway_booking";
+//       transactionData.status = "pending";
+
+//       const orderId = await createOrder(Number(finalPrice) * 100);
+
+//       const transaction = new Transaction(transactionData);
+//       await transaction.save();
+
+//       booking.transaction = transaction._id;
+//       await booking.save();
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Transaction initiated successfully via " + paymentMode,
+//         data: { OrderId: orderId },
+//       });
+//     } else {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid payment gateway",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error processing payment:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//       errorMessage: error.message,
+//     });
+//   }
+// };
+
 export const initiatePayment = async (req, res) => {
-  const { bookingId, paymentMode } = req.body;
+  const { customerId, discountType,
+    discountValue,
+    offerType,
+    offerRefId, paymentMode } = req.body;
   try {
-    // Find the booking based on bookingId
-    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
-    if (!booking) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
+    if (!customerId || !paymentMode) {
+      return res.status(404).json({
+        success: false,
+        message: "CustomerId and Payment Mode is required",
+      });
     }
 
-    // Get the final price from the booking
-    const finalPrice = booking.finalPrice;
+    // Fetch cart items for the customer
+    const cart = await CartItem.find({ customer: customerId })
+      .populate("product")
+      .select("-__v");
+
+    if (!cart || cart.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "There is no item in the cart",
+      });
+    }
+
+    const products = cart.map((item) => {
+      const productData = {
+        product: item.product._id,
+        quantity: item.quantity,
+        price: item.price,
+      };
+
+      // Include productOption only if it's present
+      if (item.productOption) {
+        productData.option = item.productOption;
+      }
+
+      return productData;
+    });
+
+    const totalPrice = products.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Calculate discount
+    let discount = 0;
+    if (discountType === "percentage") {
+      discount = totalPrice * (discountValue / 100);
+    } else if (["flat_amount", "product"].includes(discountType)) {
+      discount = discountValue;
+    }
+
+    const finalPrice = totalPrice - discount;
 
     // Initialize transaction object
     const transactionData = {
-      customerId: booking.customer,
+      customerId: customerId,
       amount: finalPrice,
       paymentGateway: paymentMode,
     };
 
     if (paymentMode === "wallet") {
-      // Deduct from wallet and create a debit transaction
-      const customer = await Customer.findOne({
-        _id: booking.customer,
-        isDeleted: false,
-      });
-      if (!customer) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Customer not found" });
-      }
-
-      if (customer.walletBalance < finalPrice) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Insufficient wallet balance" });
-      }
-
-      customer.walletBalance -= finalPrice;
-      await customer.save();
-
       transactionData.transactionType = "wallet_booking";
-      transactionData.status = "completed";
+      transactionData.status = "pending";
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
 
-      booking.paymentStatus = "completed";
-      booking.serviceStatus = "scheduled";
-      booking.transaction = transaction._id;
-      await booking.save();
-
-      const customerToken = await FirebaseTokens.find({
-        userId: booking.customer,
-        userType: "customer",
+      return res.status(200).json({
+        success: true,
+        message:
+          "Transaction initiated successfully via wallet",
+        data: { transactionId: transaction._id}
       });
-      const partnerToken = await FirebaseTokens.find({
-        userId: booking.partner[0].partner,
-        userType: "partner",
-      });
-      if (customerToken) {
-        for (let i = 0; i < customerToken.length; i++) {
-          CustomerFCMService.sendBookingConfirmationMessage(
-            customerToken[i].token
-          );
-        }
-      }
-      if (partnerToken) {
-        for (let i = 0; i < partnerToken.length; i++) {
-          PartnerFCMService.sendBookingConfirmationMessage(
-            partnerToken[i].token
-          );
-        }
-      }
-      const product = await Product.findById(booking.product[0].product);
+    }else if (paymentMode === "cash") {
+      transactionData.transactionType = "cash_booking";
+      transactionData.status = "pending";
 
-      await waMsgService.sendCusBoookingConfirmationMessage(
-        customer.mobile,
-        customer.name,
-        product.name,
-        booking.product.length,
-        moment(booking.scheduleFor.date).format("DD/MM/YYYY"),
-        booking.scheduleFor.time + " " + booking.scheduleFor.format,
-        booking.customerAddress,
-        booking.finalPrice
-      );
+      const transaction = new Transaction(transactionData);
+      await transaction.save();
 
       return res.status(200).json({
         success: true,
         message:
-          "Payment processed successfully via wallet and booking updated",
-        // data: {Booking: booking, OrderId: orderId}
+          "Transaction initiated successfully via cash",
+        data: { transactionId: transaction._id}
       });
-    } else if (["cashfree", "razorpay", "cash"].includes(paymentMode)) {
+    } else if (["cashfree", "razorpay"].includes(paymentMode)) {
       // Create a pending transaction for gateway payments
       transactionData.transactionType = "gateway_booking";
       transactionData.status = "pending";
@@ -782,13 +907,10 @@ export const initiatePayment = async (req, res) => {
       const transaction = new Transaction(transactionData);
       await transaction.save();
 
-      booking.transaction = transaction._id;
-      await booking.save();
-
       return res.status(200).json({
         success: true,
         message: "Transaction initiated successfully via " + paymentMode,
-        data: { OrderId: orderId },
+        data: { transactionId: transaction._id, orderId: orderId },
       });
     } else {
       return res.status(400).json({
@@ -808,7 +930,7 @@ export const initiatePayment = async (req, res) => {
 
 export const getMostBookedProducts = async (req, res) => {
   try {
-    const {customerId} = req.query;
+    const { customerId } = req.query;
     const mostBookedProducts = await MostBookedProduct.find({
       isActive: true,
       isDeleted: false,
@@ -838,11 +960,14 @@ export const getMostBookedProducts = async (req, res) => {
     }));
 
     if (customerId) {
-      const cartProducts = await CartItem.find({ customer: customerId }).select("-__v");
+      const cartProducts = await CartItem.find({ customer: customerId }).select(
+        "-__v"
+      );
       // Map products to add cartQuantity
       products = products.map((product) => {
         const cartItem = cartProducts.find(
-          (cartProduct) => cartProduct.product.toString() === product._id.toString()
+          (cartProduct) =>
+            cartProduct.product.toString() === product._id.toString()
         );
 
         return {
@@ -850,7 +975,8 @@ export const getMostBookedProducts = async (req, res) => {
           cartQuantity: cartItem ? cartItem.quantity : 0, // Assign cart quantity
           cartItemID: cartItem ? cartItem._id : null,
         };
-    })}
+      });
+    }
 
     res.status(200).json({
       success: true,
