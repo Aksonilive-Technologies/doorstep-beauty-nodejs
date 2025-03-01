@@ -291,20 +291,21 @@ export const deleteAdmin = async (req, res) => {
 
 export const updateAdminPassword = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    let { username, oldPassword, password } = req.body;
 
-    if (!username || !password) {
+    if (!username || !oldPassword || !password) {
       return res.status(400).json({
         success: false,
-        message: !username ? "Username is required" : "Password is required",
+        message: "Username, oldPassword and password is required",
       });
     }
 
     const admin = await Admin.findOne({ username });
-    if (!admin) {
-      return res.status(404).json({
+
+    if (!admin || !(await bcryptjs.compare(oldPassword, admin.password))) {
+      return res.status(401).json({
         success: false,
-        message: "Admin not found",
+        message: "Invalid username or password",
       });
     }
     if (admin.isDeleted || !admin.isActive) {
@@ -317,8 +318,7 @@ export const updateAdminPassword = async (req, res) => {
     const hashedPassword = await bcryptjs.hash(password, 10);
     await Admin.findOneAndUpdate(
       { username },
-      { password: hashedPassword },
-      { new: true }
+      { password: hashedPassword }
     );
 
     return res.status(200).json({
