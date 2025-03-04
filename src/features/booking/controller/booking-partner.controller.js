@@ -561,35 +561,35 @@ export const cancelBooking = async (req, res) => {
           "paid"
         );
       }
-    }
 
-    booking.status = "cancelled";
-    booking.serviceStatus = "cancelled";
-    booking.cancelledBy = "partner";
+      booking.status = "cancelled";
+      booking.serviceStatus = "cancelled";
+      booking.cancelledBy = "partner";
 
-    if (timeDifferenceInHours > 3) {
-      const newChildBooking = new Booking({
-        customer: booking.customer,
-        product: booking.product,
-        totalPrice: booking.totalPrice,
-        discount: booking.discount,
-        finalPrice: booking.finalPrice,
-        discountType: booking.discountType,
-        discountValue: booking.discountValue,
-        offerType: booking.offerType,
-        offerRefId: booking.offerRefId,
-        transaction: booking.transaction,
-        status: "pending", // Initial status for the new booking
-        serviceStatus: "pending", // Initial service status for the new booking
-        customerAddress: booking.customerAddress,
-        paymentStatus: booking.paymentStatus, // Reset payment status
-        scheduleFor: booking.scheduleFor, // You may reset or update this
-      });
+      if (timeDifferenceInHours > 3) {
+        const newChildBooking = new Booking({
+          customer: booking.customer,
+          product: booking.product,
+          totalPrice: booking.totalPrice,
+          discount: booking.discount,
+          finalPrice: booking.finalPrice,
+          discountType: booking.discountType,
+          discountValue: booking.discountValue,
+          offerType: booking.offerType,
+          offerRefId: booking.offerRefId,
+          transaction: booking.transaction,
+          status: "pending", // Initial status for the new booking
+          serviceStatus: "pending", // Initial service status for the new booking
+          customerAddress: booking.customerAddress,
+          paymentStatus: booking.paymentStatus, // Reset payment status
+          scheduleFor: booking.scheduleFor, // You may reset or update this
+        });
 
-      const savedChildBooking = await newChildBooking.save();
+        const savedChildBooking = await newChildBooking.save();
 
-      // Step 6: Update the parent booking with the new child booking's ID
-      booking.childBooking = savedChildBooking._id;
+        // Step 6: Update the parent booking with the new child booking's ID
+        booking.childBooking = savedChildBooking._id;
+      }
     }
 
     await booking.save();
