@@ -176,39 +176,6 @@ export const fetchBookings = async (req, res) => {
       });
     }
 
-    bookings.forEach((booking) => {
-      // console.log("booking", booking.product);
-      booking.product.forEach((productItem) => {
-        // Check if there is an option selected for this product
-        // console.log("productItem", productItem);
-        if (productItem.option && productItem.product.options) {
-          let selectedOption = productItem.product.options.find((opt) =>
-            opt._id.equals(productItem.option)
-          );
-
-          if (selectedOption) {
-            let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
-
-            // Update product image with option's image
-            clonedProduct.image = selectedOption.image;
-
-            // Update product name by concatenating the option name with the original product name
-            clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
-
-            // Update product price with option price
-            clonedProduct.price = selectedOption.price;
-
-            // Update product details with option's details
-            clonedProduct.details = selectedOption.details;
-
-            // Assign the cloned product back to the productItem
-            productItem.product = clonedProduct;
-          }
-        }
-      });
-      // console.log("booking", booking.product);
-    });
-
     // Current date for comparison
     const now = moment();
 
@@ -223,13 +190,16 @@ export const fetchBookings = async (req, res) => {
       if (booking.serviceStatus === "ongoing") {
         // Ongoing bookings
         categorized.Ongoing.push(booking);
-      } else if (booking.scheduleFor && booking.scheduleFor.date) {
-        const scheduleDate = moment(booking.scheduleFor.date);
-        if (scheduleDate.isAfter(now)) {
-          // Upcoming bookings
+      } else if (booking.scheduleFor && booking.scheduleFor.date && booking.scheduleFor.time) {
+        // Combine date and time correctly
+        const scheduleDateTime = moment(
+          `${booking.scheduleFor.date.split("T")[0]} ${booking.scheduleFor.time} ${booking.scheduleFor.format}`,
+          "YYYY-MM-DD hh:mm A"
+        );
+    
+        if (scheduleDateTime.isAfter(now)) {
           categorized.Upcoming.push(booking);
         } else {
-          // Previous bookings
           categorized.Previous.push(booking);
         }
       } else {
