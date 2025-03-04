@@ -192,10 +192,11 @@ export const fetchBookings = async (req, res) => {
         categorized.Ongoing.push(booking);
       } else if (booking.scheduleFor && booking.scheduleFor.date && booking.scheduleFor.time) {
         // Combine date and time correctly
-        const scheduleDateTime = moment(
-          `${booking.scheduleFor.date.split("T")[0]} ${booking.scheduleFor.time} ${booking.scheduleFor.format}`,
-          "YYYY-MM-DD hh:mm A"
-        );
+        const scheduleDateTime = moment(booking.scheduleFor.date) // Create moment from date
+      .set({
+        hour: moment(booking.scheduleFor.time + " " + booking.scheduleFor.format, "hh:mm A").hour(),
+        minute: moment(booking.scheduleFor.time + " " + booking.scheduleFor.format, "hh:mm A").minute(),
+      });
     
         if (scheduleDateTime.isAfter(now)) {
           categorized.Upcoming.push(booking);
