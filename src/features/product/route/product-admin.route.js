@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import * as Product from "../controller/product-admin.controller.js";
 import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
+import "../cronJob.js";
 // Update the path accordingly
 
 // Route to create a new product with image upload

@@ -45,6 +45,7 @@ import customerFeedbackRoute from "./src/features/feedback/route/feedback-app.ro
 import customerComplaintRoute from "./src/features/complaint/route/complaint-app.route.js";
 import customerMembershipRoute from "./src/features/membership/route/membership-app.route.js";
 import customerSlotRoute from "./src/features/slot/route/slot-app.route.js";
+import customerOfferRoute from "./src/features/offers/route/offer-customer.route.js";
 
 app.use("/api/v1/customer/category", customerCategoryRoute);
 app.use("/api/v1/customer/product", customerProductRoute);
@@ -57,6 +58,7 @@ app.use("/api/v1/customer/complain", customerComplaintRoute);
 app.use("/api/v1/customer/membership", customerMembershipRoute);
 app.use("/api/v1/customer/slot", customerSlotRoute);
 app.use("/api/v1/customer", customerRoute);
+app.use("/api/v1/customer/offers", customerOfferRoute);
 
 //**************Partner Route API************************ */
 
@@ -76,34 +78,34 @@ app.use("/api/v1/partner/cart", partnerCartRoute);
 import adminRoute from "./src/features/admin/route/admin.route.js";
 import adminCustomerRoute from "./src/features/customer/route/customer-admin.route.js";
 import adminPartnerRoute from "./src/features/partner/route/partner-admin.route.js";
-import bannerRoute from "./src/features/banner/route/banner-admin.route.js";
-import categoryAdminRoute from "./src/features/category/route/category-admin.route.js";
-import subcategoryAdminRoute from "./src/features/subcategory/route/subcategory-admin.route.js";
-import productAdminRoute from "./src/features/product/route/product-admin.route.js";
-import membershipRoute from "./src/features/membership/route/membership-admin.route.js";
+import adminBannerRoute from "./src/features/banner/route/banner-admin.route.js";
+import adminCategoryRoute from "./src/features/category/route/category-admin.route.js";
+import adminSubcategoryRoute from "./src/features/subcategory/route/subcategory-admin.route.js";
+import adminProductRoute from "./src/features/product/route/product-admin.route.js";
+import adminMembershipRoute from "./src/features/membership/route/membership-admin.route.js";
 import adminComplainRoute from "./src/features/complaint/route/complaint-admin.route.js";
-import feedbackRoute from "./src/features/feedback/route/feedback-admin.route.js";
-import notificationRoute from "./src/features/notification/route/notification.route.js";
-import offerRoute from "./src/features/offers/route/offers.route.js";
-import slotRoute from "./src/features/slot/route/slot-admin.route.js";
-import stockRoute from "./src/features/stock/route/stock-admin.route.js";
-import bookingAdminRoute from "./src/features/booking/route/booking-admin.route.js";
+import adminFeedbackRoute from "./src/features/feedback/route/feedback-admin.route.js";
+import adminNotificationRoute from "./src/features/notification/route/notification.route.js";
+import adminOfferRoute from "./src/features/offers/route/offer-admin.route.js";
+import adminSlotRoute from "./src/features/slot/route/slot-admin.route.js";
+import adminStockRoute from "./src/features/stock/route/stock-admin.route.js";
+import adminBookingRoute from "./src/features/booking/route/booking-admin.route.js";
 
 app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/admin/customer", adminCustomerRoute);
 app.use("/api/v1/admin/partner", adminPartnerRoute);
-app.use("/api/v1/admin/banner", bannerRoute);
-app.use("/api/v1/admin/category", categoryAdminRoute);
-app.use("/api/v1/admin/subcategory", subcategoryAdminRoute);
-app.use("/api/v1/admin/product", productAdminRoute);
-app.use("/api/v1/admin/membership", membershipRoute);
+app.use("/api/v1/admin/banner", adminBannerRoute);
+app.use("/api/v1/admin/category", adminCategoryRoute);
+app.use("/api/v1/admin/subcategory", adminSubcategoryRoute);
+app.use("/api/v1/admin/product", adminProductRoute);
+app.use("/api/v1/admin/membership", adminMembershipRoute);
 app.use("/api/v1/admin/complain", adminComplainRoute);
-app.use("/api/v1/admin/feedback", feedbackRoute);
-app.use("/api/v1/admin/notification", notificationRoute);
-app.use("/api/v1/admin/offers", offerRoute);
-app.use("/api/v1/admin/slot", slotRoute);
-app.use("/api/v1/admin/stock", stockRoute);
-app.use("/api/v1/admin/booking", bookingAdminRoute);
+app.use("/api/v1/admin/feedback", adminFeedbackRoute);
+app.use("/api/v1/admin/notification", adminNotificationRoute);
+app.use("/api/v1/admin/offers", adminOfferRoute);
+app.use("/api/v1/admin/slot", adminSlotRoute);
+app.use("/api/v1/admin/stock", adminStockRoute);
+app.use("/api/v1/admin/booking", adminBookingRoute);
 app.use("/api/v1/admin/graph", graphRoute);
 
 //**************Extra Route API************************ */
