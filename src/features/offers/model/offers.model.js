@@ -10,6 +10,16 @@ const offerSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    offerCode: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    offerImage: {
+      type: String,
+      default: "https://cdn-icons-png.flaticon.com/512/726/726476.png",
+    },
     applicableOn: {
       type: String,
       required: true,

@@ -5,7 +5,8 @@ import {
   deleteOffer,
   changeOfferStatus,
   searchOffers,
-} from "../controller/offers.controller.js";
+} from "../controller/offer-admin.controller.js";
+import "../cronJob.js";
 const router = express.Router();
 
 router.post("/create", createOffer);
