@@ -52,7 +52,7 @@ const productSchema = new mongoose.Schema(
     },
     rating: {
       type: Number,
-      default: 0,
+      default: 5,
     },
     isActive: {
       type: Boolean,
