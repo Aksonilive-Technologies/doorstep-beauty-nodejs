@@ -11,10 +11,11 @@ export const getOfferByCode = async (req, res) => {
       offerCode: code,
       isActive: true,
       isDeleted: false,
-    });
+    }).lean();
     if (!offer) {
       return res.status(404).json({ success: false, message: "No such coupon found" });
     }
+    offer.isEligible = true;
     return res.status(200).json({
       success: true,
       message: "offer retrieved successfully",
