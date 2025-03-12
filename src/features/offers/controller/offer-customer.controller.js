@@ -1,3 +1,4 @@
+import Cart from "../../cart/model/cart.model.js";
 import Offer from "../model/offers.model.js";
 
 export const getOfferByCode = async (req, res) => {
@@ -30,6 +31,10 @@ export const getOfferByCode = async (req, res) => {
   }
 };
 export const getOffers = async (req, res) => {
+    const { customerId } = req.query;
+    if (!customerId) {
+        return res.status(400).json({ message: "Customer ID is required" });
+    }
   try {
     const offers = await Offer.find({
       isActive: true,
@@ -46,8 +51,24 @@ export const getOffers = async (req, res) => {
     })
       .select("-isDeleted -isActive -__v")
       .lean();
+      // Fetch cart items
+    const cart = await Cart.find({ customer: customerId }).populate("product").select("-__v");
+
+    const products = cart.map(({ product, quantity, price}) => ({
+      product: product._id,
+      quantity,
+      price,
+    }));
+
+    const totalPrice = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
     offers.forEach((offer) => {
-      offer.isEligible = true;
+        if (offer.applicableOn === "package_booking") {
+            if(totalPrice >= offer.offerValidOn && cart.length >= offer.offerValue+2){ {
+                offer.isEligible = true;
+            }
+        }else{
+      offer.isEligible = false;
+        }
     });
     return res.status(200).json({ success: true,
         message: "offers retrieved successfully",
