@@ -63,7 +63,7 @@ export const getOffers = async (req, res) => {
     const totalPrice = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
     offers.forEach((offer) => {
         if (offer.applicableOn === "package_booking") {
-            if(totalPrice >= offer.offerValidOn && cart.length >= offer.offerValue+2){ {
+            if(totalPrice >= offer.offerValidOn && cart.length >= offer.offerValue+2){
                 offer.isEligible = true;
             }
         }else{
