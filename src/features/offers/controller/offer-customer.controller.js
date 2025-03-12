@@ -3,7 +3,7 @@ import Offer from "../model/offers.model.js";
 
 export const getOfferByCode = async (req, res) => {
   const { code, customerId } = req.query;
-  if (!code || customerId) {
+  if (!code || !customerId) {
     return res.status(400).json({ message: "Offer code and customerId is required" });
   }
   try {
