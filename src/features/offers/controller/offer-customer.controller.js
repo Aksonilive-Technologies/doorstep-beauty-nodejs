@@ -2,9 +2,9 @@ import Cart from "../../cart/model/cart.model.js";
 import Offer from "../model/offers.model.js";
 
 export const getOfferByCode = async (req, res) => {
-  const { code } = req.query;
-  if (!code) {
-    return res.status(400).json({ message: "Offer code is required" });
+  const { code, customerId } = req.query;
+  if (!code || customerId) {
+    return res.status(400).json({ message: "Offer code and customerId is required" });
   }
   try {
     const offer = await Offer.findOne({
