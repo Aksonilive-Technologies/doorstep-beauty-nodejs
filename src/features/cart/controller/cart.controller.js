@@ -96,11 +96,10 @@ export const bookCart = async (req, res) => {
     const cart = await Cart.find({ customer: customerId }).populate("product").select("-__v");
     if (!cart.length) return res.status(404).json({ success: false, message: "No items in the cart" });
 
-    const products = cart.map(({ product, quantity, price, productOption }) => ({
+    const products = cart.map(({ product, quantity, price}) => ({
       product: product._id,
       quantity,
       price,
-      ...(productOption && { option: productOption }),
     }));
 
     const totalPrice = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -215,40 +214,6 @@ export const getCartByCustomerId = async (req, res) => {
         message: "Cart for customerId " + id + " not found",
       });
     }
-
-    cart.forEach((cartItem) => {
-      const productItem = cartItem.product;
-
-      // Check if there is an option selected for this product
-      if (cartItem.productOption && productItem.options) {
-        const selectedOption = productItem.options.find((opt) =>
-          opt._id.equals(cartItem.productOption)
-        );
-
-        if (selectedOption) {
-          let clonedProduct = JSON.parse(JSON.stringify(productItem.product));
-
-          // Update product image with option's image
-          clonedProduct.image = selectedOption.image;
-
-          // Update product name by concatenating the option name with the original product name
-          clonedProduct.name = `${selectedOption.option} ${clonedProduct.name}`;
-
-          // Update product price with option price
-          clonedProduct.price = selectedOption.price;
-
-          // Update product details with option's details
-          clonedProduct.details = selectedOption.details;
-
-          // Assign the cloned product back to the productItem
-          productItem.product = clonedProduct;
-        }
-      }
-
-      // delete cartItem.productOption;
-      // delete cartItem.price;
-      // delete cartItem.product.options;
-    });
 
     cart.sort((a, b) => b.product.price - a.product.price);
 
