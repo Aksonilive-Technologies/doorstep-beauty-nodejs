@@ -13,7 +13,7 @@ export const getOfferByCode = async (req, res) => {
       isDeleted: false,
     });
     if (!offer) {
-      return res.status(404).json({ message: "Offer not found" });
+      return res.status(404).json({ success: false, message: "No such coupon found" });
     }
     return res.status(200).json({
       success: true,
