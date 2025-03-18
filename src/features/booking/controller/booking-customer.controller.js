@@ -16,6 +16,7 @@ import XLSX from "xlsx";
 import waMsgService from "../../../../utility/waMsgService.js";
 import { createOrder } from "../../../../helper/razorpayHelper.js";
 import CartItem from "../../cart/model/cart.model.js";
+import Membership from "../../membership/model/membership.model.js";
 
 export const bookProduct = async (req, res) => {
   const {
@@ -147,6 +148,7 @@ export const fetchBookings = async (req, res) => {
     // Fetch bookings with populated fields
     const bookings = await Booking.find({
       customer: customerId,
+      isActive: true,
       isDeleted: false,
       childBooking: { $exists: false },
     })
@@ -247,6 +249,7 @@ export const cancelBooking = async (req, res) => {
     const booking = await Booking.findOne({
       _id: bookingId,
       serviceStatus: { $in: ["pending", "scheduled"] },
+      isActive: true,
       isDeleted: false,
     });
 
@@ -378,6 +381,7 @@ export const fetchRecentBookedProducts = async (req, res) => {
     // Fetch bookings for the customer and populate products
     const bookings = await Booking.find({
       customer: customerId,
+      isActive: true,
       isDeleted: false,
     })
       .populate("product.product")
@@ -445,7 +449,8 @@ export const ratePartner = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    const booking = await Booking.findOne({ _id: bookingId, isActive: true,
+      isDeleted: false, });
 
     if (!booking) {
       return res.status(404).json({
@@ -493,7 +498,8 @@ export const rateBooking = async (req, res) => {
     const { bookingId, rating } = req.body;
 
     // Step 1: Find the booking by ID
-    const booking = await Booking.findOne({ _id: bookingId, isDeleted: false });
+    const booking = await Booking.findOne({ _id: bookingId, isActive: true,
+      isDeleted: false, });
     if (!booking) {
       return res
         .status(404)
@@ -784,7 +790,7 @@ export const initiatePayment = async (req, res) => {
   const { customerId, discountType,
     discountValue,
     offerType,
-    offerRefId, paymentMode } = req.body;
+    offerRefId, paymentMode, membershipId } = req.body;
   try {
     if (!customerId || !paymentMode) {
       return res.status(404).json({
@@ -812,11 +818,6 @@ export const initiatePayment = async (req, res) => {
         price: item.price,
       };
 
-      // Include productOption only if it's present
-      if (item.productOption) {
-        productData.option = item.productOption;
-      }
-
       return productData;
     });
 
@@ -824,6 +825,8 @@ export const initiatePayment = async (req, res) => {
       (sum, item) => sum + item.price * item.quantity,
       0
     );
+
+    const taxes = totalPrice*0.04;
 
     // Calculate discount
     let discount = 0;
@@ -833,7 +836,14 @@ export const initiatePayment = async (req, res) => {
       discount = discountValue;
     }
 
-    const finalPrice = totalPrice - discount;
+    let finalPrice = totalPrice + taxes - discount;
+    let membership;
+
+    if(membershipId){
+      membership = Membership.findById(membershipId);
+
+      finalPrice+= membership.price
+    }
 
     // Initialize transaction object
     const transactionData = {
@@ -877,12 +887,28 @@ export const initiatePayment = async (req, res) => {
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
+      if(membershipId){
+      const membershipTransaction = new Transaction({
+        customerId: customerId,
+        transactionType: "membership_plan_purchase",
+        amount: membership.discountedPrice,
+        paymentGateway: paymentMode,
+      });
+      await membershipTransaction.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Transaction initiated successfully via " + paymentMode,
+        data: { transactionId: transaction._id, membershipTransactionId: membershipTransaction._id, orderId: orderId },
+      });
+    }else{
 
       return res.status(200).json({
         success: true,
         message: "Transaction initiated successfully via " + paymentMode,
         data: { transactionId: transaction._id, orderId: orderId },
       });
+    }
     } else {
       return res.status(400).json({
         success: false,
