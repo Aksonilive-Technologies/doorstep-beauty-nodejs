@@ -650,6 +650,7 @@ export const getTopPartnerByServiceCount = async (req, res) => {
       // Only include active bookings with completed status in the aggregation
       {
         $match: {
+          isActive: true,
           isDeleted: false,
           status: "completed", // Ensure the booking status is completed
           "partner.partner": { $exists: true }, // Ensure bookings have partners
