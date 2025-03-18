@@ -10,7 +10,6 @@ import Product from "../../product/model/product.model.js";
 import waMsgService from "../../../../utility/waMsgService.js";
 import moment from "moment";
 
-
 // Add item to cart
 export const addItemToCart = async (req, res) => {
   const { customerId, itemId, optionId, price } = req.body;
@@ -76,55 +75,149 @@ export const bookCart = async (req, res) => {
     bookingTransactionId,
     paymentStatus,
     paymentGatewayId,
+    membershipId,
+    membershipTransactionId,
   } = req.body;
 
   try {
     // Validate required fields
-    const requiredFields = { customerId, customerAddressId, scheduleFor, bookingTransactionId };
-    const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
+    const requiredFields = {
+      customerId,
+      customerAddressId,
+      scheduleFor,
+      bookingTransactionId,
+    };
+    const missingFields = Object.keys(requiredFields).filter(
+      (key) => !requiredFields[key]
+    );
     if (missingFields.length)
-      return res.status(400).json({ success: false, message: `Missing fields: ${missingFields.join(", ")}` });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `Missing fields: ${missingFields.join(", ")}`,
+        });
 
     // Fetch customer address
-    const customerAddressData = await CustomerAddress.findOne({ _id: customerAddressId, isActive: true, isDeleted: false });
-    if (!customerAddressData) return res.status(404).json({ success: false, message: "Customer address not found" });
+    const customerAddressData = await CustomerAddress.findOne({
+      _id: customerAddressId,
+      isActive: true,
+      isDeleted: false,
+    });
+    if (!customerAddressData)
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer address not found" });
 
     const { address } = customerAddressData;
     const customerAddress = `${address.fullAddress}, near ${address.landmark}, ${address.locality}, ${address.city}, ${address.state}, ${address.pincode}, ${address.country}`;
 
     // Fetch cart items
-    const cart = await Cart.find({ customer: customerId }).populate("product").select("-__v");
-    if (!cart.length) return res.status(404).json({ success: false, message: "No items in the cart" });
+    const cart = await Cart.find({ customer: customerId })
+      .populate("product")
+      .select("-__v");
+    if (!cart.length)
+      return res
+        .status(404)
+        .json({ success: false, message: "No items in the cart" });
 
-    const products = cart.map(({ product, quantity, price}) => ({
+    const products = cart.map(({ product, quantity, price }) => ({
       product: product._id,
       quantity,
       price,
     }));
 
-    const totalPrice = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discount = discountType === "percentage" ? (totalPrice * discountValue) / 100 : discountValue || 0;
-    const finalPrice = totalPrice - discount;
+    const totalPrice = products.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const discount =
+      discountType === "percentage"
+        ? (totalPrice * discountValue) / 100
+        : discountValue || 0;
+    const taxes = totalPrice * 0.04;
+    let finalPrice = totalPrice + taxes - discount;
 
     // Validate transaction
-    const transactionData = await Transaction.findOne({ _id: bookingTransactionId, isDeleted: false });
-    const customer = await Customer.findOne({ _id: customerId, isDeleted: false });
-    if (!transactionData) return res.status(404).json({ success: false, message: "Transaction not found" });
-    if (["completed", "failed"].includes(transactionData.status.toLowerCase()))
-      return res.status(400).json({ success: false, message: `Transaction already marked as ${transactionData.status}` });
+    const transactionData = await Transaction.findOne({
+      _id: bookingTransactionId,
+      isActive: true,
+      isDeleted: false,
+    });
 
+    const customer = await Customer.findOne({
+      _id: customerId,
+      isActive: true,
+      isDeleted: false,
+    });
+    if (!transactionData)
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
+
+    if (["completed", "failed"].includes(transactionData.status.toLowerCase()))
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: `Transaction already marked as ${transactionData.status}`,
+        });
+
+        let membershipTransactionData;
+    if (membershipId) {
+      membershipTransactionData = await Transaction.findOne({
+        _id: membershipTransactionId,
+        isActive: true,
+        isDeleted: false,
+      });
+      if (!membershipTransactionData)
+        return res
+          .status(404)
+          .json({
+            success: false,
+            message: "Membership transaction not found",
+          });
+
+      if (
+        ["completed", "failed"].includes(
+          membershipTransactionData.status.toLowerCase()
+        )
+      )
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: `Transaction already marked as ${membershipTransactionData.status}`,
+          });
+    }
     // Handle different payment types
     if (transactionData.transactionType === "gateway_booking") {
       if (["completed", "failed"].includes(paymentStatus)) {
         transactionData.status = paymentStatus;
-        if (paymentStatus === "completed") transactionData.transactionRefId = paymentGatewayId;
+        if (paymentStatus === "completed")
+          transactionData.transactionRefId = paymentGatewayId;
         await transactionData.save();
-        if (paymentStatus === "failed") return res.status(400).json({ success: true, message: "Cart booking failed" });
+
+        if (membershipId) {
+          membershipTransactionData.status = paymentStatus;
+          if (paymentStatus === "completed")
+            membershipTransactionData.transactionRefId = paymentGatewayId;
+          await membershipTransactionData.save();
+        }
+        if (paymentStatus === "failed")
+          return res
+            .status(400)
+            .json({ success: true, message: "Cart booking failed" });
       }
     } else if (transactionData.transactionType === "wallet_booking") {
-      if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+      if (!customer)
+        return res
+          .status(404)
+          .json({ success: false, message: "Customer not found" });
       if (customer.walletBalance < finalPrice)
-        return res.status(400).json({ success: false, message: "Insufficient wallet balance" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Insufficient wallet balance" });
       customer.walletBalance -= finalPrice;
       await customer.save();
       transactionData.status = "completed";
@@ -153,8 +246,14 @@ export const bookCart = async (req, res) => {
     // Update MostBookedProduct
     await Promise.all(
       products.map(async ({ product }) => {
-        const existingRecord = await MostBookedProduct.findOne({ product, isActive: true, isDeleted: false });
-        existingRecord ? existingRecord.count++ : await MostBookedProduct.create({ product, count: 1 });
+        const existingRecord = await MostBookedProduct.findOne({
+          product,
+          isActive: true,
+          isDeleted: false,
+        });
+        existingRecord
+          ? existingRecord.count++
+          : await MostBookedProduct.create({ product, count: 1 });
         await existingRecord?.save();
       })
     );
@@ -173,7 +272,7 @@ export const bookCart = async (req, res) => {
         );
       }
     }
-    
+
     const product = await Product.findById(newBooking.product[0].product);
 
     await waMsgService.sendCusBoookingConfirmationMessage(
@@ -186,9 +285,17 @@ export const bookCart = async (req, res) => {
       newBooking.customerAddress,
       newBooking.finalPrice
     );
-    res.status(200).json({ success: true, message: "Cart booked successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Cart booked successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error booking cart", errorMessage: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error booking cart",
+        errorMessage: error.message,
+      });
   }
 };
 
