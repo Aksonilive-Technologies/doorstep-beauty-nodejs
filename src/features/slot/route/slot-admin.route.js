@@ -17,6 +17,6 @@ router.put("/delete", slotController.deleteSlot);
 // Change slot status
 router.put("/change-status", slotController.changeSlotStatus);
 
-router.get("/search-slot", slotController.searchSlots);
+// router.get("/search-slot", slotController.searchSlots);
 
 export default router;

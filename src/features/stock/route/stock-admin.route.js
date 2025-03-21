@@ -8,7 +8,8 @@ import {
   updateStock,
   downloadExcelSheet,
   searchStock,
-  fetahAllStockBooking,
+  fetchAllStockBooking,
+  searchStockBooking
 } from "../controller/stock-admin.controller.js";
 import {
   uploadSingleImage,
@@ -21,7 +22,8 @@ router.put("/update", uploadMultipleImages, updateStock);
 router.delete("/delete", deleteStock);
 router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
-router.get("/searchStock", searchStock);
-router.get("/booking/fetch/all", fetahAllStockBooking);
+router.get("/search", searchStock);
+router.get("/booking/fetch/all", fetchAllStockBooking);
+router.get("/booking/search", searchStockBooking);
 
 export default router;

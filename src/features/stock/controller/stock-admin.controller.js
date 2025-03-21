@@ -3,6 +3,7 @@ import StockBooking from "../../stock-booking/model/stock-booking.model.js";
 import mongoose from "mongoose";
 import { cloudinary } from "../../../../config/cloudinary.js";
 import XLSX from "xlsx";
+import Partner from "../../partner/model/partner.model.js";
 
 // export const createStock = async (req, res) => {
 //   const requiredFields = [
@@ -550,7 +551,7 @@ export const searchStock = async (req, res) => {
   }
 };
 
-export const fetahAllStockBooking = async (req, res) => {
+export const fetchAllStockBooking = async (req, res) => {
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
@@ -593,6 +594,82 @@ export const fetahAllStockBooking = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error fetching bookings",
+      details: error.message,
+    });
+  }
+};
+
+export const searchStockBooking = async (req, res) => {
+
+  try {
+    // Set default pagination values if not provided
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const query = req.query.query;
+
+    let searchCondition = {};
+
+    if (query) {
+      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
+
+        // Search by customer name, email, number, or discountType if it's not a boolean query
+        const partnerSearchCondition = {
+          $or: [
+            { name: queryRegex }, // Search by customer name
+            // { email: queryRegex }, // Search by customer email
+            // { number: queryRegex }, // Search by customer phone number
+          ],
+        };
+
+        // Find matching customers by name, email, or number
+        const matchingPartners = await Partner.find(
+          partnerSearchCondition
+        ).select("_id");
+        const partnerIds = matchingPartners.map((partner) => partner._id);
+
+        // Search condition for customerId, discountType, or other fields
+        searchCondition = {
+          partner: { $in: partnerIds },
+          isDeleted: false
+        };
+      }
+
+    // Fetch bookings with populated fields and pagination
+    const bookings = await StockBooking.find(searchCondition)
+      .populate("product.product")
+      .populate("partner", "name email phone")
+      // .populate("customer")
+      // .sort({ "scheduleFor.date": 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Count the total number of bookings for pagination calculation
+    const totalBookings = await StockBooking.countDocuments(searchCondition);
+    const totalPages = Math.ceil(totalBookings / limit);
+
+    if (bookings.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No bookings found matching the search criteria",
+      });
+    }
+
+    // Return successful response with pagination info
+    return res.status(200).json({
+      success: true,
+      message: "Bookings retrieved successfully",
+      data: bookings,
+      totalBookings,
+      currentPage: page,
+      totalPages,
+    });
+  } catch (error) {
+    // Handle potential errors
+    return res.status(500).json({
+      success: false,
+      message: "Error occurred while searching bookings",
       details: error.message,
     });
   }

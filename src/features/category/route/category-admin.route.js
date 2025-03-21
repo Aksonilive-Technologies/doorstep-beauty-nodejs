@@ -26,6 +26,6 @@ router.get("/change-status", categoryAdminController.changeStatus);
 
 router.get("/download-excel", categoryAdminController.downloadExcelSheet);
 
-router.get("/search-category", categoryAdminController.searchCategory);
+router.get("/search", categoryAdminController.searchCategory);
 
 export default router;
