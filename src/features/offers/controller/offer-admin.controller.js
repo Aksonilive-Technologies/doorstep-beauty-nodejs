@@ -1,36 +1,51 @@
+import { cloudinary } from "../../../../config/cloudinary.js";
 import Offer from "../model/offers.model.js";
 
 // Create Offer
 export const createOffer = async (req, res) => {
   try {
-    const {
-      offerName,
-      offerDescription,
-      applicableOn,
-      offerValidOn,
-      offerType,
-      offerValue,
-      offerValidity,
-    } = req.body;
+    const offerData = req.body;
+
 
     // Validate required fields
-    if (!offerValue || !offerType || !offerValidOn || !applicableOn) {
+    if (
+      !offerData.offerValue ||
+      !offerData.offerType ||
+      !offerData.offerCode ||
+      !offerData.offerValidOn ||
+      !offerData.applicableOn
+    ) {
       return res.status(400).send({
         success: false,
         message:
-          " offerValue, offerType, offerValidOn , and applicableOn are required fields.",
+          " offerValue, offerType, offerValidOn, offerCode and applicableOn are required fields.",
       });
     }
 
-    const newOffer = new Offer({
-      offerName,
-      offerDescription,
-      applicableOn,
-      offerValidOn,
-      offerType,
-      offerValue,
-      offerValidity,
-    });
+    let imageUrl;
+
+    if (req.file) {
+      const baseFolder = process.env.CLOUDINARY_BASE_FOLDER || "";
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: baseFolder + "offer",
+          public_id: `${Date.now()}_${req.file.originalname.split(".")[0]}`,
+          overwrite: true,
+        });
+        imageUrl = result.secure_url;
+      } catch (error) {
+        console.error(`Error uploading image to Cloudinary:`, error.message);
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading image",
+          errorMessage: error.message,
+        });
+      }
+    }
+
+    // Create a new product with the image URL if available else with the default image
+
+    const newOffer = new Offer({ ...offerData, offerImage: imageUrl });
 
     await newOffer.save();
     res.status(201).send({
@@ -58,7 +73,9 @@ export const getOffers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch the offers with pagination
-    const offers = await Offer.find({isDeleted: false}).skip(skip).limit(limit);
+    const offers = await Offer.find({ isDeleted: false })
+      .skip(skip)
+      .limit(limit);
 
     // Get the total number of offers to calculate total pages
     const totalOffers = await Offer.countDocuments();
