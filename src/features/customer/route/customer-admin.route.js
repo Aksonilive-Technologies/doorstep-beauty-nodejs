@@ -13,6 +13,6 @@ router.get("/all", getAllCustomers);
 router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
 router.get("/download-excel", downloadExcelSheet);
-router.get("/searchCustomer", searchCustomer);
+router.get("/search", searchCustomer);
 
 export default router;

@@ -19,6 +19,6 @@ router.put("/update", uploadSingleImage, updatePartner);
 router.delete("/delete", deletePartner);
 router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
-router.get("/searchPartner", searchPartners);
+router.get("/search", searchPartners);
 
 export default router;

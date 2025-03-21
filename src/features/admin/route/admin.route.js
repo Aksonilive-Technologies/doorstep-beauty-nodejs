@@ -24,6 +24,6 @@ router.put("/delete", verifyToken, deleteAdmin);
 router.post("/update/password", updateAdminPassword);
 router.put("/update", verifyToken, updateAdmin);
 router.get("/download-excel", verifyToken, downloadExcelSheet);
-router.get("/searchAdmin", verifyToken, searchAdmin);
+router.get("/search", verifyToken, searchAdmin);
 
 export default router;

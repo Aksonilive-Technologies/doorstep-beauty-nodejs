@@ -6,7 +6,7 @@ import {
   changeMembershipStatus,
   fetchAllMemberships,
   deleteMembership,
-  searchMembership,
+  // searchMembership,
 } from "../controller/membership-admin.controller.js";
 
 const router = express.Router();
@@ -16,6 +16,6 @@ router.put("/update", updateMembership);
 router.get("/fetch/all", fetchAllMemberships);
 router.put("/change-status", changeMembershipStatus);
 router.put("/delete", deleteMembership);
-router.get("/search-membership", searchMembership);
+// router.get("/search-membership", searchMembership);
 
 export default router;

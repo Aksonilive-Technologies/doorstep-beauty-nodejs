@@ -13,6 +13,6 @@ router.post("/create", createOffer);
 router.get("/fetch/all", getOffers);
 router.put("/delete", deleteOffer);
 router.put("/change-status", changeOfferStatus);
-router.get("/search-offer", searchOffers);
+router.get("/search", searchOffers);
 
 export default router;

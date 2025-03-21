@@ -116,7 +116,10 @@ export const downloadExcelSheet = async (req, res) => {
 };
 
 export const searchBookings = async (req, res) => {
-  const { query, page = 1, limit = 10 } = req.query;
+  const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const query = req.query.query;
 
   try {
     // Define the search condition dynamically based on the query
@@ -125,16 +128,12 @@ export const searchBookings = async (req, res) => {
     if (query) {
       const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
 
-      // If the query is exactly "true" or "false", handle it as a search for isActive or isDeleted
-      if (query.toLowerCase() === "true" || query.toLowerCase() === "false") {
-        searchCondition.isActive = query.toLowerCase() === "true"; // Example using isActive; you can also use isDeleted if needed
-      } else {
         // Search by customer name, email, number, or discountType if it's not a boolean query
         const customerSearchCondition = {
           $or: [
             { name: queryRegex }, // Search by customer name
-            { email: queryRegex }, // Search by customer email
-            { number: queryRegex }, // Search by customer phone number
+            // { email: queryRegex }, // Search by customer email
+            // { number: queryRegex }, // Search by customer phone number
           ],
         };
 
@@ -146,20 +145,20 @@ export const searchBookings = async (req, res) => {
 
         // Search condition for customerId, discountType, or other fields
         searchCondition = {
-          $or: [
-            { customer: { $in: customerIds } }, // Match by customerId
-            { discountType: queryRegex }, // Match discountType
-          ],
+          customer: { $in: customerIds }, // Match by customerId
+          isDeleted: false
+            // { discountType: queryRegex }, // Match discountType
         };
       }
-    }
 
     // Fetch bookings with pagination and populated customer details
-    const bookings = await Booking.find(searchCondition)
-      .populate("customer", "name email mobile") // Populate specific fields from customer details
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      const bookings = await Booking.find(searchCondition)
+      .populate("product.product")
+      .populate("partner.partner")
+      .populate("customer")
+      .sort({ "scheduleFor.date": 1 })
+      .skip(skip)
+      .limit(limit);
 
     // Get total count of bookings matching the search condition
     const totalBookings = await Booking.countDocuments(searchCondition);
