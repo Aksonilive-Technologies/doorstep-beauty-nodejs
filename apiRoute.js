@@ -102,7 +102,7 @@ app.use("/api/v1/admin/membership", adminMembershipRoute);
 app.use("/api/v1/admin/complain", adminComplainRoute);
 app.use("/api/v1/admin/feedback", adminFeedbackRoute);
 app.use("/api/v1/admin/notification", adminNotificationRoute);
-app.use("/api/v1/admin/offers", adminOfferRoute);
+app.use("/api/v1/admin/offer", adminOfferRoute);
 app.use("/api/v1/admin/slot", adminSlotRoute);
 app.use("/api/v1/admin/stock", adminStockRoute);
 app.use("/api/v1/admin/booking", adminBookingRoute);
