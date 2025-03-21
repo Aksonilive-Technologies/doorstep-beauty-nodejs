@@ -51,6 +51,15 @@ export const register = async (req, res) => {
         .json({ success: false, message: "Mobile number already registered" });
     }
 
+    if(req.body.referralCode){
+      const refereeCustomer = await Customer.findOne({referralCode: req.body.referralCode})
+      if(!refereeCustomer){
+        return res
+        .status(400)
+        .json({ success: false, message: "Wrong referral code" });
+      }
+    }
+
     // Upload the image to Cloudinary if present
     let imageUrl = undefined;
     if (req.file) {
@@ -542,10 +551,9 @@ export const fetchWalletTransactions = async (req, res) => {
     const transactions = await Transaction.find({
       customerId: id,
       transactionType: {
-        $in: ["recharge_wallet", "wallet_booking", "booking_refund"],
+        $in: ["recharge_wallet", "wallet_booking", "booking_refund", "referral_bonus"],
       },
       status: "completed",
-
       isDeleted: false,
     }).sort({ createdAt: -1 });
 

@@ -91,12 +91,10 @@ export const bookCart = async (req, res) => {
       (key) => !requiredFields[key]
     );
     if (missingFields.length)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Missing fields: ${missingFields.join(", ")}`,
-        });
+      return res.status(400).json({
+        success: false,
+        message: `Missing fields: ${missingFields.join(", ")}`,
+      });
 
     // Fetch customer address
     const customerAddressData = await CustomerAddress.findOne({
@@ -156,14 +154,12 @@ export const bookCart = async (req, res) => {
         .json({ success: false, message: "Transaction not found" });
 
     if (["completed", "failed"].includes(transactionData.status.toLowerCase()))
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: `Transaction already marked as ${transactionData.status}`,
-        });
+      return res.status(400).json({
+        success: false,
+        message: `Transaction already marked as ${transactionData.status}`,
+      });
 
-        let membershipTransactionData;
+    let membershipTransactionData;
     if (membershipId) {
       membershipTransactionData = await Transaction.findOne({
         _id: membershipTransactionId,
@@ -171,24 +167,20 @@ export const bookCart = async (req, res) => {
         isDeleted: false,
       });
       if (!membershipTransactionData)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "Membership transaction not found",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "Membership transaction not found",
+        });
 
       if (
         ["completed", "failed"].includes(
           membershipTransactionData.status.toLowerCase()
         )
       )
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: `Transaction already marked as ${membershipTransactionData.status}`,
-          });
+        return res.status(400).json({
+          success: false,
+          message: `Transaction already marked as ${membershipTransactionData.status}`,
+        });
     }
     // Handle different payment types
     if (transactionData.transactionType === "gateway_booking") {
@@ -243,6 +235,24 @@ export const bookCart = async (req, res) => {
       isDeleted: false,
     });
 
+    const bookings = await Booking.find({ customer: customerId });
+    // Process referaal bonus on 1st booking
+    if (bookings.length == 1) {
+      const refereeCustomerId = customer.referredBy;
+      const refereeCustomer = await Customer.findById(refereeCustomerId);
+
+      const transaction = new Transaction({
+        customerId: refereeCustomer._id,
+        transactionType: "referral_bonus",
+        amount: 100,
+        paymentGateway: "system",
+        status: "completed"
+      });
+      await transaction.save();
+      refereeCustomer.walletBalance+=100;
+      await refereeCustomer.save();
+    }
+
     // Update MostBookedProduct
     await Promise.all(
       products.map(async ({ product }) => {
@@ -289,13 +299,11 @@ export const bookCart = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Cart booked successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error booking cart",
-        errorMessage: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error booking cart",
+      errorMessage: error.message,
+    });
   }
 };
 
