@@ -256,6 +256,7 @@ export const bookCart = async (req, res) => {
     // Update MostBookedProduct
     await Promise.all(
       products.map(async ({ product }) => {
+        if((await Product.findById(product)).isFree === false){
         const existingRecord = await MostBookedProduct.findOne({
           product,
           isActive: true,
@@ -265,6 +266,7 @@ export const bookCart = async (req, res) => {
           ? existingRecord.count++
           : await MostBookedProduct.create({ product, count: 1 });
         await existingRecord?.save();
+      }
       })
     );
 

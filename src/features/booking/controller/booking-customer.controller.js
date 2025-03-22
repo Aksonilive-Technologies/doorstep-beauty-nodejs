@@ -192,14 +192,24 @@ export const fetchBookings = async (req, res) => {
       if (booking.serviceStatus === "ongoing") {
         // Ongoing bookings
         categorized.Ongoing.push(booking);
-      } else if (booking.scheduleFor && booking.scheduleFor.date && booking.scheduleFor.time) {
+      } else if (
+        booking.scheduleFor &&
+        booking.scheduleFor.date &&
+        booking.scheduleFor.time
+      ) {
         // Combine date and time correctly
         const scheduleDateTime = moment(booking.scheduleFor.date) // Create moment from date
-      .set({
-        hour: moment(booking.scheduleFor.time + " " + booking.scheduleFor.format, "hh:mm A").hour(),
-        minute: moment(booking.scheduleFor.time + " " + booking.scheduleFor.format, "hh:mm A").minute(),
-      });
-    
+          .set({
+            hour: moment(
+              booking.scheduleFor.time + " " + booking.scheduleFor.format,
+              "hh:mm A"
+            ).hour(),
+            minute: moment(
+              booking.scheduleFor.time + " " + booking.scheduleFor.format,
+              "hh:mm A"
+            ).minute(),
+          });
+
         if (scheduleDateTime.isAfter(now)) {
           categorized.Upcoming.push(booking);
         } else {
@@ -401,6 +411,9 @@ export const fetchRecentBookedProducts = async (req, res) => {
       booking.product.map((p) => p.product)
     );
 
+    // Filter out products with isFree = true
+    recentProducts = recentProducts.filter((product) => !product.isFree);
+
     // Limit the result to the last 10 products
     recentProducts = recentProducts.slice(0, 10);
 
@@ -449,8 +462,11 @@ export const ratePartner = async (req, res) => {
     }
 
     // Find the booking by bookingId
-    const booking = await Booking.findOne({ _id: bookingId, isActive: true,
-      isDeleted: false, });
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      isActive: true,
+      isDeleted: false,
+    });
 
     if (!booking) {
       return res.status(404).json({
@@ -498,8 +514,11 @@ export const rateBooking = async (req, res) => {
     const { bookingId, rating } = req.body;
 
     // Step 1: Find the booking by ID
-    const booking = await Booking.findOne({ _id: bookingId, isActive: true,
-      isDeleted: false, });
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      isActive: true,
+      isDeleted: false,
+    });
     if (!booking) {
       return res
         .status(404)
@@ -787,10 +806,15 @@ export const updateTransaction = async (req, res) => {
 // };
 
 export const initiatePayment = async (req, res) => {
-  const { customerId, discountType,
+  const {
+    customerId,
+    discountType,
     discountValue,
     offerType,
-    offerRefId, paymentMode, membershipId } = req.body;
+    offerRefId,
+    paymentMode,
+    membershipId,
+  } = req.body;
   try {
     if (!customerId || !paymentMode) {
       return res.status(404).json({
@@ -826,7 +850,7 @@ export const initiatePayment = async (req, res) => {
       0
     );
 
-    const taxes = totalPrice*0.04;
+    const taxes = totalPrice * 0.04;
 
     // Calculate discount
     let discount = 0;
@@ -839,10 +863,10 @@ export const initiatePayment = async (req, res) => {
     let finalPrice = totalPrice + taxes - discount;
     let membership;
 
-    if(membershipId){
+    if (membershipId) {
       membership = Membership.findById(membershipId);
 
-      finalPrice+= membership.price
+      finalPrice += membership.price;
     }
 
     // Initialize transaction object
@@ -861,11 +885,10 @@ export const initiatePayment = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message:
-          "Transaction initiated successfully via wallet",
-        data: { transactionId: transaction._id}
+        message: "Transaction initiated successfully via wallet",
+        data: { transactionId: transaction._id },
       });
-    }else if (paymentMode === "cash") {
+    } else if (paymentMode === "cash") {
       transactionData.transactionType = "cash_booking";
       transactionData.status = "pending";
 
@@ -874,9 +897,8 @@ export const initiatePayment = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message:
-          "Transaction initiated successfully via cash",
-        data: { transactionId: transaction._id}
+        message: "Transaction initiated successfully via cash",
+        data: { transactionId: transaction._id },
       });
     } else if (["cashfree", "razorpay"].includes(paymentMode)) {
       // Create a pending transaction for gateway payments
@@ -887,28 +909,31 @@ export const initiatePayment = async (req, res) => {
 
       const transaction = new Transaction(transactionData);
       await transaction.save();
-      if(membershipId){
-      const membershipTransaction = new Transaction({
-        customerId: customerId,
-        transactionType: "membership_plan_purchase",
-        amount: membership.discountedPrice,
-        paymentGateway: paymentMode,
-      });
-      await membershipTransaction.save();
+      if (membershipId) {
+        const membershipTransaction = new Transaction({
+          customerId: customerId,
+          transactionType: "membership_plan_purchase",
+          amount: membership.discountedPrice,
+          paymentGateway: paymentMode,
+        });
+        await membershipTransaction.save();
 
-      return res.status(200).json({
-        success: true,
-        message: "Transaction initiated successfully via " + paymentMode,
-        data: { transactionId: transaction._id, membershipTransactionId: membershipTransaction._id, orderId: orderId },
-      });
-    }else{
-
-      return res.status(200).json({
-        success: true,
-        message: "Transaction initiated successfully via " + paymentMode,
-        data: { transactionId: transaction._id, orderId: orderId },
-      });
-    }
+        return res.status(200).json({
+          success: true,
+          message: "Transaction initiated successfully via " + paymentMode,
+          data: {
+            transactionId: transaction._id,
+            membershipTransactionId: membershipTransaction._id,
+            orderId: orderId,
+          },
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          message: "Transaction initiated successfully via " + paymentMode,
+          data: { transactionId: transaction._id, orderId: orderId },
+        });
+      }
     } else {
       return res.status(400).json({
         success: false,
