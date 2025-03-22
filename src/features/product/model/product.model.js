@@ -39,6 +39,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isFree: {
+      type: Boolean,
+      default: false,
+    },
     isBestSeller: {
       type: Boolean,
       default: false,
