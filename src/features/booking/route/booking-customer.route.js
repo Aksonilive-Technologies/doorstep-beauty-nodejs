@@ -1,6 +1,7 @@
 import express from "express";
 const router = express.Router();
 import * as Order from "../controller/booking-customer.controller.js";
+import "./cronJob.js";
 
 router.post("/create", Order.bookProduct);
 // router.put("/update", Order.updateOrder);
