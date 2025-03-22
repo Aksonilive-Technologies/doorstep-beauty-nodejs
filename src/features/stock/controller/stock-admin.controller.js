@@ -174,17 +174,23 @@ export const createStock = async (req, res) => {
 };
 
 export const fetchAllStocks = async (req, res) => {
+  const { query } = req.query;
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    //search condition
+    const searchCondition = query
+      ? { isDeleted: false, name: { $regex: query, $options: "i" } }
+      : { isDeleted: false };
+
     // Fetch stocks with pagination
-    const stocks = await Stock.find({isDeleted: false}).skip(skip).limit(limit).sort({ position: 1 });
+    const stocks = await Stock.find(searchCondition).skip(skip).limit(limit).sort({ position: 1 });
 
     // Count the total number of documents for pagination calculation
-    const totalStocks = await Stock.countDocuments();
+    const totalStocks = stocks.length;
     const totalPages = Math.ceil(totalStocks / limit);
 
     // If no stocks found
@@ -496,70 +502,37 @@ export const downloadExcelSheet = async (req, res) => {
   }
 };
 
-export const searchStock = async (req, res) => {
-  try {
-    const { query } = req.query;
-
-    // Handle pagination parameters
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    // Define search conditions using case-insensitive regex to match multiple fields
-    const searchCondition = query
-      ? {
-          $or: [
-            { name: { $regex: query, $options: "i" } }, // Case-insensitive search
-            { brand: { $regex: query, $options: "i" } },
-            { size: { $regex: query, $options: "i" } },
-          ],
-        }
-      : {};
-
-    // Find the stocks matching the search condition, including both deleted and non-deleted stocks
-    const stocks = await Stock.find(searchCondition)
-      .limit(limit) // Convert string to number
-      .skip(skip)
-      .lean();
-
-    // Check if no stocks are found
-    if (stocks.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No data found",
-      });
-    }
-
-    const totalStocks = await Stock.countDocuments(searchCondition);
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Stock retrieved successfully",
-      data: stocks,
-      totalStocks,
-      totalPages: Math.ceil(totalStocks / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    console.error("Error while searching stocks:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while searching stocks",
-      errorMessage: error.message,
-    });
-  }
-};
-
 export const fetchAllStockBooking = async (req, res) => {
+  const { query } = req.query;
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    //search condition
+    let searchCondition = {};
+
+    if (query) {
+      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
+
+        // Find matching customers by name, email, or number
+        const matchingPartners = await Partner.find(
+          { name: queryRegex }
+        ).select("_id");
+        const partnerIds = matchingPartners.map((partner) => partner._id);
+
+        // Search condition for partnerId
+        searchCondition = {
+          partner: { $in: partnerIds },
+          isDeleted: false
+        };
+      }else{
+        searchCondition = { isDeleted: false };
+      }
+
     // Fetch bookings with populated fields and pagination
-    const bookings = await StockBooking.find()
+    const bookings = await StockBooking.find(searchCondition)
       .populate("product.product")
       .populate("partner", "name email phone")
       // .populate("customer")
@@ -569,7 +542,7 @@ export const fetchAllStockBooking = async (req, res) => {
       .lean();
 
     // Count the total number of bookings for pagination calculation
-    const totalBookings = await StockBooking.countDocuments();
+    const totalBookings = bookings.length;
     const totalPages = Math.ceil(totalBookings / limit);
 
     // If no bookings found
@@ -594,82 +567,6 @@ export const fetchAllStockBooking = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error fetching bookings",
-      details: error.message,
-    });
-  }
-};
-
-export const searchStockBooking = async (req, res) => {
-
-  try {
-    // Set default pagination values if not provided
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const query = req.query.query;
-
-    let searchCondition = {};
-
-    if (query) {
-      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
-
-        // Search by customer name, email, number, or discountType if it's not a boolean query
-        const partnerSearchCondition = {
-          $or: [
-            { name: queryRegex }, // Search by customer name
-            // { email: queryRegex }, // Search by customer email
-            // { number: queryRegex }, // Search by customer phone number
-          ],
-        };
-
-        // Find matching customers by name, email, or number
-        const matchingPartners = await Partner.find(
-          partnerSearchCondition
-        ).select("_id");
-        const partnerIds = matchingPartners.map((partner) => partner._id);
-
-        // Search condition for customerId, discountType, or other fields
-        searchCondition = {
-          partner: { $in: partnerIds },
-          isDeleted: false
-        };
-      }
-
-    // Fetch bookings with populated fields and pagination
-    const bookings = await StockBooking.find(searchCondition)
-      .populate("product.product")
-      .populate("partner", "name email phone")
-      // .populate("customer")
-      // .sort({ "scheduleFor.date": 1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    // Count the total number of bookings for pagination calculation
-    const totalBookings = await StockBooking.countDocuments(searchCondition);
-    const totalPages = Math.ceil(totalBookings / limit);
-
-    if (bookings.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No bookings found matching the search criteria",
-      });
-    }
-
-    // Return successful response with pagination info
-    return res.status(200).json({
-      success: true,
-      message: "Bookings retrieved successfully",
-      data: bookings,
-      totalBookings,
-      currentPage: page,
-      totalPages,
-    });
-  } catch (error) {
-    // Handle potential errors
-    return res.status(500).json({
-      success: false,
-      message: "Error occurred while searching bookings",
       details: error.message,
     });
   }

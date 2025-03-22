@@ -8,7 +8,7 @@ import {
   deletePartner,
   changeStatus,
   downloadExcelSheet,
-  searchPartners,
+  // searchPartners,
 } from "../controller/partner-admin.controller.js";
 import { uploadSingleImage } from "../../../../middleware/uploadMiddleware.js";
 
@@ -19,6 +19,6 @@ router.put("/update", uploadSingleImage, updatePartner);
 router.delete("/delete", deletePartner);
 router.put("/change-status", changeStatus);
 router.get("/download-excel", downloadExcelSheet);
-router.get("/search", searchPartners);
+// router.get("/search", searchPartners);
 
 export default router;

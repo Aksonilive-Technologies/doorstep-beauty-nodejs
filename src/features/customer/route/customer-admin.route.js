@@ -3,7 +3,6 @@ import express from "express";
 import {
   getAllCustomers,
   downloadExcelSheet,
-  searchCustomer,
   deleteCustomer,
   changeStatusDeletedCustomer,
 } from "../controller/customer-admin.controller.js";
@@ -13,6 +12,5 @@ router.get("/all", getAllCustomers);
 router.delete("/delete", deleteCustomer);
 router.put("/change-status", changeStatusDeletedCustomer);
 router.get("/download-excel", downloadExcelSheet);
-router.get("/search", searchCustomer);
 
 export default router;

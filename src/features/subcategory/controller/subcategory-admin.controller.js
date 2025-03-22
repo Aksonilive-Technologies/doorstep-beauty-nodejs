@@ -72,20 +72,26 @@ export const createSubcategory = async (req, res) => {
 
 // Get all Subcategories
 export const getAllSubcategories = async (req, res) => {
+  const {query} = req.query;
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    //search condition
+    const searchCondition = query
+      ? { isDeleted: false, name: { $regex: query, $options: "i" } }
+      : { isDeleted: false };
+
     // Find subcategories with pagination
-    const subcategories = await Subcategory.find({isDeleted: false})
+    const subcategories = await Subcategory.find(searchCondition)
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)
       .limit(limit);
 
     // Get the total number of subcategories (for pagination info)
-    const totalSubcategories = await Subcategory.countDocuments();
+    const totalSubcategories = subcategories.length;
     const totalPages = Math.ceil(totalSubcategories / limit);
 
     res.status(200).json({
@@ -326,65 +332,5 @@ export const downloadExcelSheet = async (req, res) => {
     res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
-  }
-};
-
-export const searchSubcategory = async (req, res) => {
-  try {
-    const { query } = req.query;
-
-    // Handle pagination parameters
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    // Define search conditions using case-insensitive regex for 'name'
-    // and exact or number conversion for 'position'
-    let searchCondition = {};
-
-    if (query) {
-      const isNumericQuery = !isNaN(query);
-      searchCondition = {
-        $or: [
-          { name: { $regex: query, $options: "i" } }, // Case-insensitive search for name
-          ...(isNumericQuery ? [{ position: parseInt(query, 10) }] : []), // Exact match for numeric position
-        ],
-      };
-    }
-
-    // Find the subcategories matching the search condition
-    const subcategories = await Subcategory.find(searchCondition)
-      .limit(limit)
-      .skip(skip)
-      .lean();
-
-    // Check if no subcategories are found
-    if (subcategories.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No data found",
-      });
-    }
-
-    const totalSubcategories = await Subcategory.countDocuments(
-      searchCondition
-    );
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Subcategories retrieved successfully",
-      data: subcategories,
-      totalSubcategories,
-      totalPages: Math.ceil(totalSubcategories / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    console.error("Error while searching subcategories:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while searching subcategories",
-      errorMessage: error.message,
-    });
   }
 };

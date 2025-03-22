@@ -260,10 +260,15 @@ export const changeStatusById = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, query } = req.query;
+
+    //search condition
+    const searchCondition = query
+      ? { isDeleted: false, name: { $regex: query, $options: "i" } }
+      : { isDeleted: false };
 
     // Fetch products with pagination and sorting
-    const products = await Product.find({isDeleted: false})
+    const products = await Product.find(searchCondition)
       .select("-__v")
       .populate("categoryId")
       .populate("subcategoryId")
@@ -412,63 +417,5 @@ export const downloadExcelSheet = async (req, res) => {
     res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
-  }
-};
-
-export const searchProduct = async (req, res) => {
-  try {
-    const { query } = req.query;
-
-    // Handle pagination parameters
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    // Define search conditions using case-insensitive regex for text fields
-    // and exact match or number conversion for numeric fields (e.g., price)
-    let searchCondition = {};
-
-    if (query) {
-      searchCondition = {
-        $or: [
-          { name: { $regex: query, $options: "i" } }, // Case-insensitive search for product name
-          { "options.option": { $regex: query, $options: "i" } }, // Search within options array (option field)
-          { details: { $regex: query, $options: "i" } }, // Search in product details
-        ],
-      };
-    }
-
-    // Find the products matching the search condition
-    const products = await Product.find(searchCondition)
-      .limit(limit)
-      .skip(skip)
-      .lean();
-
-    // Check if no products are found
-    if (products.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No products found",
-      });
-    }
-
-    const totalProducts = await Product.countDocuments(searchCondition);
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Products retrieved successfully",
-      data: products,
-      totalProducts,
-      totalPages: Math.ceil(totalProducts / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    console.error("Error while searching products:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while searching products",
-      errorMessage: error.message,
-    });
   }
 };
