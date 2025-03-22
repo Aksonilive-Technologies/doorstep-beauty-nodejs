@@ -72,20 +72,26 @@ export const createCategory = async (req, res) => {
 
 // Get all categories
 export const getAllCategories = async (req, res) => {
+  const { query } = req.query;
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    //search condition
+    const searchCondition = query
+      ? { isDeleted: false, name: { $regex: query, $options: "i" } }
+      : { isDeleted: false };
+
     // Find categories with pagination
-    const categories = await Category.find({isDeleted: false})
+    const categories = await Category.find(searchCondition)
       .select("-__v")
       .sort({ position: 1 }) // Sort by position in ascending order
       .skip(skip)
       .limit(limit);
 
     // Get the total number of categories (for pagination info)
-    const totalCategories = await Category.countDocuments();
+    const totalCategories = categories.length;
     const totalPages = Math.ceil(totalCategories / limit);
 
     res.status(200).json({
@@ -286,63 +292,5 @@ export const downloadExcelSheet = async (req, res) => {
     res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
-  }
-};
-
-export const searchCategory = async (req, res) => {
-  try {
-    const { query } = req.query;
-
-    // Handle pagination parameters
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    // Define search conditions using case-insensitive regex for 'name'
-    // and exact or number conversion for 'position'
-    let searchCondition = {};
-
-    if (query) {
-      const isNumericQuery = !isNaN(query);
-      searchCondition = {
-        $or: [
-          { name: { $regex: query, $options: "i" } }, // Case-insensitive search for name
-          ...(isNumericQuery ? [{ position: parseInt(query, 10) }] : []), // Exact match for numeric position
-        ],
-      };
-    }
-
-    // Find the categories matching the search condition
-    const categories = await Category.find(searchCondition)
-      .limit(limit)
-      .skip(skip)
-      .lean();
-
-    // Check if no categories are found
-    if (categories.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No data found",
-      });
-    }
-
-    const totalCategories = await Category.countDocuments(searchCondition);
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Categories retrieved successfully",
-      data: categories,
-      totalCategories,
-      totalPages: Math.ceil(totalCategories / limit),
-      currentPage: page,
-    });
-  } catch (error) {
-    console.error("Error while searching categories:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while searching categories",
-      errorMessage: error.message,
-    });
   }
 };

@@ -10,7 +10,6 @@ import {
   updateAdmin,
   changeStatus,
   downloadExcelSheet,
-  searchAdmin,
 } from "../controller/admin.controller.js";
 import verifyToken from "../../../../middleware/verifyToken.js";
 
@@ -24,6 +23,5 @@ router.put("/delete", verifyToken, deleteAdmin);
 router.post("/update/password", updateAdminPassword);
 router.put("/update", verifyToken, updateAdmin);
 router.get("/download-excel", verifyToken, downloadExcelSheet);
-router.get("/search", verifyToken, searchAdmin);
 
 export default router;

@@ -115,83 +115,6 @@ export const resolvedComplaint = async (req, res) => {
   }
 };
 
-export const searchComplaints = async (req, res) => {
-  const { query, page = 1, limit = 10 } = req.query;
-
-  try {
-    // Define the search condition dynamically based on the query
-    let searchCondition = {};
-
-    if (query) {
-      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
-
-      // If the query is exactly "true" or "false", handle it as a search for the resolved field
-      if (query.toLowerCase() === "true" || query.toLowerCase() === "false") {
-        searchCondition.resolved = query.toLowerCase() === "true";
-      } else {
-        // Search by customer name, email, number, or complaint category if it's not a "true" or "false" query
-        const customerSearchCondition = {
-          $or: [
-            { name: queryRegex }, // Search by customer name
-            { email: queryRegex }, // Search by customer email
-            { number: queryRegex }, // Search by customer number
-          ],
-        };
-
-        // Find matching customers by name, email, or number
-        const matchingCustomers = await Customer.find(
-          customerSearchCondition
-        ).select("_id");
-        const customerIds = matchingCustomers.map((customer) => customer._id);
-
-        // Search condition for customerId, complaintCategory, or other fields
-        searchCondition = {
-          $or: [
-            { customerId: { $in: customerIds } }, // Match by customerId
-            { complaintCategory: queryRegex }, // Match complaint category
-          ],
-        };
-      }
-    }
-
-    // Find the complaints matching the search condition
-    const complaints = await Complaint.find(searchCondition)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .populate("customerId", "name email mobile") // Populate specific fields from customer details
-      .populate("resolvedBy", "name");
-
-    // Get total count of complaints matching the search condition
-    const totalComplaints = await Complaint.countDocuments(searchCondition);
-
-    if (complaints.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No complaints found matching the search criteria",
-      });
-    }
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Complaints retrieved successfully",
-      data: complaints,
-      totalComplaints,
-      currentPage: page,
-      totalPages: Math.ceil(totalComplaints / limit),
-    });
-  } catch (error) {
-    console.error("Error searching complaints:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Error occurred while searching complaints",
-      error: error.message,
-    });
-  }
-};
-
 export const getComplaintStatsByCategory = async (req, res) => {
   try {
     // Aggregate complaints grouped by complaintCategory and count each category
@@ -299,7 +222,6 @@ export const getResolvedComplaintStatsByCategory = async (req, res) => {
 export default {
   getAllComplaints,
   resolvedComplaint,
-  searchComplaints,
   getComplaintStatsByCategory,
   getResolvedComplaintStatsByCategory,
 };

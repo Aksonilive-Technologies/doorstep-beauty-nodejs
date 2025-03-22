@@ -18,7 +18,6 @@ router.delete("/delete", Product.deleteProduct);
 router.get("/fetch/all", Product.getAllProducts);
 router.put("/change-status", Product.changeStatusById);
 router.get("/download-excel", Product.downloadExcelSheet);
-router.get("/search", Product.searchProduct);
 // router.get("/fetch/new-products", Product.getAllNewProducts);
 
 export default router;

@@ -16,6 +16,5 @@ router.get("/fetch/all", getNotifications);
 // router.get("/fetchbyId",  getNotificationById);
 router.put("/update", uploadSingleImage, updateNotification);
 router.put("/delete", deleteNotification);
-// router.get("/search-notification", searchNotification);
 
 export default router;

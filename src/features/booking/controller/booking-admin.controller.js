@@ -8,14 +8,37 @@ import PartnerTransaction from "../../partner-transaction/model/partner-transact
 import mongoose from "mongoose";
 
 export const fetchBookings = async (req, res) => {
+  const { query } = req.query;
   try {
     // Set default pagination values if not provided
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    //search condition
+    let searchCondition = {};
+
+    if (query) {
+      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
+
+        // Find matching customers by name, email, or number
+        const matchingCustomers = await Customer.find(
+          { name: queryRegex }
+        ).select("_id");
+        const customerIds = matchingCustomers.map((customer) => customer._id);
+
+        // Search condition for customerId
+        searchCondition = {
+          customer: { $in: customerIds }, // Match by customerId
+          isDeleted: false
+            // { discountType: queryRegex }, // Match discountType
+        };
+      }else{
+        searchCondition = { isDeleted: false };
+      }
+
     // Fetch bookings with populated fields and pagination
-    const bookings = await Booking.find({isDeleted: false})
+    const bookings = await Booking.find(searchCondition)
       .populate("product.product")
       .populate("partner.partner")
       .populate("customer")
@@ -25,7 +48,7 @@ export const fetchBookings = async (req, res) => {
       .lean();
 
     // Count the total number of bookings for pagination calculation
-    const totalBookings = await Booking.countDocuments();
+    const totalBookings = bookings.length;
     const totalPages = Math.ceil(totalBookings / limit);
 
     // If no bookings found
@@ -112,81 +135,6 @@ export const downloadExcelSheet = async (req, res) => {
     res.send(excelBuffer);
   } catch (error) {
     res.status(500).json({ message: "Error generating Excel file", error });
-  }
-};
-
-export const searchBookings = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const query = req.query.query;
-
-  try {
-    // Define the search condition dynamically based on the query
-    let searchCondition = {};
-
-    if (query) {
-      const queryRegex = { $regex: query, $options: "i" }; // Case-insensitive regex for all fields
-
-        // Search by customer name, email, number, or discountType if it's not a boolean query
-        const customerSearchCondition = {
-          $or: [
-            { name: queryRegex }, // Search by customer name
-            // { email: queryRegex }, // Search by customer email
-            // { number: queryRegex }, // Search by customer phone number
-          ],
-        };
-
-        // Find matching customers by name, email, or number
-        const matchingCustomers = await Customer.find(
-          customerSearchCondition
-        ).select("_id");
-        const customerIds = matchingCustomers.map((customer) => customer._id);
-
-        // Search condition for customerId, discountType, or other fields
-        searchCondition = {
-          customer: { $in: customerIds }, // Match by customerId
-          isDeleted: false
-            // { discountType: queryRegex }, // Match discountType
-        };
-      }
-
-    // Fetch bookings with pagination and populated customer details
-      const bookings = await Booking.find(searchCondition)
-      .populate("product.product")
-      .populate("partner.partner")
-      .populate("customer")
-      .sort({ "scheduleFor.date": 1 })
-      .skip(skip)
-      .limit(limit);
-
-    // Get total count of bookings matching the search condition
-    const totalBookings = await Booking.countDocuments(searchCondition);
-
-    if (bookings.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No bookings found matching the search criteria",
-      });
-    }
-
-    // Return the search results along with pagination details
-    res.status(200).json({
-      success: true,
-      message: "Bookings retrieved successfully",
-      data: bookings,
-      totalBookings,
-      currentPage: page,
-      totalPages: Math.ceil(totalBookings / limit),
-    });
-  } catch (error) {
-    console.error("Error searching bookings:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Error occurred while searching bookings",
-      error: error.message,
-    });
   }
 };
 

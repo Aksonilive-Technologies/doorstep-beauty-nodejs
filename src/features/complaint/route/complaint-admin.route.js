@@ -10,5 +10,4 @@ const router = express.Router();
 // router.post("/create", createComplaint);
 router.get("/all", getAllComplaints);
 router.put("/resolved", resolvedComplaint);
-// router.get("/search-complaint", searchComplaints);
 export default router;

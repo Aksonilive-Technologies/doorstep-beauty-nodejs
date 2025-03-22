@@ -64,6 +64,7 @@ export const createOffer = async (req, res) => {
 
 // Get All Offers
 export const getOffers = async (req, res) => {
+  const { query } = req.query;
   try {
     // Get page and limit from query parameters, or set defaults
     const page = parseInt(req.query.page) || 1;
@@ -72,13 +73,18 @@ export const getOffers = async (req, res) => {
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
+    //search condition
+    const searchCondition = query
+      ? { isDeleted: false, offerName: { $regex: query, $options: "i" } }
+      : { isDeleted: false };
+
     // Fetch the offers with pagination
-    const offers = await Offer.find({ isDeleted: false })
+    const offers = await Offer.find(searchCondition)
       .skip(skip)
       .limit(limit);
 
     // Get the total number of offers to calculate total pages
-    const totalOffers = await Offer.countDocuments();
+    const totalOffers = offers.length;
 
     res.status(200).send({
       success: true,
@@ -162,65 +168,9 @@ export const changeOfferStatus = async (req, res) => {
   }
 };
 
-export const searchOffers = async (req, res) => {
-  const { query, page = 1, limit = 10 } = req.query;
-
-  try {
-    // Create an empty search condition object
-    let searchCondition = {};
-
-    // If the `query` param is provided, search across multiple fields
-    if (query) {
-      searchCondition.$or = [
-        { offerName: { $regex: query, $options: "i" } }, // Search in offerName (case-insensitive)
-        { offerDescription: { $regex: query, $options: "i" } }, // Search in offerDescription (case-insensitive)
-        { applicableOn: { $regex: query, $options: "i" } }, // Search in applicableOn (case-insensitive)
-        { offerValidOn: isNaN(Number(query)) ? undefined : Number(query) }, // Search in offerValidOn (must be a number)
-        { offerType: { $regex: query, $options: "i" } }, // Search in offerType (case-insensitive)
-      ];
-    }
-
-    // Fetch data based on the search condition with pagination
-    const offers = await Offer.find(searchCondition)
-      .sort({ createdAt: -1 }) // Sort by latest offers
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .lean();
-
-    if (offers.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No offer found matching the search criteria",
-      });
-    }
-
-    // Get the total count of matching offers
-    const totalOffers = await Offer.countDocuments(searchCondition);
-
-    // Send the result back to the client
-    res.status(200).json({
-      success: true,
-      message: "Offers retrieved successfully",
-      data: offers,
-      totalOffers,
-      currentPage: page,
-      totalPages: Math.ceil(totalOffers / limit),
-    });
-  } catch (error) {
-    // Handle any error during the search process
-    console.error("Error searching offers:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error occurred while searching offers",
-      error: error.message,
-    });
-  }
-};
-
 export default {
   createOffer,
   getOffers,
   deleteOffer,
   changeOfferStatus,
-  searchOffers,
 };
