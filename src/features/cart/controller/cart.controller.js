@@ -12,21 +12,20 @@ import moment from "moment";
 
 // Add item to cart
 export const addItemToCart = async (req, res) => {
-  const { customerId, itemId, optionId, price } = req.body;
+  const { customerId, itemId} = req.body;
 
   try {
-    if (!customerId || !itemId || !price) {
+    if (!customerId || !itemId) {
       return res.status(400).json({
         success: false,
-        message: "feilds like customerId, itemId, price are required",
+        message: "feilds like customerId and itemId are required",
       });
     }
     let cart;
     const query = { customer: customerId, product: itemId };
-
-    if (optionId) {
-      query.productOption = optionId; // Add productOption only if optionId is provided
-    }
+    const product = await Product
+      .findById(itemId)
+      .select("-__v");
 
     cart = await Cart.findOne(query);
 
@@ -35,12 +34,8 @@ export const addItemToCart = async (req, res) => {
       const newCartItem = {
         customer: customerId,
         product: itemId,
-        price,
+        price: product.price,
       };
-
-      if (optionId) {
-        newCartItem.productOption = optionId; // Add productOption if provided
-      }
 
       cart = new Cart(newCartItem);
     } else {
