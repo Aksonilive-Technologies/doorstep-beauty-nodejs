@@ -11,6 +11,7 @@ export const getAllNewProducts = async (req, res) => {
       isActive: true,
       isDeleted: false,
       isnew: true,
+      isFree: false,
     })
       .sort({ createdAt: -1 })
       .select("-__v")
@@ -119,6 +120,8 @@ export const getAllCategoryProducts = async (req, res) => {
     let products = await Product.find({
       isActive: true,
       isDeleted: false,
+      isFree: false,
+
     })
       .populate("categoryId")
       .populate("subcategoryId")
@@ -227,6 +230,7 @@ export const getAllProducts = async (req, res) => {
     let products = await Product.find({
       isActive: true,
       isDeleted: false,
+      isFree: false,
     })
       .populate("categoryId")
       .populate("subcategoryId")
