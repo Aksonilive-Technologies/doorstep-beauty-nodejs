@@ -1,3 +1,4 @@
+import Booking from "../../booking/model/booking.model.js";
 import CartItem from "../../cart/model/cart.model.js";
 import Categories from "../../category/model/category.model.js";
 import Product from "../model/product.model.js";
@@ -44,6 +45,69 @@ export const getAllNewProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching products",
+      errorMessage: error.message,
+    });
+  }
+};
+
+export const getAllFreeProducts = async (req, res) => {
+  try {
+    const { customerId } = req.query;
+    if(!customerId){
+      return res.status(400).json({
+        success: false,
+        message: "Customer Id is required",
+      })
+    }
+    const bookings = await Booking.find({
+      customer: customerId,
+    });
+
+    if(bookings.length>0){
+      return res.status(404).json({
+        success: false,
+        message: "Free products not found",
+      });
+    }
+
+    let products = await Product.find({
+      isActive: true,
+      isDeleted: false,
+      isFree: true,
+    })
+      .sort({ createdAt: -1 })
+      .select("-__v")
+      .limit(10)
+      .lean();
+
+    if (customerId) {
+      const cartProducts = await CartItem.find({ customer: customerId }).select(
+        "-__v"
+      );
+
+      products = products.map((product) => {
+        const cartItem = cartProducts.find(
+          (cartProduct) =>
+            cartProduct.product.toString() === product._id.toString()
+        );
+
+        return {
+          ...product,
+          cartQuantity: cartItem ? cartItem.quantity : 0, // Set cartQuantity to 0 if not in cart
+          cartItemID: cartItem ? cartItem._id : null,
+        };
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "All free products fetched successfully",
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching free products",
       errorMessage: error.message,
     });
   }
